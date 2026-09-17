@@ -666,32 +666,32 @@
 
 <style id="password-constraints-style">
 .password-requirements {
-    margin-top: 8px;
-    padding: 10px 12px;
-    border-radius: 8px;
-    background: rgba(0, 0, 0, 0.04);
-    font-size: 12px;
-    line-height: 1.5;
+    margin-top: 5px;
+    padding: 0;
+    background: transparent;
+    font-size: 11px;
+    line-height: 1.3;
 }
 
 .password-requirements small {
     display: block;
-    margin-bottom: 4px;
-    font-weight: 600;
+    margin: 0;
+    font-size: 11px;
+    font-weight: 500;
 }
 
 .password-requirements ul {
-    margin: 0;
-    padding-left: 18px;
+    display: none;
 }
 
 .password-requirements li {
-    margin: 2px 0;
+    margin: 0;
 }
 
 .password-requirements li.valid {
     font-weight: 600;
 }
+
 </style>
 
 </head>
@@ -985,22 +985,10 @@
                             placeholder="Create a password"
                             autocomplete="new-password"
                             minlength="12"
-                         maxlength="12" pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8}" inputmode="text" spellcheck="false">
+                         maxlength="12" pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{12}" inputmode="text" spellcheck="false">
 <div class="password-requirements" id="passwordRequirements">
-    <small>Password must be exactly 12 characters and contain:</small>
-    <ul>
-        <li id="passwordLengthRule">Exactly 12 characters</li>
-        <li id="passwordUpperRule">At least 1 uppercase letter (A-Z)</li>
-        <li id="passwordLowerRule">At least 1 lowercase letter (a-z)</li>
-        <li id="passwordNumberRule">At least 1 number (0-9)</li>
-        <li id="passwordSpecialRule">At least 1 special character (!@#$%^&*)</li>
-    </ul>
+    <small>12 characters • 1 uppercase • 1 lowercase • 1 number • 1 special character</small>
 </div>
-
-
-                        <div class="help-text">
-                            Use at least 6 characters.
-                        </div>
 
                     </div>
 
@@ -1196,12 +1184,12 @@
 
 
                     <h2 class="section-title">
-                        Emergency Contact
+                        Emergency Contacts
                     </h2>
 
                     <div class="contact-box">
 
-                        <h3>Primary Emergency Contact</h3>
+                        <h3>Emergency Contact 1 (Primary)</h3>
 
                         <div class="form-grid">
 
@@ -1209,7 +1197,6 @@
                                 <label for="contactName">
                                     Contact Name <span class="required">*</span>
                                 </label>
-
                                 <input
                                     type="text"
                                     id="contactName"
@@ -1222,7 +1209,6 @@
                                 <label for="contactRelationship">
                                     Relationship <span class="required">*</span>
                                 </label>
-
                                 <input
                                     type="text"
                                     id="contactRelationship"
@@ -1235,13 +1221,11 @@
                                 <label for="contactPhone">
                                     Contact Phone <span class="required">*</span>
                                 </label>
-
                                 <input
                                     type="tel"
                                     id="contactPhone"
                                     name="contactPhone"
-                                    placeholder="Emergency contact phone"
-                                
+                                    placeholder="10-digit mobile number"
                                     inputmode="numeric"
                                     maxlength="10"
                                     minlength="10"
@@ -1252,10 +1236,7 @@
                             </div>
 
                             <div class="form-group">
-                                <label for="contactEmail">
-                                    Contact Email
-                                </label>
-
+                                <label for="contactEmail">Contact Email</label>
                                 <input
                                     type="email"
                                     id="contactEmail"
@@ -1267,8 +1248,129 @@
                         </div>
                     </div>
 
-                </div>
+                    <div class="contact-box">
 
+                        <h3>Emergency Contact 2</h3>
+
+                        <div class="form-grid">
+
+                            <div class="form-group">
+                                <label for="contactName2">
+                                    Contact Name <span class="required">*</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    id="contactName2"
+                                    name="contactName2"
+                                    placeholder="Emergency contact name"
+                                >
+                            </div>
+
+                            <div class="form-group">
+                                <label for="contactRelationship2">
+                                    Relationship <span class="required">*</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    id="contactRelationship2"
+                                    name="contactRelationship2"
+                                    placeholder="e.g. Father, Mother, Spouse"
+                                >
+                            </div>
+
+                            <div class="form-group">
+                                <label for="contactPhone2">
+                                    Contact Phone <span class="required">*</span>
+                                </label>
+                                <input
+                                    type="tel"
+                                    id="contactPhone2"
+                                    name="contactPhone2"
+                                    placeholder="10-digit mobile number"
+                                    inputmode="numeric"
+                                    maxlength="10"
+                                    minlength="10"
+                                    pattern="[6-9][0-9]{9}"
+                                    spellcheck="false"
+                                    autocomplete="tel"
+                                >
+                            </div>
+
+                            <div class="form-group">
+                                <label for="contactEmail2">Contact Email</label>
+                                <input
+                                    type="email"
+                                    id="contactEmail2"
+                                    name="contactEmail2"
+                                    placeholder="Emergency contact email"
+                                >
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <div class="contact-box">
+
+                        <h3>Emergency Contact 3</h3>
+
+                        <div class="form-grid">
+
+                            <div class="form-group">
+                                <label for="contactName3">
+                                    Contact Name <span class="required">*</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    id="contactName3"
+                                    name="contactName3"
+                                    placeholder="Emergency contact name"
+                                >
+                            </div>
+
+                            <div class="form-group">
+                                <label for="contactRelationship3">
+                                    Relationship <span class="required">*</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    id="contactRelationship3"
+                                    name="contactRelationship3"
+                                    placeholder="e.g. Father, Mother, Spouse"
+                                >
+                            </div>
+
+                            <div class="form-group">
+                                <label for="contactPhone3">
+                                    Contact Phone <span class="required">*</span>
+                                </label>
+                                <input
+                                    type="tel"
+                                    id="contactPhone3"
+                                    name="contactPhone3"
+                                    placeholder="10-digit mobile number"
+                                    inputmode="numeric"
+                                    maxlength="10"
+                                    minlength="10"
+                                    pattern="[6-9][0-9]{9}"
+                                    spellcheck="false"
+                                    autocomplete="tel"
+                                >
+                            </div>
+
+                            <div class="form-group">
+                                <label for="contactEmail3">Contact Email</label>
+                                <input
+                                    type="email"
+                                    id="contactEmail3"
+                                    name="contactEmail3"
+                                    placeholder="Emergency contact email"
+                                >
+                            </div>
+
+                        </div>
+                    </div>
+
+                </div>
 
                 <!-- =========================
                      DRIVER INFORMATION
@@ -1744,6 +1846,30 @@
 
         const contactPhone =
             document.getElementById("contactPhone");
+        
+        const contactName2 =
+            document.getElementById("contactName2");
+
+        const contactRelationship2 =
+            document.getElementById("contactRelationship2");
+
+        const contactPhone2 =
+            document.getElementById("contactPhone2");
+
+        const contactName3 =
+            document.getElementById("contactName3");
+
+        const contactRelationship3 =
+            document.getElementById("contactRelationship3");
+
+        const contactPhone3 =
+            document.getElementById("contactPhone3");
+
+        const emergencyContactPhones = [
+            contactPhone,
+            contactPhone2,
+            contactPhone3
+        ];
 
         const vehicleNumber =
             document.getElementById("vehicleNumber");
@@ -1967,6 +2093,36 @@
 
             setRequired(
                 contactPhone,
+                role === "family"
+            );
+
+            setRequired(
+                contactName2,
+                role === "family"
+            );
+
+            setRequired(
+                contactRelationship2,
+                role === "family"
+            );
+
+            setRequired(
+                contactPhone2,
+                role === "family"
+            );
+
+            setRequired(
+                contactName3,
+                role === "family"
+            );
+
+            setRequired(
+                contactRelationship3,
+                role === "family"
+            );
+
+            setRequired(
+                contactPhone3,
                 role === "family"
             );
 
@@ -2612,67 +2768,69 @@ citizenIdentityDocumentNumber.addEventListener(
         }
 
 
-        function normalizeContactPhoneNumber() {
-            if (!contactPhone) return "";
-
-            const value = contactPhone.value
+        function normalizeEmergencyPhoneNumber(input) {
+            if (!input) return "";
+            const value = input.value
                 .replace(/\D/g, "")
                 .substring(0, 10);
 
-            contactPhone.value = value;
+            input.value = value;
             return value;
         }
 
+        function validateEmergencyPhoneNumber(input) {
+            if (!input) return true;
 
-        function validateContactPhoneNumber() {
-            if (!contactPhone) return true;
+            const value = normalizeEmergencyPhoneNumber(input);
 
-            const value = normalizeContactPhoneNumber();
-
-            contactPhone.classList.remove(
+            input.classList.remove(
                 "document-valid",
                 "document-invalid"
             );
 
             if (!value) {
-                contactPhone.setCustomValidity(
-                    "Emergency contact phone number is required."
-                );
-                return false;
+                if (input.required) {
+                    input.setCustomValidity(
+                        "Emergency contact phone number is required."
+                    );
+                    input.classList.add("document-invalid");
+                    return false;
+                }
+
+                input.setCustomValidity("");
+                return true;
             }
 
             if (!/^[6-9]\d{9}$/.test(value)) {
-                contactPhone.classList.add("document-invalid");
-                contactPhone.setCustomValidity(
+                input.classList.add("document-invalid");
+                input.setCustomValidity(
                     "Enter a valid 10-digit Indian mobile number starting with 6, 7, 8 or 9."
                 );
                 return false;
             }
 
-            contactPhone.classList.add("document-valid");
-            contactPhone.setCustomValidity("");
+            input.classList.add("document-valid");
+            input.setCustomValidity("");
             return true;
         }
 
+        emergencyContactPhones.forEach(function(input) {
+            if (!input) return;
 
-        if (phone) {
-            phone.addEventListener("input", validatePhoneNumber);
-            phone.addEventListener("blur", validatePhoneNumber);
-        }
-
-
-        if (contactPhone) {
-            contactPhone.addEventListener(
+            input.addEventListener(
                 "input",
-                validateContactPhoneNumber
+                function() {
+                    validateEmergencyPhoneNumber(input);
+                }
             );
 
-            contactPhone.addEventListener(
+            input.addEventListener(
                 "blur",
-                validateContactPhoneNumber
+                function() {
+                    validateEmergencyPhoneNumber(input);
+                }
             );
-        }
-
+        });
 
         function normalizeVehicleNumber() {
 
@@ -3097,18 +3255,20 @@ signupForm.addEventListener(
 
                 if (role === "family") {
 
-    if (!validateContactPhoneNumber()) {
-                event.preventDefault();
-                event.stopImmediatePropagation();
+    for (const emergencyPhone of emergencyContactPhones) {
+                if (!validateEmergencyPhoneNumber(emergencyPhone)) {
+                    event.preventDefault();
+                    event.stopImmediatePropagation();
 
-                contactPhone.reportValidity();
+                    emergencyPhone.reportValidity();
 
-                showMessage(
-                    "Please enter a valid emergency contact phone number.",
-                    "error"
-                );
+                    showMessage(
+                        "Please enter valid 10-digit emergency contact phone numbers.",
+                        "error"
+                    );
 
-                return false;
+                    return false;
+                }
             }
 
 
