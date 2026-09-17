@@ -975,11 +975,100 @@
                 ========================== -->
 
                 <!-- FAMILY / CITIZEN -->
-                <div id="familySection" class="role-section">
+<div id="familySection" class="role-section">
 
-                    <h2 class="section-title">
-                        Medical Information
-                    </h2>
+    <!-- =========================
+         CITIZEN IDENTITY VERIFICATION
+    ========================== -->
+
+    <h2 class="section-title">
+        Identity Verification
+    </h2>
+
+    <div class="verification-box">
+
+        <div class="verification-title">
+            Government Identity Verification
+        </div>
+
+        <div class="verification-note">
+            Government-issued identity verification is required for
+            Citizen / Family accounts. Select one identity document
+            and enter the document number. Your identity information
+            will be used only for account verification and emergency
+            coordination.
+        </div>
+
+        <div class="form-grid">
+
+            <div class="form-group">
+
+                <label for="citizenIdentityDocumentType">
+                    Identity Document
+                    <span class="required">*</span>
+                </label>
+
+                <select
+                    id="citizenIdentityDocumentType"
+                    name="citizenIdentityDocumentType"
+                >
+                    <option value="">
+                        Select document
+                    </option>
+
+                    <option value="aadhaar">
+                        Aadhaar Card
+                    </option>
+
+                    <option value="pan">
+                        PAN Card
+                    </option>
+
+                    <option value="driving_license">
+                        Driving Licence
+                    </option>
+                </select>
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label for="citizenIdentityDocumentNumber">
+                    Document Number
+                    <span class="required">*</span>
+                </label>
+
+                <input
+                    type="text"
+                    id="citizenIdentityDocumentNumber"
+                    name="citizenIdentityDocumentNumber"
+                    placeholder="Select an identity document first"
+                    autocomplete="off"
+                    disabled
+                >
+
+                <div
+                    id="citizenIdentityDocumentHelp"
+                    class="help-text"
+                >
+                    Select Aadhaar Card, PAN Card or Driving Licence.
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+         <!-- =========================
+                 MEDICAL INFORMATION
+          ========================== -->
+
+        <h2 class="section-title">
+            Medical Information
+            </h2>
 
                     <div class="medical-box">
 
@@ -1610,6 +1699,25 @@
         const identityDocumentHelp =
             document.getElementById("identityDocumentHelp");
 
+           /* =========================
+                CITIZEN IDENTITY
+            ========================== */
+
+        const citizenIdentityDocumentType =
+            document.getElementById(
+            "citizenIdentityDocumentType"
+    );
+
+        const citizenIdentityDocumentNumber =
+            document.getElementById(
+            "citizenIdentityDocumentNumber"
+    );
+
+        const citizenIdentityDocumentHelp =
+            document.getElementById(
+        "citizenIdentityDocumentHelp"
+    );
+
         const driverOtp =
             document.getElementById("driverOtp");
 
@@ -1836,6 +1944,46 @@
                 role === "driver"
             );
 
+            /* =========================
+                CITIZEN IDENTITY
+                ========================== */
+
+setRequired(
+    citizenIdentityDocumentType,
+    role === "family"
+);
+
+setRequired(
+    citizenIdentityDocumentNumber,
+    role === "family"
+);
+
+
+if (role !== "family") {
+
+    citizenIdentityDocumentType.value = "";
+
+    citizenIdentityDocumentNumber.value = "";
+
+    citizenIdentityDocumentNumber.disabled = true;
+
+    citizenIdentityDocumentNumber.removeAttribute(
+        "pattern"
+    );
+
+    citizenIdentityDocumentNumber.setCustomValidity("");
+
+    citizenIdentityDocumentNumber.classList.remove(
+        "document-valid",
+        "document-invalid"
+    );
+
+} else {
+
+    updateCitizenIdentityDocumentRules();
+
+}
+
             if (role !== "driver") {
                 identityDocumentNumber.value = "";
                 identityDocumentNumber.disabled = true;
@@ -1889,40 +2037,59 @@
 
 
         /* =========================
-           ROLE SELECTION
-        ========================== */
+   ROLE SELECTION
+========================= */
 
-        document
-            .querySelectorAll('input[name="role"]')
-            .forEach(function(radio) {
+const roleRadios = document.querySelectorAll(
+    'input[name="role"]'
+);
 
-                radio.addEventListener(
-                    "change",
-                    function() {
+roleRadios.forEach(function(radio) {
 
-                        resetDriverVerification();
+    radio.addEventListener("change", function() {
 
-                        updateRoleForm();
+        resetDriverVerification();
 
-                        const roleNames = {
-                            family: "Citizen / Family",
-                            driver: "Ambulance / Driver",
-                            hospital: "Hospital / ER"
-                        };
+        updateRoleForm();
 
-                        showMessage(
-                            roleNames[this.value] +
-                            " registration selected.",
-                            "success"
-                        );
+        const roleNames = {
+            family: "Citizen / Family",
+            driver: "Ambulance / Driver",
+            hospital: "Hospital / ER"
+        };
 
-                    }
-                );
+        showMessage(
+            roleNames[this.value] +
+            " registration selected.",
+            "success"
+        );
+    });
 
-            });
+    /* Make the complete role card clickable */
+    const roleCard = radio.parentElement.querySelector(
+        ".role-card"
+    );
+
+    if (roleCard) {
+        roleCard.addEventListener("click", function(event) {
+
+            if (event.target === radio) {
+                return;
+            }
+
+            radio.checked = true;
+
+            radio.dispatchEvent(
+                new Event("change", {
+                    bubbles: true
+                })
+            );
+        });
+    }
+});
 
 
-        /* =========================
+/* =========================
            PASSWORD VALIDATION
         ========================== */
 
@@ -2025,7 +2192,307 @@
             }
         }
 
+        /* =========================
+             CITIZEN IDENTITY DOCUMENT RULES    
+        ========================== */
 
+function updateCitizenIdentityDocumentRules() {
+
+    if (!citizenIdentityDocumentType ||
+        !citizenIdentityDocumentNumber) {
+        return;
+    }
+
+    const type =
+        citizenIdentityDocumentType.value;
+
+    citizenIdentityDocumentNumber.value = "";
+
+    citizenIdentityDocumentNumber.classList.remove(
+        "document-valid",
+        "document-invalid"
+    );
+
+    citizenIdentityDocumentNumber.setCustomValidity("");
+
+    if (type === "aadhaar") {
+
+        citizenIdentityDocumentNumber.disabled = false;
+
+        citizenIdentityDocumentNumber.maxLength = 12;
+
+        citizenIdentityDocumentNumber.inputMode =
+            "numeric";
+
+        citizenIdentityDocumentNumber.pattern =
+            "[0-9]{12}";
+
+        citizenIdentityDocumentNumber.placeholder =
+            "Enter 12-digit Aadhaar number";
+
+        citizenIdentityDocumentHelp.textContent =
+            "Aadhaar number must contain exactly 12 digits.";
+
+    }
+
+    else if (type === "pan") {
+
+        citizenIdentityDocumentNumber.disabled = false;
+
+        citizenIdentityDocumentNumber.maxLength = 10;
+
+        citizenIdentityDocumentNumber.inputMode =
+            "text";
+
+        citizenIdentityDocumentNumber.pattern =
+            "[A-Z]{5}[0-9]{4}[A-Z]";
+
+        citizenIdentityDocumentNumber.placeholder =
+            "Enter PAN e.g. ABCDE1234F";
+
+        citizenIdentityDocumentHelp.textContent =
+            "PAN must contain 10 characters: 5 letters, 4 digits and 1 letter.";
+
+    }
+
+    else if (type === "driving_license") {
+
+        citizenIdentityDocumentNumber.disabled = false;
+
+        citizenIdentityDocumentNumber.maxLength = 20;
+
+        citizenIdentityDocumentNumber.inputMode =
+            "text";
+
+        citizenIdentityDocumentNumber.removeAttribute(
+            "pattern"
+        );
+
+        citizenIdentityDocumentNumber.placeholder =
+            "Enter driving licence number";
+
+        citizenIdentityDocumentHelp.textContent =
+            "Enter the driving licence number exactly as issued.";
+
+    }
+
+    else {
+
+        citizenIdentityDocumentNumber.disabled = true;
+
+        citizenIdentityDocumentNumber.maxLength = 10;
+
+        citizenIdentityDocumentNumber.inputMode =
+            "text";
+
+        citizenIdentityDocumentNumber.removeAttribute(
+            "pattern"
+        );
+
+        citizenIdentityDocumentNumber.placeholder =
+            "Select an identity document first";
+
+        citizenIdentityDocumentHelp.textContent =
+            "Select Aadhaar Card, PAN Card or Driving Licence.";
+
+    }
+}
+
+    /* =========================
+       CITIZEN IDENTITY VALIDATION
+    ========================== */
+
+function validateCitizenIdentityDocument() {
+
+    if (!citizenIdentityDocumentType ||
+        !citizenIdentityDocumentNumber) {
+        return true;
+    }
+
+    const type =
+        citizenIdentityDocumentType.value;
+
+    let value =
+        citizenIdentityDocumentNumber.value.trim();
+
+
+    if (!type) {
+
+        citizenIdentityDocumentNumber.setCustomValidity(
+            "Please select a government identity document."
+        );
+
+        return false;
+    }
+
+
+    if (type === "aadhaar") {
+
+        value =
+            value.replace(/\D/g, "");
+
+        citizenIdentityDocumentNumber.value =
+            value;
+
+        if (!/^\d{12}$/.test(value)) {
+
+            citizenIdentityDocumentNumber.classList.remove(
+                "document-valid"
+            );
+
+            citizenIdentityDocumentNumber.classList.add(
+                "document-invalid"
+            );
+
+            citizenIdentityDocumentNumber.setCustomValidity(
+                "Aadhaar number must contain exactly 12 digits."
+            );
+
+            return false;
+        }
+
+    }
+
+
+    else if (type === "pan") {
+
+        value =
+            value
+                .toUpperCase()
+                .replace(/[^A-Z0-9]/g, "");
+
+        citizenIdentityDocumentNumber.value =
+            value;
+
+        if (!/^[A-Z]{5}\d{4}[A-Z]$/.test(value)) {
+
+            citizenIdentityDocumentNumber.classList.remove(
+                "document-valid"
+            );
+
+            citizenIdentityDocumentNumber.classList.add(
+                "document-invalid"
+            );
+
+            citizenIdentityDocumentNumber.setCustomValidity(
+                "Enter a valid PAN format such as ABCDE1234F."
+            );
+
+            return false;
+        }
+
+    }
+
+
+    else if (type === "driving_license") {
+
+        value =
+            value
+                .toUpperCase()
+                .replace(/[^A-Z0-9 -]/g, "")
+                .trim();
+
+        citizenIdentityDocumentNumber.value =
+            value;
+
+        if (value.length === 0) {
+
+            citizenIdentityDocumentNumber.classList.remove(
+                "document-valid"
+            );
+
+            citizenIdentityDocumentNumber.classList.add(
+                "document-invalid"
+            );
+
+            citizenIdentityDocumentNumber.setCustomValidity(
+                "Please enter your driving licence number."
+            );
+
+            return false;
+        }
+
+    }
+
+
+    citizenIdentityDocumentNumber.classList.remove(
+        "document-invalid"
+    );
+
+    citizenIdentityDocumentNumber.classList.add(
+        "document-valid"
+    );
+
+    citizenIdentityDocumentNumber.setCustomValidity("");
+
+    return true;
+}
+
+    /* =========================
+        CITIZEN IDENTITY INPUT EVENTS
+    ========================== */
+
+citizenIdentityDocumentType.addEventListener(
+    "change",
+    updateCitizenIdentityDocumentRules
+);
+
+
+citizenIdentityDocumentNumber.addEventListener(
+    "input",
+    function() {
+
+        const type =
+            citizenIdentityDocumentType.value;
+
+        let value =
+            citizenIdentityDocumentNumber.value;
+
+
+        if (type === "aadhaar") {
+
+            value =
+                value.replace(/\D/g, "");
+
+            if (value.length > 12) {
+                value = value.substring(0, 12);
+            }
+
+            citizenIdentityDocumentNumber.value =
+                value;
+
+        }
+
+
+        else if (type === "pan") {
+
+            value =
+                value
+                    .toUpperCase()
+                    .replace(/[^A-Z0-9]/g, "");
+
+            if (value.length > 10) {
+                value = value.substring(0, 10);
+            }
+
+            citizenIdentityDocumentNumber.value =
+                value;
+
+        }
+
+
+        else if (type === "driving_license") {
+
+            citizenIdentityDocumentNumber.value =
+                value
+                    .toUpperCase()
+                    .replace(/[^A-Z0-9 -]/g, "");
+
+        }
+
+        validateCitizenIdentityDocument();
+    }
+);
         /* =========================
            VEHICLE NUMBER RULES
            =========================
@@ -2389,6 +2856,24 @@
 
                 const role =
                     getSelectedRole();
+
+                if (role === "family") {
+
+    if (!validateCitizenIdentityDocument()) {
+
+        event.preventDefault();
+        event.stopImmediatePropagation();
+
+        citizenIdentityDocumentNumber.reportValidity();
+
+        showMessage(
+            "Please enter a valid government identity document.",
+            "error"
+        );
+
+        return;
+    }
+}
 
                 if (role === "driver") {
 
