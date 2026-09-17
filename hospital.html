@@ -598,7 +598,7 @@
         ========================== */
 
         .map-container {
-            height: 285px;
+            height: 360px;
             position: relative;
             overflow: hidden;
             background:
@@ -991,9 +991,66 @@
             }
 
             .map-container {
-                height: 280px;
+                height: 320px;
             }
         }
+
+        /* =========================
+           LEAFLET HOSPITAL TRACKING MAP
+        ========================== */
+        #hospitalLiveMap {
+            width: 100%;
+            height: 100%;
+            min-height: 360px;
+        }
+
+        .hospital-map-overlay {
+            position: absolute;
+            top: 14px;
+            left: 14px;
+            z-index: 500;
+            background: rgba(255,255,255,.96);
+            border: 1px solid #e1e6ed;
+            border-radius: 10px;
+            padding: 11px 14px;
+            box-shadow: 0 6px 18px rgba(0,0,0,.10);
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .hospital-map-overlay strong {
+            font-size: 13px;
+            color: #172033;
+        }
+
+        .hospital-map-overlay span {
+            font-size: 11px;
+            color: #667085;
+        }
+
+        .hospital-custom-marker {
+            width: 38px;
+            height: 38px;
+            border-radius: 50% 50% 50% 0;
+            transform: rotate(-45deg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,.20);
+            border: 3px solid #fff;
+        }
+
+        .hospital-custom-marker span {
+            transform: rotate(45deg);
+            color: #fff;
+            font-size: 17px;
+            font-weight: 800;
+        }
+
+        .hospital-ambulance-icon { background: #e63946; }
+        .hospital-patient-icon { background: #16834a; }
+        .hospital-destination-icon { background: #172033; }
 
         /* =========================
            RESQ-ROUTE HOSPITAL OPERATIONS
@@ -1582,6 +1639,7 @@
         }
 
     </style>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 </head>
 
 <body>
@@ -2332,12 +2390,11 @@
                 <div class="card">
                     <div class="card-header"><h2>Live Route</h2><span id="mapUpdate">GPS updated just now</span></div>
                     <div class="map-container">
-                        <div class="road"></div><div class="road two"></div><div class="road three"></div>
-                        <div class="route-line"></div>
-                        <div class="marker ambulance-marker"><span>🚑</span></div>
-                        <div class="marker hospital-marker"><span>H</span></div>
-                        <div class="map-label hospital-label"><strong>Our Hospital</strong><span>Emergency Department</span></div>
-                        <div class="map-bottom"><strong>Ambulance en route</strong><span class="traffic">● Low traffic • ETA 08 min</span></div>
+                        <div id="hospitalLiveMap"></div>
+                        <div class="hospital-map-overlay">
+                            <strong id="hospitalMapRouteTitle">Ambulance → Hospital</strong>
+                            <span id="hospitalMapRouteStatus">Waiting for ambulance GPS...</span>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -2448,22 +2505,36 @@
     <!-- =========================
          JAVASCRIPT
          
-         Temporary frontend behavior.
-         Supabase integration will later
-         be handled by:
-         
-         js/auth.js
-         js/emergency.js
-         js/realtime.js
+         Hospital dashboard scripts.
+         Shared auth/supabase routers are intentionally not loaded
+         here because this page performs its own hospital-only access check.
     ========================== -->
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/supabase.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
 <script>
-/* Hospital page intentionally does NOT load auth.js.
-   auth.js performs global dashboard routing and can redirect this page
-   before the hospital dashboard finishes loading. Hospital access is
-   verified locally below using the Supabase profile role. */
+(function () {
+    const SUPABASE_URL = "https://teunajhcuadiacbzohsh.supabase.co";
+    const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_watS5zhRnq_dE6v9ZUTm2w_7y_fbv3c";
+
+    if (window.supabase && typeof window.supabase.createClient === "function") {
+        window.supabaseClient = window.supabase.createClient(
+            SUPABASE_URL,
+            SUPABASE_PUBLISHABLE_KEY,
+            {
+                auth: {
+                    persistSession: true,
+                    autoRefreshToken: true,
+                    detectSessionInUrl: true,
+                    flowType: "pkce"
+                }
+            }
+        );
+    } else {
+        console.error("ResQ-Route: Supabase library failed to load.");
+    }
+})();
 </script>
 <script src="js/emergency.js"></script>
 <script src="js/realtime.js"></script>
@@ -2630,165 +2701,104 @@
 
 
     function getSupabaseClient() {
-
-        if (
-            window.resqRoute &&
-            window.resqRoute.supabase
-        ) {
-
-            return window.resqRoute.supabase;
-
-        }
-
-
-        if (
-            window.supabaseClient
-        ) {
-
-            return window.supabaseClient;
-
-        }
-
-
-        return null;
-
+        return window.supabaseClient || null;
     }
 
 
     async function loadHospitalId() {
 
-        supabaseClient =
-            getSupabaseClient();
-
+        supabaseClient = getSupabaseClient();
 
         if (!supabaseClient) {
-
-            throw new Error(
-                "Supabase client is unavailable."
-            );
-
+            throw new Error("Supabase client is unavailable.");
         }
 
-
-        const result =
+        const { data: { user }, error: userError } =
             await supabaseClient.auth.getUser();
 
-
-        const user =
-            result &&
-            result.data
-                ? result.data.user
-                : null;
-
-
-        if (!user) {
-
-            window.location.replace(
-                "signin.html"
-            );
-
-            return null;
-
+        if (userError) {
+            throw userError;
         }
 
-        /* =====================================================
-           HOSPITAL-ONLY ACCESS CHECK
+        if (!user) {
+            window.location.replace("signin.html");
+            return null;
+        }
 
-           Do NOT use localStorage for the role. The authoritative
-           role is the Supabase profiles.role value. This prevents
-           a stale family role from redirecting hospital.html.
-           ===================================================== */
+        /*
+         * HOSPITAL-ONLY ACCESS
+         *
+         * The dashboard never loads for a family/citizen or driver
+         * account. We verify the authenticated Supabase account's role
+         * and hospital_staff assignment locally instead of loading the
+         * shared auth.js/supabase.js routers, which could redirect the
+         * page to another dashboard.
+         */
         const profileResult = await supabaseClient
             .from("profiles")
-            .select("role, name")
+            .select("role,name,email")
             .eq("id", user.id)
             .maybeSingle();
 
         if (profileResult.error) {
-            throw new Error(
-                "Unable to verify hospital account role: " +
-                profileResult.error.message
-            );
+            throw profileResult.error;
         }
 
-        const role = String(
-            profileResult.data && profileResult.data.role
-                ? profileResult.data.role
-                : ""
-        ).trim().toLowerCase();
+        const role = String(profileResult.data?.role || "")
+            .trim()
+            .toLowerCase();
 
-        if (role !== "hospital") {
-            console.error(
-                "ResQ-Route: hospital.html opened by non-hospital account.",
-                { userId: user.id, role: role }
-            );
-
+        if (role !== "hospital" && role !== "hospital_staff") {
             document.body.innerHTML = `
-                <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#f4f7fb;font-family:Arial,Helvetica,sans-serif;padding:20px;">
-                    <div style="max-width:460px;background:#fff;border:1px solid #e3e8ef;border-radius:16px;padding:30px;text-align:center;box-shadow:0 12px 35px rgba(23,32,51,.08);">
-                        <div style="font-size:42px;margin-bottom:12px;">🔒</div>
-                        <h2 style="margin:0 0 8px;color:#172033;">Hospital Access Required</h2>
-                        <p style="margin:0 0 20px;color:#687386;font-size:13px;line-height:1.6;">
-                            This account is registered as <strong>${role || "unknown"}</strong>.
-                            Only hospital accounts can access the Hospital ER Dashboard.
+                <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:30px;background:#f4f7fb;font-family:Arial,Helvetica,sans-serif;color:#172033;">
+                    <div style="max-width:520px;width:100%;background:#fff;border:1px solid #e3e8ef;border-radius:16px;padding:35px;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.08);">
+                        <div style="font-size:48px;margin-bottom:12px;">🔒</div>
+                        <h2 style="margin-bottom:10px;">Hospital Access Required</h2>
+                        <p style="color:#667085;line-height:1.6;margin-bottom:22px;">
+                            This dashboard is restricted to authenticated hospital accounts.
                         </p>
-                        <button type="button" onclick="window.location.replace('signin.html')" style="border:0;background:#e63946;color:#fff;padding:11px 18px;border-radius:8px;font-weight:800;cursor:pointer;">
+                        <button onclick="window.location.replace('signin.html')" style="border:0;background:#e63946;color:#fff;border-radius:9px;padding:12px 20px;font-weight:700;cursor:pointer;">
                             Return to Sign In
                         </button>
                     </div>
                 </div>`;
-
             return null;
         }
 
-        if (profileResult.data && profileResult.data.name) {
-            const userName = document.getElementById("hospitalUser");
-            if (userName) {
-                userName.textContent = profileResult.data.name;
-            }
+        const staffResult = await supabaseClient
+            .from("hospital_staff")
+            .select("hospital_id")
+            .eq("user_id", user.id)
+            .maybeSingle();
+
+        if (staffResult.error) {
+            throw staffResult.error;
         }
 
-
-        const response =
-            await supabaseClient
-                .from(
-                    "hospital_staff"
-                )
-                .select(
-                    "hospital_id"
-                )
-                .eq(
-                    "user_id",
-                    user.id
-                )
-                .maybeSingle();
-
-
-        if (response.error) {
-
-            throw response.error;
-
+        if (!staffResult.data?.hospital_id) {
+            document.body.innerHTML = `
+                <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:30px;background:#f4f7fb;font-family:Arial,Helvetica,sans-serif;color:#172033;">
+                    <div style="max-width:520px;width:100%;background:#fff;border:1px solid #e3e8ef;border-radius:16px;padding:35px;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.08);">
+                        <div style="font-size:48px;margin-bottom:12px;">🏥</div>
+                        <h2 style="margin-bottom:10px;">Hospital Account Not Assigned</h2>
+                        <p style="color:#667085;line-height:1.6;margin-bottom:22px;">
+                            This hospital account is valid, but it has not been assigned to a hospital facility yet.
+                        </p>
+                        <button onclick="window.location.replace('signin.html')" style="border:0;background:#e63946;color:#fff;border-radius:9px;padding:12px 20px;font-weight:700;cursor:pointer;">
+                            Return to Sign In
+                        </button>
+                    </div>
+                </div>`;
+            return null;
         }
 
-
-        if (
-            !response.data ||
-            !response.data.hospital_id
-        ) {
-
-            throw new Error(
-                "No hospital is assigned to this account."
-            );
-
+        if (profileResult.data?.name) {
+            const userEl = document.getElementById("hospitalUser");
+            if (userEl) userEl.textContent = profileResult.data.name;
         }
 
-
-        hospitalId =
-            response.data.hospital_id;
-
-
+        hospitalId = staffResult.data.hospital_id;
         return hospitalId;
-
     }
 
 
@@ -5032,6 +5042,173 @@
 
 
     /* =====================================================
+       LIVE LEAFLET MAP
+       Same mapping stack used by family.html:
+       Leaflet + OpenStreetMap + OSRM road routing.
+       ===================================================== */
+
+    let hospitalMap = null;
+    let hospitalAmbulanceMarker = null;
+    let hospitalPatientMarker = null;
+    let hospitalDestinationMarker = null;
+    let hospitalRouteLine = null;
+    let hospitalRouteRequestId = 0;
+
+    const HOSPITAL_MAP_DEFAULTS = {
+        patient: { lat: 30.9010, lng: 75.8573 },
+        ambulance: { lat: 30.9100, lng: 75.8400 },
+        hospital: { lat: 30.9200, lng: 75.8500 }
+    };
+
+    let hospitalMapPositions = {
+        patient: { ...HOSPITAL_MAP_DEFAULTS.patient },
+        ambulance: { ...HOSPITAL_MAP_DEFAULTS.ambulance },
+        hospital: { ...HOSPITAL_MAP_DEFAULTS.hospital }
+    };
+
+    function hospitalValidPosition(lat, lng) {
+        return Number.isFinite(Number(lat)) &&
+            Number.isFinite(Number(lng)) &&
+            Math.abs(Number(lat)) <= 90 &&
+            Math.abs(Number(lng)) <= 180;
+    }
+
+    function hospitalMapIcon(type) {
+        const config = {
+            ambulance: { cls: "hospital-ambulance-icon", text: "🚑" },
+            patient: { cls: "hospital-patient-icon", text: "+" },
+            hospital: { cls: "hospital-destination-icon", text: "H" }
+        }[type];
+
+        return L.divIcon({
+            className: "",
+            html: `<div class="hospital-custom-marker ${config.cls}"><span>${config.text}</span></div>`,
+            iconSize: [38, 38],
+            iconAnchor: [19, 38],
+            popupAnchor: [0, -36]
+        });
+    }
+
+    function initHospitalMap() {
+        const el = document.getElementById("hospitalLiveMap");
+        if (!el || hospitalMap || typeof L === "undefined") return;
+
+        hospitalMap = L.map("hospitalLiveMap", { zoomControl: true })
+            .setView([HOSPITAL_MAP_DEFAULTS.patient.lat, HOSPITAL_MAP_DEFAULTS.patient.lng], 13);
+
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            maxZoom: 19,
+            attribution: "&copy; OpenStreetMap contributors"
+        }).addTo(hospitalMap);
+
+        hospitalPatientMarker = L.marker(
+            [hospitalMapPositions.patient.lat, hospitalMapPositions.patient.lng],
+            { icon: hospitalMapIcon("patient") }
+        ).addTo(hospitalMap).bindPopup("<strong>Patient</strong><br>Emergency location");
+
+        hospitalAmbulanceMarker = L.marker(
+            [hospitalMapPositions.ambulance.lat, hospitalMapPositions.ambulance.lng],
+            { icon: hospitalMapIcon("ambulance") }
+        ).addTo(hospitalMap).bindPopup("<strong>Ambulance</strong><br>Incoming emergency vehicle");
+
+        hospitalDestinationMarker = L.marker(
+            [hospitalMapPositions.hospital.lat, hospitalMapPositions.hospital.lng],
+            { icon: hospitalMapIcon("hospital") }
+        ).addTo(hospitalMap).bindPopup("<strong>Our Hospital</strong><br>Emergency Department");
+
+        drawHospitalRoute();
+
+        setTimeout(function () {
+            hospitalMap.invalidateSize();
+        }, 250);
+    }
+
+    async function drawHospitalRoute() {
+        if (!hospitalMap || !hospitalValidPosition(hospitalMapPositions.ambulance.lat, hospitalMapPositions.ambulance.lng)) return;
+
+        const destination = hospitalMapPositions.hospital;
+        if (!hospitalValidPosition(destination.lat, destination.lng)) return;
+
+        const requestId = ++hospitalRouteRequestId;
+        const statusEl = document.getElementById("hospitalMapRouteStatus");
+        if (statusEl) statusEl.textContent = "Calculating road route...";
+
+        const url =
+            `https://router.project-osrm.org/route/v1/driving/` +
+            `${hospitalMapPositions.ambulance.lng},${hospitalMapPositions.ambulance.lat};` +
+            `${destination.lng},${destination.lat}` +
+            `?overview=full&geometries=geojson&steps=false`;
+
+        try {
+            const response = await fetch(url, { headers: { Accept: "application/json" } });
+            if (!response.ok) throw new Error("OSRM route request failed");
+            const data = await response.json();
+            if (requestId !== hospitalRouteRequestId) return;
+
+            if (!data.routes || !data.routes.length) throw new Error("No route returned");
+
+            const route = data.routes[0];
+            const coordinates = route.geometry.coordinates.map(function (pair) {
+                return [pair[1], pair[0]];
+            });
+
+            if (hospitalRouteLine) hospitalMap.removeLayer(hospitalRouteLine);
+            hospitalRouteLine = L.polyline(coordinates, {
+                weight: 5,
+                opacity: 0.85
+            }).addTo(hospitalMap);
+
+            hospitalMap.fitBounds(hospitalRouteLine.getBounds(), { padding: [45, 45] });
+
+            const km = Number(route.distance || 0) / 1000;
+            const minutes = Math.max(1, Math.round(Number(route.duration || 0) / 60));
+            if (statusEl) statusEl.textContent = `Road route • ${km.toFixed(1)} km • ETA ${minutes} min`;
+
+            const mapUpdate = document.getElementById("mapUpdate");
+            if (mapUpdate) mapUpdate.textContent = "GPS / route synchronized";
+        } catch (error) {
+            console.warn("Hospital map routing unavailable:", error);
+            if (statusEl) statusEl.textContent = "Live GPS active • route unavailable";
+        }
+    }
+
+    function updateHospitalMapPosition(type, lat, lng) {
+        if (!hospitalValidPosition(lat, lng)) return;
+
+        hospitalMapPositions[type] = { lat: Number(lat), lng: Number(lng) };
+
+        const marker = {
+            ambulance: hospitalAmbulanceMarker,
+            patient: hospitalPatientMarker,
+            hospital: hospitalDestinationMarker
+        }[type];
+
+        if (marker) marker.setLatLng([Number(lat), Number(lng)]);
+
+        if (type === "ambulance") {
+            const mapUpdate = document.getElementById("mapUpdate");
+            if (mapUpdate) mapUpdate.textContent = "GPS updated just now";
+            drawHospitalRoute();
+        }
+    }
+
+    window.updateHospitalMap = updateHospitalMapPosition;
+    window.updateHospitalAmbulanceLocation = function (lat, lng) {
+        updateHospitalMapPosition("ambulance", lat, lng);
+    };
+    window.updateHospitalPatientLocation = function (lat, lng) {
+        updateHospitalMapPosition("patient", lat, lng);
+    };
+    window.updateHospitalDestinationLocation = function (lat, lng) {
+        updateHospitalMapPosition("hospital", lat, lng);
+    };
+
+    document.addEventListener("DOMContentLoaded", function () {
+        initHospitalMap();
+    });
+
+
+    /* =====================================================
        INITIALIZATION
        ===================================================== */
 
@@ -5039,7 +5216,11 @@
 
         try {
 
-            await loadHospitalId();
+            const accessHospitalId = await loadHospitalId();
+
+            if (!accessHospitalId) {
+                return;
+            }
 
             await loadBedInventory();
 
