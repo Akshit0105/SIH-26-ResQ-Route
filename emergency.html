@@ -1,1087 +1,932 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <title>Emergency Assistance | ResQ-Route</title>
 
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
 
-        body {
-            font-family: Arial, Helvetica, sans-serif;
-            background: #f4f7fb;
-            color: #172033;
-            min-height: 100vh;
-        }
+      body {
+        font-family: Arial, Helvetica, sans-serif;
+        background: #f4f7fb;
+        color: #172033;
+        min-height: 100vh;
+      }
 
-        /* =========================
+      /* =========================
            NAVBAR
         ========================== */
 
-        nav {
-            height: 72px;
-            background: #ffffff;
-            border-bottom: 1px solid #e6eaf0;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 7%;
-        }
+      nav {
+        height: 72px;
+        background: #ffffff;
+        border-bottom: 1px solid #e6eaf0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 7%;
+      }
 
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            text-decoration: none;
-            color: #172033;
-        }
+      .logo {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        text-decoration: none;
+        color: #172033;
+      }
 
-        .logo-icon {
-            width: 42px;
-            height: 42px;
-            border-radius: 10px;
-            background: #e63946;
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 21px;
-            font-weight: bold;
-        }
+      .logo-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 10px;
+        background: #e63946;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 21px;
+        font-weight: bold;
+      }
 
-        .logo-text {
-            font-size: 21px;
-            font-weight: 800;
-        }
+      .logo-text {
+        font-size: 21px;
+        font-weight: 800;
+      }
 
-        .logo-text span {
-            color: #e63946;
-        }
+      .logo-text span {
+        color: #e63946;
+      }
 
-        .nav-links {
-            display: flex;
-            align-items: center;
-            gap: 22px;
-        }
+      .nav-links {
+        display: flex;
+        align-items: center;
+        gap: 22px;
+      }
 
-        .nav-link {
-            text-decoration: none;
-            color: #596579;
-            font-size: 14px;
-            font-weight: 600;
-        }
+      .nav-link {
+        text-decoration: none;
+        color: #596579;
+        font-size: 14px;
+        font-weight: 600;
+      }
 
-        .nav-link:hover {
-            color: #e63946;
-        }
+      .nav-link:hover {
+        color: #e63946;
+      }
 
-        /* =========================
+      /* =========================
            PAGE
         ========================== */
 
-        .page {
-            padding: 42px 20px 60px;
-        }
+      .page {
+        padding: 42px 20px 60px;
+      }
 
-        .emergency-container {
-            width: 100%;
-            max-width: 1050px;
-            margin: auto;
-        }
+      .emergency-container {
+        width: 100%;
+        max-width: 1050px;
+        margin: auto;
+      }
 
-        /* =========================
+      /* =========================
            WARNING HEADER
         ========================== */
 
-        .warning-banner {
-            background: #fff3f3;
-            border: 1px solid #ffd4d7;
-            border-radius: 14px;
-            padding: 18px 20px;
-            display: flex;
-            align-items: flex-start;
-            gap: 14px;
-            margin-bottom: 24px;
-        }
+      .warning-banner {
+        background: #fff3f3;
+        border: 1px solid #ffd4d7;
+        border-radius: 14px;
+        padding: 18px 20px;
+        display: flex;
+        align-items: flex-start;
+        gap: 14px;
+        margin-bottom: 24px;
+      }
 
-        .warning-icon {
-            width: 38px;
-            height: 38px;
-            border-radius: 9px;
-            background: #e63946;
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 800;
-            flex-shrink: 0;
-        }
+      .warning-icon {
+        width: 38px;
+        height: 38px;
+        border-radius: 9px;
+        background: #e63946;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        flex-shrink: 0;
+      }
 
-        .warning-banner h3 {
-            font-size: 14px;
-            margin-bottom: 5px;
-            color: #9f1d29;
-        }
+      .warning-banner h3 {
+        font-size: 14px;
+        margin-bottom: 5px;
+        color: #9f1d29;
+      }
 
-        .warning-banner p {
-            font-size: 12px;
-            line-height: 1.5;
-            color: #7b4a50;
-        }
+      .warning-banner p {
+        font-size: 12px;
+        line-height: 1.5;
+        color: #7b4a50;
+      }
 
-        /* =========================
+      /* =========================
            MAIN CARD
         ========================== */
 
-        .main-card {
-            background: white;
-            border-radius: 22px;
-            box-shadow: 0 20px 60px rgba(25, 42, 70, 0.10);
-            overflow: hidden;
-        }
+      .main-card {
+        background: white;
+        border-radius: 22px;
+        box-shadow: 0 20px 60px rgba(25, 42, 70, 0.1);
+        overflow: hidden;
+      }
 
-        .card-header {
-            padding: 38px 45px;
-            border-bottom: 1px solid #edf0f4;
-        }
+      .card-header {
+        padding: 38px 45px;
+        border-bottom: 1px solid #edf0f4;
+      }
 
-        .card-header h1 {
-            font-size: 30px;
-            margin-bottom: 9px;
-        }
+      .card-header h1 {
+        font-size: 30px;
+        margin-bottom: 9px;
+      }
 
-        .card-header p {
-            color: #6c7789;
-            font-size: 14px;
-            line-height: 1.6;
-        }
+      .card-header p {
+        color: #6c7789;
+        font-size: 14px;
+        line-height: 1.6;
+      }
 
-        .form-section {
-            padding: 38px 45px 45px;
-        }
+      .form-section {
+        padding: 38px 45px 45px;
+      }
 
-        /* =========================
+      /* =========================
            SECTION TITLES
         ========================== */
 
-        .section-title {
-            font-size: 17px;
-            font-weight: 800;
-            margin-bottom: 20px;
-        }
+      .section-title {
+        font-size: 17px;
+        font-weight: 800;
+        margin-bottom: 20px;
+      }
 
-        .section-title:not(:first-child) {
-            margin-top: 36px;
-        }
+      .section-title:not(:first-child) {
+        margin-top: 36px;
+      }
 
-        /* =========================
+      /* =========================
            FORM GRID
         ========================== */
 
-        .form-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-        }
+      .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+      }
 
-        .form-group {
-            margin-bottom: 2px;
-        }
+      .form-group {
+        margin-bottom: 2px;
+      }
 
-        .form-group.full {
-            grid-column: 1 / -1;
-        }
+      .form-group.full {
+        grid-column: 1 / -1;
+      }
 
-        .form-group label {
-            display: block;
-            font-size: 13px;
-            font-weight: 700;
-            color: #364152;
-            margin-bottom: 8px;
-        }
+      .form-group label {
+        display: block;
+        font-size: 13px;
+        font-weight: 700;
+        color: #364152;
+        margin-bottom: 8px;
+      }
 
-        .required {
-            color: #e63946;
-        }
+      .required {
+        color: #e63946;
+      }
 
-        input,
-        select,
-        textarea {
-            width: 100%;
-            border: 1px solid #dce2ea;
-            border-radius: 10px;
-            padding: 0 14px;
-            font-family: inherit;
-            font-size: 14px;
-            color: #172033;
-            background: white;
-            outline: none;
-            transition: 0.2s ease;
-        }
+      input,
+      select,
+      textarea {
+        width: 100%;
+        border: 1px solid #dce2ea;
+        border-radius: 10px;
+        padding: 0 14px;
+        font-family: inherit;
+        font-size: 14px;
+        color: #172033;
+        background: white;
+        outline: none;
+        transition: 0.2s ease;
+      }
 
-        input,
-        select {
-            height: 48px;
-        }
+      input,
+      select {
+        height: 48px;
+      }
 
-        textarea {
-            min-height: 95px;
-            padding-top: 13px;
-            padding-bottom: 13px;
-            resize: vertical;
-        }
+      textarea {
+        min-height: 95px;
+        padding-top: 13px;
+        padding-bottom: 13px;
+        resize: vertical;
+      }
 
-        input:focus,
-        select:focus,
-        textarea:focus {
-            border-color: #e63946;
-            box-shadow: 0 0 0 3px rgba(230, 57, 70, 0.08);
-        }
+      input:focus,
+      select:focus,
+      textarea:focus {
+        border-color: #e63946;
+        box-shadow: 0 0 0 3px rgba(230, 57, 70, 0.08);
+      }
 
-        .help-text {
-            margin-top: 6px;
-            font-size: 11px;
-            color: #818b9b;
-            line-height: 1.5;
-        }
+      .help-text {
+        margin-top: 6px;
+        font-size: 11px;
+        color: #818b9b;
+        line-height: 1.5;
+      }
 
-        /* =========================
+      /* =========================
            LOCATION
         ========================== */
 
-        .location-box {
-            background: #f8fafc;
-            border: 1px solid #e2e7ee;
-            border-radius: 14px;
-            padding: 20px;
-        }
+      .location-box {
+        background: #f8fafc;
+        border: 1px solid #e2e7ee;
+        border-radius: 14px;
+        padding: 20px;
+      }
 
-        .location-status {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 16px;
-        }
+      .location-status {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 16px;
+      }
 
-        .location-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background: #9aa4b2;
-        }
+      .location-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #9aa4b2;
+      }
 
-        .location-dot.active {
-            background: #1fa463;
-            box-shadow: 0 0 0 4px rgba(31,164,99,0.12);
-        }
+      .location-dot.active {
+        background: #1fa463;
+        box-shadow: 0 0 0 4px rgba(31, 164, 99, 0.12);
+      }
 
-        .location-status span {
-            font-size: 13px;
-            font-weight: 700;
-            color: #596579;
-        }
+      .location-status span {
+        font-size: 13px;
+        font-weight: 700;
+        color: #596579;
+      }
 
-        .location-buttons {
-            display: flex;
-            gap: 12px;
-        }
+      .location-buttons {
+        display: flex;
+        gap: 12px;
+      }
 
-        .location-btn {
-            height: 44px;
-            padding: 0 18px;
-            border: 1px solid #dce2ea;
-            border-radius: 9px;
-            background: white;
-            color: #364152;
-            font-size: 13px;
-            font-weight: 700;
-            cursor: pointer;
-        }
+      .location-btn {
+        height: 44px;
+        padding: 0 18px;
+        border: 1px solid #dce2ea;
+        border-radius: 9px;
+        background: white;
+        color: #364152;
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+      }
 
-        .location-btn:hover {
-            border-color: #e63946;
-            color: #e63946;
-        }
+      .location-btn:hover {
+        border-color: #e63946;
+        color: #e63946;
+      }
 
-        .location-btn.primary {
-            background: #172033;
-            color: white;
-            border-color: #172033;
-        }
+      .location-btn.primary {
+        background: #172033;
+        color: white;
+        border-color: #172033;
+      }
 
-        .location-btn.primary:hover {
-            background: #263149;
-            color: white;
-        }
+      .location-btn.primary:hover {
+        background: #263149;
+        color: white;
+      }
 
-        .coordinates {
-            display: none;
-            margin-top: 15px;
-            padding: 12px;
-            background: white;
-            border: 1px solid #e2e7ee;
-            border-radius: 8px;
-            font-size: 12px;
-            color: #647084;
-        }
+      .coordinates {
+        display: none;
+        margin-top: 15px;
+        padding: 12px;
+        background: white;
+        border: 1px solid #e2e7ee;
+        border-radius: 8px;
+        font-size: 12px;
+        color: #647084;
+      }
 
-        .coordinates.active {
-            display: block;
-        }
+      .coordinates.active {
+        display: block;
+      }
 
-        /* =========================
+      /* =========================
            PRIORITY
         ========================== */
 
-        .priority-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 12px;
-        }
+      .priority-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+      }
 
-        .priority-option {
-            position: relative;
-        }
+      .priority-option {
+        position: relative;
+      }
 
-        .priority-option input {
-            position: absolute;
-            opacity: 0;
-            pointer-events: none;
-        }
+      .priority-option input {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+      }
 
-        .priority-card {
-            display: block;
-            border: 1px solid #dce2ea;
-            border-radius: 11px;
-            padding: 15px;
-            cursor: pointer;
-            transition: 0.2s ease;
-        }
+      .priority-card {
+        display: block;
+        border: 1px solid #dce2ea;
+        border-radius: 11px;
+        padding: 15px;
+        cursor: pointer;
+        transition: 0.2s ease;
+      }
 
-        .priority-card:hover {
-            border-color: #e63946;
-        }
+      .priority-card:hover {
+        border-color: #e63946;
+      }
 
-        .priority-option input:checked + .priority-card {
-            border-color: #e63946;
-            background: #fff5f6;
-        }
+      .priority-option input:checked + .priority-card {
+        border-color: #e63946;
+        background: #fff5f6;
+      }
 
-        .priority-card strong {
-            display: block;
-            font-size: 13px;
-            margin-bottom: 4px;
-        }
+      .priority-card strong {
+        display: block;
+        font-size: 13px;
+        margin-bottom: 4px;
+      }
 
-        .priority-card span {
-            display: block;
-            font-size: 11px;
-            color: #7b8595;
-            line-height: 1.4;
-        }
+      .priority-card span {
+        display: block;
+        font-size: 11px;
+        color: #7b8595;
+        line-height: 1.4;
+      }
 
-        /* =========================
+      /* =========================
            SUBMIT AREA
         ========================== */
 
-        .submit-area {
-            margin-top: 35px;
-            padding-top: 25px;
-            border-top: 1px solid #edf0f4;
-        }
+      .submit-area {
+        margin-top: 35px;
+        padding-top: 25px;
+        border-top: 1px solid #edf0f4;
+      }
 
-        .submit-note {
-            text-align: center;
-            font-size: 12px;
-            color: #747f90;
-            line-height: 1.6;
-            margin-bottom: 18px;
-        }
+      .submit-note {
+        text-align: center;
+        font-size: 12px;
+        color: #747f90;
+        line-height: 1.6;
+        margin-bottom: 18px;
+      }
 
-        .request-btn {
-            width: 100%;
-            height: 58px;
-            border: none;
-            border-radius: 11px;
-            background: #e63946;
-            color: white;
-            font-size: 16px;
-            font-weight: 800;
-            cursor: pointer;
-            transition: 0.2s ease;
-        }
+      .request-btn {
+        width: 100%;
+        height: 58px;
+        border: none;
+        border-radius: 11px;
+        background: #e63946;
+        color: white;
+        font-size: 16px;
+        font-weight: 800;
+        cursor: pointer;
+        transition: 0.2s ease;
+      }
 
-        .request-btn:hover {
-            background: #cf2938;
-            transform: translateY(-1px);
-        }
+      .request-btn:hover {
+        background: #cf2938;
+        transform: translateY(-1px);
+      }
 
-        .request-btn:disabled {
-            opacity: 0.65;
-            cursor: not-allowed;
-            transform: none;
-        }
+      .request-btn:disabled {
+        opacity: 0.65;
+        cursor: not-allowed;
+        transform: none;
+      }
 
-        /* =========================
+      /* =========================
            STATUS MESSAGE
         ========================== */
 
-        .status-message {
-            display: none;
-            margin-bottom: 20px;
-            padding: 14px 16px;
-            border-radius: 9px;
-            font-size: 13px;
-            line-height: 1.5;
-        }
+      .status-message {
+        display: none;
+        margin-bottom: 20px;
+        padding: 14px 16px;
+        border-radius: 9px;
+        font-size: 13px;
+        line-height: 1.5;
+      }
 
-        .status-message.error {
-            display: block;
-            background: #fff0f1;
-            color: #b4232f;
-            border: 1px solid #ffd1d5;
-        }
+      .status-message.error {
+        display: block;
+        background: #fff0f1;
+        color: #b4232f;
+        border: 1px solid #ffd1d5;
+      }
 
-        .status-message.success {
-            display: block;
-            background: #eefbf3;
-            color: #16733a;
-            border: 1px solid #c8efd7;
-        }
+      .status-message.success {
+        display: block;
+        background: #eefbf3;
+        color: #16733a;
+        border: 1px solid #c8efd7;
+      }
 
-        /* =========================
+      /* =========================
            LOADING
         ========================== */
 
-        .spinner {
-            display: none;
-            width: 19px;
-            height: 19px;
-            border: 2px solid rgba(255,255,255,0.4);
-            border-top-color: white;
-            border-radius: 50%;
-            animation: spin 0.7s linear infinite;
-            margin: auto;
-        }
+      .spinner {
+        display: none;
+        width: 19px;
+        height: 19px;
+        border: 2px solid rgba(255, 255, 255, 0.4);
+        border-top-color: white;
+        border-radius: 50%;
+        animation: spin 0.7s linear infinite;
+        margin: auto;
+      }
 
-        .request-btn.loading .button-text {
-            display: none;
-        }
+      .request-btn.loading .button-text {
+        display: none;
+      }
 
-        .request-btn.loading .spinner {
-            display: block;
-        }
+      .request-btn.loading .spinner {
+        display: block;
+      }
 
-        @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
         }
+      }
 
-        /* =========================
+      /* =========================
            LOGIN NOTICE
         ========================== */
 
-        .login-notice {
-            margin-top: 22px;
-            padding: 15px;
-            background: #f8fafc;
-            border: 1px solid #e2e7ee;
-            border-radius: 10px;
-            text-align: center;
-            font-size: 12px;
-            color: #687385;
-            line-height: 1.6;
-        }
+      .login-notice {
+        margin-top: 22px;
+        padding: 15px;
+        background: #f8fafc;
+        border: 1px solid #e2e7ee;
+        border-radius: 10px;
+        text-align: center;
+        font-size: 12px;
+        color: #687385;
+        line-height: 1.6;
+      }
 
-        .login-notice a {
-            color: #e63946;
-            font-weight: 700;
-            text-decoration: none;
-        }
+      .login-notice a {
+        color: #e63946;
+        font-weight: 700;
+        text-decoration: none;
+      }
 
-        /* =========================
+      /* =========================
            RESPONSIVE
         ========================== */
 
-        @media (max-width: 750px) {
-
-            nav {
-                padding: 0 5%;
-            }
-
-            .nav-links {
-                gap: 12px;
-            }
-
-            .page {
-                padding: 25px 12px 40px;
-            }
-
-            .card-header,
-            .form-section {
-                padding-left: 30px;
-                padding-right: 30px;
-            }
-
-            .form-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .form-group.full {
-                grid-column: auto;
-            }
-
-            .priority-grid {
-                grid-template-columns: 1fr;
-            }
+      @media (max-width: 750px) {
+        nav {
+          padding: 0 5%;
         }
 
-        @media (max-width: 500px) {
-
-            nav {
-                height: 65px;
-            }
-
-            .logo-text {
-                font-size: 18px;
-            }
-
-            .logo-icon {
-                width: 36px;
-                height: 36px;
-            }
-
-            .nav-link {
-                font-size: 12px;
-            }
-
-            .warning-banner {
-                padding: 14px;
-            }
-
-            .main-card {
-                border-radius: 16px;
-            }
-
-            .card-header,
-            .form-section {
-                padding: 25px 20px;
-            }
-
-            .card-header h1 {
-                font-size: 26px;
-            }
-
-            .location-buttons {
-                flex-direction: column;
-            }
-
-            .location-btn {
-                width: 100%;
-            }
+        .nav-links {
+          gap: 12px;
         }
+
+        .page {
+          padding: 25px 12px 40px;
+        }
+
+        .card-header,
+        .form-section {
+          padding-left: 30px;
+          padding-right: 30px;
+        }
+
+        .form-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .form-group.full {
+          grid-column: auto;
+        }
+
+        .priority-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 500px) {
+        nav {
+          height: 65px;
+        }
+
+        .logo-text {
+          font-size: 18px;
+        }
+
+        .logo-icon {
+          width: 36px;
+          height: 36px;
+        }
+
+        .nav-link {
+          font-size: 12px;
+        }
+
+        .warning-banner {
+          padding: 14px;
+        }
+
+        .main-card {
+          border-radius: 16px;
+        }
+
+        .card-header,
+        .form-section {
+          padding: 25px 20px;
+        }
+
+        .card-header h1 {
+          font-size: 26px;
+        }
+
+        .location-buttons {
+          flex-direction: column;
+        }
+
+        .location-btn {
+          width: 100%;
+        }
+      }
     </style>
-</head>
+  </head>
 
-<body>
-
+  <body>
     <!-- =========================
          NAVBAR
     ========================== -->
 
     <nav>
+      <a href="index.html" class="logo">
+        <div class="logo-icon">R</div>
 
-        <a href="index.html" class="logo">
+        <div class="logo-text">ResQ<span>-Route</span></div>
+      </a>
 
-            <div class="logo-icon">
-                R
-            </div>
+      <div class="nav-links">
+        <a href="signin.html" class="nav-link"> Sign In </a>
 
-            <div class="logo-text">
-                ResQ<span>-Route</span>
-            </div>
-
-        </a>
-
-        <div class="nav-links">
-
-            <a href="signin.html" class="nav-link">
-                Sign In
-            </a>
-
-            <a href="signup.html" class="nav-link">
-                Create Account
-            </a>
-
-        </div>
-
+        <a href="signup.html" class="nav-link"> Create Account </a>
+      </div>
     </nav>
-
 
     <!-- =========================
          MAIN
     ========================== -->
 
     <main class="page">
+      <div class="emergency-container">
+        <!-- WARNING -->
 
-        <div class="emergency-container">
+        <div class="warning-banner">
+          <div class="warning-icon">!</div>
 
-            <!-- WARNING -->
+          <div>
+            <h3>For genuine emergencies only</h3>
 
-            <div class="warning-banner">
+            <p>
+              If you are experiencing a life-threatening emergency, contact your
+              local emergency service immediately. ResQ-Route is a coordination
+              prototype and does not replace emergency services.
+            </p>
+          </div>
+        </div>
 
-                <div class="warning-icon">
-                    !
-                </div>
+        <!-- MAIN CARD -->
 
-                <div>
+        <div class="main-card">
+          <div class="card-header">
+            <h1>Request Emergency Assistance</h1>
 
-                    <h3>
-                        For genuine emergencies only
-                    </h3>
+            <p>
+              Provide the information below so the system can coordinate an
+              ambulance and suitable hospital.
+            </p>
+          </div>
 
-                    <p>
-                        If you are experiencing a life-threatening
-                        emergency, contact your local emergency service
-                        immediately. ResQ-Route is a coordination
-                        prototype and does not replace emergency services.
-                    </p>
+          <form class="form-section" id="emergencyForm">
+            <!-- STATUS -->
 
-                </div>
+            <div id="statusMessage" class="status-message"></div>
 
-            </div>
-
-
-            <!-- MAIN CARD -->
-
-            <div class="main-card">
-
-                <div class="card-header">
-
-                    <h1>
-                        Request Emergency Assistance
-                    </h1>
-
-                    <p>
-                        Provide the information below so the system can
-                        coordinate an ambulance and suitable hospital.
-                    </p>
-
-                </div>
-
-
-                <form
-                    class="form-section"
-                    id="emergencyForm"
-                >
-
-                    <!-- STATUS -->
-
-                    <div
-                        id="statusMessage"
-                        class="status-message"
-                    ></div>
-
-
-                    <!-- =========================
+            <!-- =========================
                          PATIENT INFORMATION
                     ========================== -->
 
-                    <h2 class="section-title">
-                        Patient Information
-                    </h2>
+            <h2 class="section-title">Patient Information</h2>
 
-                    <div class="form-grid">
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="patientName">
+                  Patient Name
+                  <span class="required">*</span>
+                </label>
 
-                        <div class="form-group">
+                <input
+                  type="text"
+                  id="patientName"
+                  name="patientName"
+                  placeholder="Enter patient's name"
+                  required
+                />
+              </div>
 
-                            <label for="patientName">
-                                Patient Name
-                                <span class="required">*</span>
-                            </label>
+              <div class="form-group">
+                <label for="patientPhone">
+                  Contact Number
+                  <span class="required">*</span>
+                </label>
 
-                            <input
-                                type="text"
-                                id="patientName"
-                                name="patientName"
-                                placeholder="Enter patient's name"
-                                required
-                            >
+                <input
+                  type="tel"
+                  id="patientPhone"
+                  name="patientPhone"
+                  placeholder="Enter 10-digit mobile number"
+                  inputmode="numeric"
+                  autocomplete="tel"
+                  maxlength="10"
+                  minlength="10"
+                  pattern="[6-9][0-9]{9}"
+                  title="Enter a valid 10-digit Indian mobile number starting with 6, 7, 8, or 9"
+                  required
+                />
+              </div>
 
-                        </div>
+              <div class="form-group">
+                <label for="patientAge">
+                  Approx. Age
+                  <span class="required">*</span>
+                </label>
 
+                <input
+                  type="number"
+                  id="patientAge"
+                  name="patientAge"
+                  placeholder="Enter approximate age"
+                  min="1"
+                  max="120"
+                  step="1"
+                  oninput="
+                    this.value = this.value.replace(/[^0-9]/g, '').slice(0, 3)
+                  "
+                  inputmode="numeric"
+                  required
+                />
 
-                        <div class="form-group">
+                <p class="help-text">
+                  Enter the patient's approximate age in whole years (1–120).
+                </p>
+              </div>
 
-                            <label for="patientPhone">
-                                Contact Number
-                                <span class="required">*</span>
-                            </label>
+              <div class="form-group">
+                <label for="patientSex">
+                  Sex
+                  <span class="required">*</span>
+                </label>
 
-                            <input
-                                type="tel"
-                                id="patientPhone"
-                                name="patientPhone"
-                                placeholder="Enter contact number"
-                                required
-                            >
+                <select id="patientSex" name="patientSex" required>
+                  <option value="">Select sex</option>
 
-                        </div>
+                  <option value="male">Male</option>
 
-                    </div>
+                  <option value="female">Female</option>
 
+                  <option value="other">Other</option>
+                </select>
+              </div>
+            </div>
 
-                    <!-- =========================
+            <!-- =========================
                          EMERGENCY TYPE
                     ========================== -->
 
-                    <h2 class="section-title">
-                        Emergency Details
-                    </h2>
+            <h2 class="section-title">Emergency Details</h2>
 
-                    <div class="form-grid">
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="emergencyType">
+                  Emergency Type
+                  <span class="required">*</span>
+                </label>
 
-                        <div class="form-group">
+                <select id="emergencyType" name="emergencyType" required>
+                  <option value="">Select emergency type</option>
 
-                            <label for="emergencyType">
-                                Emergency Type
-                                <span class="required">*</span>
-                            </label>
+                  <option value="accident">Road / Vehicle Accident</option>
 
-                            <select
-                                id="emergencyType"
-                                name="emergencyType"
-                                required
-                            >
+                  <option value="cardiac">Cardiac Emergency</option>
 
-                                <option value="">
-                                    Select emergency type
-                                </option>
+                  <option value="breathing">Breathing Difficulty</option>
 
-                                <option value="accident">
-                                    Road / Vehicle Accident
-                                </option>
+                  <option value="stroke">Stroke Symptoms</option>
 
-                                <option value="cardiac">
-                                    Cardiac Emergency
-                                </option>
+                  <option value="trauma">Serious Injury / Trauma</option>
 
-                                <option value="breathing">
-                                    Breathing Difficulty
-                                </option>
+                  <option value="unconscious">
+                    Unconscious / Unresponsive
+                  </option>
 
-                                <option value="stroke">
-                                    Stroke Symptoms
-                                </option>
+                  <option value="pregnancy">
+                    Pregnancy / Maternity Emergency
+                  </option>
 
-                                <option value="trauma">
-                                    Serious Injury / Trauma
-                                </option>
+                  <option value="other">Other Emergency</option>
+                </select>
+              </div>
 
-                                <option value="unconscious">
-                                    Unconscious / Unresponsive
-                                </option>
+              <div class="form-group">
+                <label for="patientCondition"> Current Condition </label>
 
-                                <option value="pregnancy">
-                                    Pregnancy / Maternity Emergency
-                                </option>
+                <select id="patientCondition" name="patientCondition">
+                  <option value="">Select condition</option>
 
-                                <option value="other">
-                                    Other Emergency
-                                </option>
+                  <option value="conscious">Conscious</option>
 
-                            </select>
+                  <option value="unconscious">Unconscious</option>
 
-                        </div>
+                  <option value="breathing">Difficulty Breathing</option>
 
+                  <option value="bleeding">Severe Bleeding</option>
 
-                        <div class="form-group">
+                  <option value="critical">Critical</option>
 
-                            <label for="patientCondition">
-                                Current Condition
-                            </label>
+                  <option value="unknown">Unknown</option>
+                </select>
+              </div>
 
-                            <select
-                                id="patientCondition"
-                                name="patientCondition"
-                            >
+              <div class="form-group full">
+                <label for="description"> Additional Details </label>
 
-                                <option value="">
-                                    Select condition
-                                </option>
+                <textarea
+                  id="description"
+                  name="description"
+                  placeholder="Describe the situation, injuries, symptoms or other important information..."
+                ></textarea>
+              </div>
+            </div>
 
-                                <option value="conscious">
-                                    Conscious
-                                </option>
-
-                                <option value="unconscious">
-                                    Unconscious
-                                </option>
-
-                                <option value="breathing">
-                                    Difficulty Breathing
-                                </option>
-
-                                <option value="bleeding">
-                                    Severe Bleeding
-                                </option>
-
-                                <option value="critical">
-                                    Critical
-                                </option>
-
-                                <option value="unknown">
-                                    Unknown
-                                </option>
-
-                            </select>
-
-                        </div>
-
-
-                        <div class="form-group full">
-
-                            <label for="description">
-                                Additional Details
-                            </label>
-
-                            <textarea
-                                id="description"
-                                name="description"
-                                placeholder="Describe the situation, injuries, symptoms or other important information..."
-                            ></textarea>
-
-                        </div>
-
-                    </div>
-
-
-                    <!-- =========================
+            <!-- =========================
                          PRIORITY
                     ========================== -->
 
-                    <h2 class="section-title">
-                        Emergency Priority
-                    </h2>
+            <h2 class="section-title">Emergency Priority</h2>
 
-                    <div class="priority-grid">
+            <div class="priority-grid">
+              <div class="priority-option">
+                <input
+                  type="radio"
+                  id="priorityHigh"
+                  name="priority"
+                  value="high"
+                  required
+                />
 
-                        <div class="priority-option">
+                <label for="priorityHigh" class="priority-card">
+                  <strong> High </strong>
 
-                            <input
-                                type="radio"
-                                id="priorityHigh"
-                                name="priority"
-                                value="high"
-                                required
-                            >
+                  <span> Serious condition requiring urgent response. </span>
+                </label>
+              </div>
 
-                            <label
-                                for="priorityHigh"
-                                class="priority-card"
-                            >
+              <div class="priority-option">
+                <input
+                  type="radio"
+                  id="priorityCritical"
+                  name="priority"
+                  value="critical"
+                />
 
-                                <strong>
-                                    High
-                                </strong>
+                <label for="priorityCritical" class="priority-card">
+                  <strong> Critical </strong>
 
-                                <span>
-                                    Serious condition requiring
-                                    urgent response.
-                                </span>
+                  <span>
+                    Life-threatening condition requiring immediate response.
+                  </span>
+                </label>
+              </div>
 
-                            </label>
+              <div class="priority-option">
+                <input
+                  type="radio"
+                  id="priorityUnknown"
+                  name="priority"
+                  value="unknown"
+                />
 
-                        </div>
+                <label for="priorityUnknown" class="priority-card">
+                  <strong> Unknown </strong>
 
+                  <span> Condition cannot currently be determined. </span>
+                </label>
+              </div>
+            </div>
 
-                        <div class="priority-option">
-
-                            <input
-                                type="radio"
-                                id="priorityCritical"
-                                name="priority"
-                                value="critical"
-                            >
-
-                            <label
-                                for="priorityCritical"
-                                class="priority-card"
-                            >
-
-                                <strong>
-                                    Critical
-                                </strong>
-
-                                <span>
-                                    Life-threatening condition requiring
-                                    immediate response.
-                                </span>
-
-                            </label>
-
-                        </div>
-
-
-                        <div class="priority-option">
-
-                            <input
-                                type="radio"
-                                id="priorityUnknown"
-                                name="priority"
-                                value="unknown"
-                            >
-
-                            <label
-                                for="priorityUnknown"
-                                class="priority-card"
-                            >
-
-                                <strong>
-                                    Unknown
-                                </strong>
-
-                                <span>
-                                    Condition cannot currently
-                                    be determined.
-                                </span>
-
-                            </label>
-
-                        </div>
-
-                    </div>
-
-
-                    <!-- =========================
+            <!-- =========================
                          LOCATION
                     ========================== -->
 
-                    <h2 class="section-title">
-                        Emergency Location
-                    </h2>
+            <h2 class="section-title">Emergency Location</h2>
 
-                    <div class="location-box">
+            <div class="location-box">
+              <div class="location-status">
+                <div class="location-dot" id="locationDot"></div>
 
-                        <div class="location-status">
+                <span id="locationStatus"> Location not detected </span>
+              </div>
 
-                            <div
-                                class="location-dot"
-                                id="locationDot"
-                            ></div>
+              <div class="location-buttons">
+                <button
+                  type="button"
+                  class="location-btn primary"
+                  id="detectLocation"
+                >
+                  📍 Use My Current Location
+                </button>
 
-                            <span id="locationStatus">
-                                Location not detected
-                            </span>
+                <button type="button" class="location-btn" id="manualLocation">
+                  Enter Manually
+                </button>
+              </div>
 
-                        </div>
+              <div class="coordinates" id="coordinates">
+                Coordinates will appear here.
+              </div>
 
+              <input type="hidden" id="latitude" name="latitude" />
 
-                        <div class="location-buttons">
+              <input type="hidden" id="longitude" name="longitude" />
+            </div>
 
-                            <button
-                                type="button"
-                                class="location-btn primary"
-                                id="detectLocation"
-                            >
-                                📍 Use My Current Location
-                            </button>
-
-                            <button
-                                type="button"
-                                class="location-btn"
-                                id="manualLocation"
-                            >
-                                Enter Manually
-                            </button>
-
-                        </div>
-
-
-                        <div
-                            class="coordinates"
-                            id="coordinates"
-                        >
-                            Coordinates will appear here.
-                        </div>
-
-                        <input
-                            type="hidden"
-                            id="latitude"
-                            name="latitude"
-                        >
-
-                        <input
-                            type="hidden"
-                            id="longitude"
-                            name="longitude"
-                        >
-
-                    </div>
-
-
-                    <!-- =========================
+            <!-- =========================
                          SUBMIT
                     ========================== -->
 
-                    <div class="submit-area">
+            <div class="submit-area">
+              <p class="submit-note">
+                By submitting this request, the emergency information will be
+                processed for ambulance dispatch and hospital coordination.
+              </p>
 
-                        <p class="submit-note">
+              <button type="submit" class="request-btn" id="requestButton">
+                <span class="button-text">
+                  🚑 REQUEST EMERGENCY ASSISTANCE
+                </span>
 
-                            By submitting this request, the emergency
-                            information will be processed for ambulance
-                            dispatch and hospital coordination.
-
-                        </p>
-
-
-                        <button
-                            type="submit"
-                            class="request-btn"
-                            id="requestButton"
-                        >
-
-                            <span class="button-text">
-                                🚑 REQUEST EMERGENCY ASSISTANCE
-                            </span>
-
-                            <span class="spinner"></span>
-
-                        </button>
-
-                    </div>
-
-
-                    <!-- LOGIN NOTICE -->
-
-                    <div class="login-notice">
-
-                        Already registered with ResQ-Route?
-
-                        <a href="signin.html">
-                            Sign in
-                        </a>
-
-                        for access to your saved medical information
-                        and emergency contacts.
-
-                    </div>
-
-                </form>
-
+                <span class="spinner"></span>
+              </button>
             </div>
 
+            <!-- LOGIN NOTICE -->
+
+            <div class="login-notice">
+              Already registered with ResQ-Route?
+
+              <a href="signin.html"> Sign in </a>
+
+              for access to your saved medical information and emergency
+              contacts.
+            </div>
+          </form>
         </div>
-
+      </div>
     </main>
-
 
     <!-- =========================
          SCRIPT
@@ -1090,318 +935,289 @@
     ========================== -->
 
     <script>
+      const emergencyForm = document.getElementById("emergencyForm");
 
-        const emergencyForm =
-            document.getElementById("emergencyForm");
+      const requestButton = document.getElementById("requestButton");
 
-        const requestButton =
-            document.getElementById("requestButton");
+      const statusMessage = document.getElementById("statusMessage");
 
-        const statusMessage =
-            document.getElementById("statusMessage");
+      const detectLocation = document.getElementById("detectLocation");
 
-        const detectLocation =
-            document.getElementById("detectLocation");
+      const manualLocation = document.getElementById("manualLocation");
 
-        const manualLocation =
-            document.getElementById("manualLocation");
+      const locationStatus = document.getElementById("locationStatus");
 
-        const locationStatus =
-            document.getElementById("locationStatus");
+      const locationDot = document.getElementById("locationDot");
 
-        const locationDot =
-            document.getElementById("locationDot");
+      const coordinates = document.getElementById("coordinates");
 
-        const coordinates =
-            document.getElementById("coordinates");
+      const latitudeInput = document.getElementById("latitude");
 
-        const latitudeInput =
-            document.getElementById("latitude");
+      const longitudeInput = document.getElementById("longitude");
 
-        const longitudeInput =
-            document.getElementById("longitude");
-
-
-        /* =========================
+      /* =========================
            STATUS MESSAGE
         ========================== */
 
-        function showMessage(message, type) {
+      function showMessage(message, type) {
+        statusMessage.textContent = message;
 
-            statusMessage.textContent = message;
+        statusMessage.className = "status-message " + type;
 
-            statusMessage.className =
-                "status-message " + type;
+        window.scrollTo({
+          top: 0,
+          behavior: "smooth",
+        });
+      }
 
-            window.scrollTo({
-                top: 0,
-                behavior: "smooth"
-            });
-
-        }
-
-
-        /* =========================
+      /* =========================
            CURRENT LOCATION
         ========================== */
 
-        detectLocation.addEventListener(
-            "click",
-            function() {
+      detectLocation.addEventListener("click", function () {
+        if (!navigator.geolocation) {
+          showMessage("Geolocation is not supported by this browser.", "error");
 
-                if (!navigator.geolocation) {
+          return;
+        }
 
-                    showMessage(
-                        "Geolocation is not supported by this browser.",
-                        "error"
-                    );
+        locationStatus.textContent = "Detecting your location...";
 
-                    return;
+        locationDot.classList.remove("active");
 
-                }
+        detectLocation.disabled = true;
 
+        navigator.geolocation.getCurrentPosition(
+          function (position) {
+            const latitude = position.coords.latitude;
 
-                locationStatus.textContent =
-                    "Detecting your location...";
+            const longitude = position.coords.longitude;
 
-                locationDot.classList.remove("active");
+            latitudeInput.value = latitude;
 
-                detectLocation.disabled = true;
+            longitudeInput.value = longitude;
 
+            locationStatus.textContent = "Location detected successfully";
 
-                navigator.geolocation.getCurrentPosition(
+            locationDot.classList.add("active");
 
-                    function(position) {
+            coordinates.textContent =
+              "Latitude: " +
+              latitude.toFixed(6) +
+              " | Longitude: " +
+              longitude.toFixed(6);
 
-                        const latitude =
-                            position.coords.latitude;
+            coordinates.classList.add("active");
 
-                        const longitude =
-                            position.coords.longitude;
+            detectLocation.disabled = false;
+          },
 
+          function (error) {
+            detectLocation.disabled = false;
 
-                        latitudeInput.value =
-                            latitude;
+            locationDot.classList.remove("active");
 
-                        longitudeInput.value =
-                            longitude;
+            locationStatus.textContent = "Unable to detect location";
 
+            let message = "Unable to detect your location.";
 
-                        locationStatus.textContent =
-                            "Location detected successfully";
-
-                        locationDot.classList.add("active");
-
-
-                        coordinates.textContent =
-                            "Latitude: " +
-                            latitude.toFixed(6) +
-                            " | Longitude: " +
-                            longitude.toFixed(6);
-
-                        coordinates.classList.add("active");
-
-
-                        detectLocation.disabled = false;
-
-                    },
-
-                    function(error) {
-
-                        detectLocation.disabled = false;
-
-                        locationDot.classList.remove("active");
-
-                        locationStatus.textContent =
-                            "Unable to detect location";
-
-
-                        let message =
-                            "Unable to detect your location.";
-
-                        if (error.code === 1) {
-                            message =
-                                "Location permission was denied. Please allow location access or enter the location manually.";
-                        }
-
-                        if (error.code === 2) {
-                            message =
-                                "Your location could not be determined. Please try again or enter it manually.";
-                        }
-
-                        if (error.code === 3) {
-                            message =
-                                "Location detection timed out. Please try again.";
-                        }
-
-                        showMessage(
-                            message,
-                            "error"
-                        );
-
-                    },
-
-                    {
-                        enableHighAccuracy: true,
-                        timeout: 10000,
-                        maximumAge: 0
-                    }
-
-                );
-
+            if (error.code === 1) {
+              message =
+                "Location permission was denied. Please allow location access or enter the location manually.";
             }
+
+            if (error.code === 2) {
+              message =
+                "Your location could not be determined. Please try again or enter it manually.";
+            }
+
+            if (error.code === 3) {
+              message = "Location detection timed out. Please try again.";
+            }
+
+            showMessage(message, "error");
+          },
+
+          {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0,
+          },
         );
+      });
 
-
-        /* =========================
+      /* =========================
            MANUAL LOCATION
         ========================== */
 
-        manualLocation.addEventListener(
-            "click",
-            function() {
+      manualLocation.addEventListener("click", function () {
+        const location = prompt("Enter the emergency location or address:");
 
-                const location =
-                    prompt(
-                        "Enter the emergency location or address:"
-                    );
+        if (!location) {
+          return;
+        }
 
+        coordinates.textContent = "Manual location: " + location;
 
-                if (!location) {
-                    return;
-                }
+        coordinates.classList.add("active");
 
+        locationStatus.textContent = "Manual location entered";
 
-                coordinates.textContent =
-                    "Manual location: " + location;
+        locationDot.classList.add("active");
+      });
 
-                coordinates.classList.add("active");
+      /* =========================
+           MOBILE NUMBER VALIDATION
+        ========================== */
 
-                locationStatus.textContent =
-                    "Manual location entered";
+      const patientPhoneInput = document.getElementById("patientPhone");
 
-                locationDot.classList.add("active");
+      // Allow digits only and limit input to 10 digits.
+      patientPhoneInput.addEventListener("input", function () {
+        this.value = this.value.replace(/\\D/g, "").slice(0, 10);
+      });
 
-            }
-        );
+      // Prevent non-numeric keys while typing.
+      patientPhoneInput.addEventListener("keydown", function (event) {
+        const allowedKeys = [
+          "Backspace",
+          "Delete",
+          "ArrowLeft",
+          "ArrowRight",
+          "Tab",
+          "Home",
+          "End",
+        ];
 
+        if (allowedKeys.includes(event.key) || event.ctrlKey || event.metaKey) {
+          return;
+        }
 
-        /* =========================
+        if (!/^[0-9]$/.test(event.key)) {
+          event.preventDefault();
+        }
+      });
+
+      /* =========================
            FORM SUBMISSION
         ========================== */
 
-        emergencyForm.addEventListener(
-            "submit",
-            function(event) {
+      emergencyForm.addEventListener("submit", function (event) {
+        event.preventDefault();
 
-                event.preventDefault();
+        const patientName = document.getElementById("patientName").value.trim();
 
+        const patientPhone = document
+          .getElementById("patientPhone")
+          .value.trim();
 
-                const patientName =
-                    document
-                        .getElementById("patientName")
-                        .value
-                        .trim();
+        const patientAge = document.getElementById("patientAge").value.trim();
 
-                const patientPhone =
-                    document
-                        .getElementById("patientPhone")
-                        .value
-                        .trim();
+        const patientSex = document.getElementById("patientSex").value;
 
-                const emergencyType =
-                    document
-                        .getElementById("emergencyType")
-                        .value;
+        // Mobile number must be exactly 10 digits and start with 6-9.
+        const mobilePattern = /^[6-9][0-9]{9}$/;
 
-                const priority =
-                    document.querySelector(
-                        'input[name="priority"]:checked'
-                    );
+        if (!mobilePattern.test(patientPhone)) {
+          showMessage(
+            "Please enter a valid 10-digit mobile number starting with 6, 7, 8, or 9.",
+            "error",
+          );
 
+          document.getElementById("patientPhone").focus();
 
-                /* Basic validation */
+          return;
+        }
 
-                if (
-                    !patientName ||
-                    !patientPhone ||
-                    !emergencyType ||
-                    !priority
-                ) {
+        // Age must be a whole number between 0 and 120.
+        const ageNumber = Number(patientAge);
 
-                    showMessage(
-                        "Please complete all required emergency information.",
-                        "error"
-                    );
+        if (
+          !patientAge ||
+          !Number.isInteger(ageNumber) ||
+          ageNumber < 1 ||
+          ageNumber > 120
+        ) {
+          showMessage(
+            "Please enter a valid approximate age between 1 and 120 years.",
+            "error",
+          );
 
-                    return;
+          document.getElementById("patientAge").focus();
 
-                }
+          return;
+        }
 
+        if (!patientSex) {
+          showMessage("Please select the patient's sex.", "error");
 
-                /* Location validation */
+          document.getElementById("patientSex").focus();
 
-                const hasCoordinates =
-                    latitudeInput.value &&
-                    longitudeInput.value;
+          return;
+        }
 
-                const hasManualLocation =
-                    coordinates.classList.contains("active");
+        const emergencyType = document.getElementById("emergencyType").value;
 
-
-                if (
-                    !hasCoordinates &&
-                    !hasManualLocation
-                ) {
-
-                    showMessage(
-                        "Please provide the emergency location before submitting the request.",
-                        "error"
-                    );
-
-                    return;
-
-                }
-
-
-                /*
-                 * Temporary submission state.
-                 *
-                 * The actual emergency creation,
-                 * ambulance dispatch,
-                 * hospital selection,
-                 * database insertion,
-                 * notifications and realtime
-                 * synchronization will be implemented
-                 * in js/emergency.js.
-                 */
-
-                requestButton.classList.add("loading");
-                requestButton.disabled = true;
-
-
-                setTimeout(function() {
-
-                    requestButton.classList.remove("loading");
-                    requestButton.disabled = false;
-
-
-                    showMessage(
-                        "Emergency request validated. Backend dispatch will be connected through js/emergency.js.",
-                        "success"
-                    );
-
-
-                }, 1000);
-
-            }
+        const priority = document.querySelector(
+          'input[name="priority"]:checked',
         );
 
+        /* Basic validation */
+
+        if (!patientName || !patientPhone || !emergencyType || !priority) {
+          showMessage(
+            "Please complete all required emergency information.",
+            "error",
+          );
+
+          return;
+        }
+
+        /* Location validation */
+
+        const hasCoordinates = latitudeInput.value && longitudeInput.value;
+
+        const hasManualLocation = coordinates.classList.contains("active");
+
+        if (!hasCoordinates && !hasManualLocation) {
+          showMessage(
+            "Please provide the emergency location before submitting the request.",
+            "error",
+          );
+
+          return;
+        }
+
+        /*
+         * Temporary submission state.
+         *
+         * The actual emergency creation,
+         * ambulance dispatch,
+         * hospital selection,
+         * database insertion,
+         * notifications and realtime
+         * synchronization will be implemented
+         * in js/emergency.js.
+         */
+
+        requestButton.classList.add("loading");
+        requestButton.disabled = true;
+
+        setTimeout(function () {
+          requestButton.classList.remove("loading");
+          requestButton.disabled = false;
+
+          showMessage(
+            "Emergency request validated. Backend dispatch will be connected through js/emergency.js.",
+            "success",
+          );
+        }, 1000);
+      });
     </script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/supabase.js"></script>
-<script src="js/auth.js"></script>
-<script src="js/emergency.js"></script>
-<script src="js/realtime.js"></script>
-</body>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/emergency.js"></script>
+    <script src="js/realtime.js"></script>
+  </body>
 </html>
