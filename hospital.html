@@ -5035,10 +5035,94 @@
 })();
 </script>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/supabase.js"></script>
-<script src="js/auth.js"></script>
-<script src="js/emergency.js"></script>
-<script src="js/realtime.js"></script>
+
+<!-- =========================
+     LOGOUT HANDLER
+========================== -->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const logoutButton = document.getElementById("logoutButton");
+
+    if (!logoutButton) {
+        console.error("ResQ-Route: Logout button not found.");
+        return;
+    }
+
+    logoutButton.addEventListener("click", async function (event) {
+        event.preventDefault();
+
+        logoutButton.disabled = true;
+        logoutButton.textContent = "Logging out...";
+
+        try {
+            /*
+             * Support the common Supabase client names used by
+             * frontend projects. If a client is available, sign out
+             * from the Supabase session first.
+             */
+            const clients = [
+                window.supabaseClient,
+                window.sb,
+                window.supabase
+            ];
+
+            for (const client of clients) {
+                if (
+                    client &&
+                    client.auth &&
+                    typeof client.auth.signOut === "function"
+                ) {
+                    try {
+                        await client.auth.signOut();
+                        break;
+                    } catch (err) {
+                        console.warn("Supabase sign-out attempt failed:", err);
+                    }
+                }
+            }
+        } catch (error) {
+            console.error("Logout error:", error);
+        } finally {
+            /*
+             * Remove the project login data and Supabase auth tokens
+             * from this browser so the dashboard cannot remain logged in.
+             */
+            try {
+                localStorage.removeItem("resq_user_name");
+
+                const keysToRemove = [];
+
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+
+                    if (
+                        key &&
+                        (
+                            key.startsWith("sb-") ||
+                            key.includes("supabase.auth.token") ||
+                            key === "resq_user" ||
+                            key === "resq_auth"
+                        )
+                    ) {
+                        keysToRemove.push(key);
+                    }
+                }
+
+                keysToRemove.forEach(function (key) {
+                    localStorage.removeItem(key);
+                });
+
+                sessionStorage.clear();
+            } catch (storageError) {
+                console.warn("Could not completely clear browser session:", storageError);
+            }
+
+            // Send the user back to the login page.
+            window.location.replace("signin.html");
+        }
+    });
+});
+</script>
+
 </body>
 </html>
