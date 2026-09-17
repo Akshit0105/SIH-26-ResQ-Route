@@ -272,20 +272,6 @@
             margin-bottom: 16px;
         }
 
-        .otp-row {
-            display: grid;
-            grid-template-columns: 1fr auto;
-            gap: 10px;
-            align-items: end;
-        }
-
-        .otp-actions {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-            margin-top: 10px;
-        }
-
         .secondary-btn {
             border: 1px solid #dce2ea;
             background: #fff;
@@ -300,23 +286,6 @@
         .secondary-btn:hover {
             border-color: #e63946;
             color: #e63946;
-        }
-
-        .verification-status {
-            font-size: 11px;
-            font-weight: 600;
-        }
-
-        .verification-status.pending {
-            color: #8a6a20;
-        }
-
-        .verification-status.verified {
-            color: #16804a;
-        }
-
-        .verification-status.error {
-            color: #c62828;
         }
 
         .document-valid {
@@ -336,10 +305,6 @@
 
         @media (max-width: 720px) {
             .role-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .otp-row {
                 grid-template-columns: 1fr;
             }
         }
@@ -1439,11 +1404,10 @@
                         </div>
 
                         <div class="verification-note">
-                            Driver identity must be verified before receiving
-                            operational assignments. Select one government-issued
-                            identity document and verify the registered phone
-                            number with OTP. Full identity-document numbers should
-                            not be displayed publicly.
+                            Driver identity information is required for
+                            account registration. Select one government-issued
+                            identity document and enter the document number.
+                            Full identity-document numbers should not be displayed publicly.
                         </div>
 
                         <div class="form-grid">
@@ -1491,66 +1455,7 @@
                         </div>
 
 
-                        <div class="verification-box" style="margin-top: 16px;">
 
-                            <div class="verification-title">
-                                Phone OTP Verification
-                            </div>
-
-                            <div class="verification-note">
-                                OTP verification will use the driver's registered
-                                phone number. The secure verification service will
-                                be connected in the authentication layer.
-                            </div>
-
-                            <div class="otp-row">
-
-                                <div class="form-group">
-                                    <label for="driverOtp">
-                                        OTP
-                                    </label>
-
-                                    <input
-                                        type="text"
-                                        id="driverOtp"
-                                        name="driverOtp"
-                                        inputmode="numeric"
-                                        maxlength="6"
-                                        placeholder="Enter 6-digit OTP"
-                                        autocomplete="one-time-code"
-                                    >
-                                </div>
-
-                                <button
-                                    type="button"
-                                    class="secondary-btn"
-                                    id="sendDriverOtpButton"
-                                >
-                                    Send OTP
-                                </button>
-
-                            </div>
-
-                            <div class="otp-actions">
-
-                                <button
-                                    type="button"
-                                    class="secondary-btn"
-                                    id="verifyDriverOtpButton"
-                                >
-                                    Verify OTP
-                                </button>
-
-                                <span
-                                    id="driverOtpStatus"
-                                    class="verification-status pending"
-                                >
-                                    Not verified
-                                </span>
-
-                            </div>
-
-                        </div>
 
                     </div>
 
@@ -1802,6 +1707,9 @@
         const createAccountButton =
             document.getElementById("createAccountButton");
 
+        const phone =
+            document.getElementById("phone");
+
         const password =
             document.getElementById("password");
 
@@ -1903,21 +1811,7 @@
         const citizenIdentityDocumentHelp =
             document.getElementById(
         "citizenIdentityDocumentHelp"
-    );
-
-        const driverOtp =
-            document.getElementById("driverOtp");
-
-        const sendDriverOtpButton =
-            document.getElementById("sendDriverOtpButton");
-
-        const verifyDriverOtpButton =
-            document.getElementById("verifyDriverOtpButton");
-
-        const driverOtpStatus =
-            document.getElementById("driverOtpStatus");
-
-        const hospitalId =
+    );const hospitalId =
             document.getElementById("hospitalId");
 
         const designation =
@@ -1933,13 +1827,7 @@
             document.getElementById("receptionName");
 
         const receptionPhone =
-            document.getElementById("receptionPhone");
-
-
-        let driverOtpVerified = false;
-
-
-        /* =========================
+            document.getElementById("receptionPhone");/* =========================
            STATUS MESSAGE
         ========================== */
 
@@ -1989,23 +1877,6 @@
 
             if (element) {
                 element.disabled = disabled;
-            }
-
-        }
-
-
-        function resetDriverVerification() {
-
-            driverOtpVerified = false;
-
-            if (driverOtp) {
-                driverOtp.value = "";
-            }
-
-            if (driverOtpStatus) {
-                driverOtpStatus.textContent = "Not verified";
-                driverOtpStatus.className =
-                    "verification-status pending";
             }
 
         }
@@ -2264,10 +2135,7 @@ const roleRadios = document.querySelectorAll(
 roleRadios.forEach(function(radio) {
 
     radio.addEventListener("change", function() {
-
-        resetDriverVerification();
-
-        updateRoleForm();
+updateRoleForm();
 
         const roleNames = {
             family: "Citizen / Family",
@@ -2736,6 +2604,17 @@ citizenIdentityDocumentNumber.addEventListener(
             return value;
         }
 
+        if (phone) {
+            phone.addEventListener("input", function () {
+                normalizePhoneNumber();
+                validatePhoneNumber();
+            });
+
+            phone.addEventListener("blur", function () {
+                validatePhoneNumber();
+            });
+        }
+
 
         function validatePhoneNumber() {
             if (!phone) return true;
@@ -3090,90 +2969,6 @@ citizenIdentityDocumentNumber.addEventListener(
             }
         );
 
-
-        /* =========================
-           DRIVER OTP UI
-        ========================== */
-
-        sendDriverOtpButton.addEventListener(
-            "click",
-            function() {
-
-                const phone =
-                    document.getElementById("phone").value.trim();
-
-                if (!phone) {
-
-                    showMessage(
-                        "Enter the driver's phone number before requesting OTP.",
-                        "error"
-                    );
-
-                    return;
-                }
-
-                /*
-                    Security note:
-                    OTP generation and verification must be performed
-                    by Supabase Auth or a secure backend service.
-                    Never generate a real verification OTP in frontend JS.
-                */
-
-                driverOtpVerified = false;
-
-                driverOtpStatus.textContent =
-                    "OTP request ready. Secure OTP service will be connected in auth.js.";
-
-                driverOtpStatus.className =
-                    "verification-status pending";
-
-                showMessage(
-                    "OTP verification UI is ready. The secure OTP service will be connected in the authentication layer.",
-                    "success"
-                );
-
-            }
-        );
-
-
-        verifyDriverOtpButton.addEventListener(
-            "click",
-            function() {
-
-                const otp =
-                    driverOtp.value.trim();
-
-                if (!/^\d{6}$/.test(otp)) {
-
-                    showMessage(
-                        "Enter the 6-digit OTP.",
-                        "error"
-                    );
-
-                    return;
-                }
-
-                /*
-                    Do NOT mark this verified on the client.
-                    auth.js will perform the real server-side OTP
-                    verification and then update this state.
-                */
-
-                driverOtpStatus.textContent =
-                    "OTP entered. Server verification is required.";
-
-                driverOtpStatus.className =
-                    "verification-status pending";
-
-                showMessage(
-                    "OTP entered. Actual verification will be performed securely by the authentication layer.",
-                    "success"
-                );
-
-            }
-        );
-
-
         /* =========================
            DRIVER DOCUMENT SUBMIT CHECK
         ========================== */
@@ -3249,6 +3044,31 @@ signupForm.addEventListener(
             }
 
 
+
+                if (!validatePassword(password.value)) {
+                    event.preventDefault();
+                    event.stopImmediatePropagation();
+                    password.reportValidity();
+                    showMessage(
+                        "Password must be exactly 12 characters and contain uppercase, lowercase, number and special character.",
+                        "error"
+                    );
+                    return false;
+                }
+
+                if (password.value !== confirmPassword.value) {
+                    event.preventDefault();
+                    event.stopImmediatePropagation();
+                    confirmPassword.setCustomValidity("Passwords do not match.");
+                    confirmPassword.reportValidity();
+                    showMessage(
+                        "Passwords do not match.",
+                        "error"
+                    );
+                    return false;
+                }
+
+                confirmPassword.setCustomValidity("");
 
                 const role =
                     getSelectedRole();
