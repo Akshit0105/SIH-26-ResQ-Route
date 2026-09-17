@@ -2445,9 +2445,35 @@
 ></script>
 
 
-<script src="js/supabase.js"></script>
+<!-- IMPORTANT: Do NOT load js/supabase.js or js/auth.js here.
+     Those shared modules perform automatic dashboard role routing.
+     This page owns its Supabase client and performs a local family-only check. -->
+<script>
+(function () {
+    const SUPABASE_URL = "https://teunajhcuadiacbzohsh.supabase.co";
+    const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_watS5zhRnq_dE6v9ZUTm2w_7y_fbv3c";
 
-<script src="js/auth.js"></script>
+    if (window.supabase && typeof window.supabase.createClient === "function") {
+        window.supabaseClient = window.supabase.createClient(
+            SUPABASE_URL,
+            SUPABASE_PUBLISHABLE_KEY,
+            {
+                auth: {
+                    persistSession: true,
+                    autoRefreshToken: true,
+                    detectSessionInUrl: true,
+                    flowType: "pkce"
+                }
+            }
+        );
+
+        window.resqRoute = window.resqRoute || {};
+        window.resqRoute.supabase = window.supabaseClient;
+    } else {
+        console.error("ResQ-Route: Supabase library failed to load.");
+    }
+})();
+</script>
 
 <script src="js/emergency.js"></script>
 
@@ -4909,9 +4935,221 @@
        INITIALIZE
     ====================================================== */
 
+    /* =====================================================
+       FAMILY DASHBOARD ACCESS CHECK
+
+       auth.js is intentionally not loaded on this page because
+       its global role router can redirect dashboards. This page
+       verifies the logged-in account locally and keeps a family
+       user on family.html.
+    ====================================================== */
+
+    async function verifyFamilyAccess() {
+
+        try {
+
+            const client =
+                window.resqRoute?.supabase ||
+                window.supabaseClient;
+
+            if (!client) {
+                throw new Error("Supabase client is not available.");
+            }
+
+            const {
+                data: {
+                    user
+                },
+                error: userError
+            } = await client.auth.getUser();
+
+            if (userError) {
+                throw userError;
+            }
+
+            if (!user) {
+                window.location.replace("signin.html");
+                return false;
+            }
+
+            const {
+                data: profile,
+                error: profileError
+            } = await client
+                .from("profiles")
+                .select("role,name")
+                .eq("id", user.id)
+                .maybeSingle();
+
+            if (profileError) {
+                throw profileError;
+            }
+
+            const role =
+                String(profile?.role || "")
+                    .trim()
+                    .toLowerCase();
+
+            if (
+                role !== "family" &&
+                role !== "citizen" &&
+                role !== "user"
+            ) {
+
+                document.body.innerHTML = `
+                    <div style="
+                        min-height:100vh;
+                        display:flex;
+                        align-items:center;
+                        justify-content:center;
+                        padding:30px;
+                        background:#f4f7fb;
+                        font-family:Arial,Helvetica,sans-serif;
+                        color:#172033;
+                    ">
+                        <div style="
+                            max-width:520px;
+                            width:100%;
+                            background:#fff;
+                            border:1px solid #e3e8ef;
+                            border-radius:16px;
+                            padding:35px;
+                            text-align:center;
+                            box-shadow:0 10px 30px rgba(0,0,0,.08);
+                        ">
+                            <div style="
+                                width:60px;
+                                height:60px;
+                                margin:0 auto 18px;
+                                border-radius:50%;
+                                background:#fff0f1;
+                                color:#e63946;
+                                display:flex;
+                                align-items:center;
+                                justify-content:center;
+                                font-size:26px;
+                            ">!</div>
+
+                            <h2 style="margin-bottom:10px;">
+                                Family Dashboard Access Required
+                            </h2>
+
+                            <p style="
+                                color:#697586;
+                                font-size:14px;
+                                line-height:1.6;
+                                margin-bottom:22px;
+                            ">
+                                This dashboard is available only to
+                                Citizen / Family accounts.
+                            </p>
+
+                            <button
+                                type="button"
+                                onclick="window.location.replace('signin.html')"
+                                style="
+                                    border:0;
+                                    background:#e63946;
+                                    color:#fff;
+                                    padding:12px 20px;
+                                    border-radius:9px;
+                                    cursor:pointer;
+                                    font-weight:700;
+                                "
+                            >
+                                Return to Sign In
+                            </button>
+                        </div>
+                    </div>
+                `;
+
+                return false;
+            }
+
+            if (profile?.name) {
+                setText("userName", profile.name);
+            }
+
+            return true;
+
+        } catch (error) {
+
+            console.error(
+                "Family access check failed:",
+                error
+            );
+
+            document.body.innerHTML = `
+                <div style="
+                    min-height:100vh;
+                    display:flex;
+                    align-items:center;
+                    justify-content:center;
+                    padding:30px;
+                    background:#f4f7fb;
+                    font-family:Arial,Helvetica,sans-serif;
+                    color:#172033;
+                ">
+                    <div style="
+                        max-width:520px;
+                        width:100%;
+                        background:#fff;
+                        border:1px solid #e3e8ef;
+                        border-radius:16px;
+                        padding:35px;
+                        text-align:center;
+                    ">
+                        <h2 style="margin-bottom:10px;">
+                            Unable to verify account
+                        </h2>
+
+                        <p style="
+                            color:#697586;
+                            font-size:14px;
+                            line-height:1.6;
+                            margin-bottom:22px;
+                        ">
+                            Please sign in again and reopen the Family Dashboard.
+                        </p>
+
+                        <button
+                            type="button"
+                            onclick="window.location.replace('signin.html')"
+                            style="
+                                border:0;
+                                background:#e63946;
+                                color:#fff;
+                                padding:12px 20px;
+                                border-radius:9px;
+                                cursor:pointer;
+                                font-weight:700;
+                            "
+                        >
+                            Return to Sign In
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            return false;
+        }
+    }
+
+
+    /* =====================================================
+       INITIALIZE
+    ====================================================== */
+
     document.addEventListener(
         "DOMContentLoaded",
-        function () {
+        async function () {
+
+            const allowed =
+                await verifyFamilyAccess();
+
+            if (!allowed) {
+                return;
+            }
 
             setupNavigation();
 
@@ -4921,11 +5159,38 @@
 
             updateClock();
 
-
             setInterval(
                 updateClock,
                 30000
             );
+
+            const logoutButton = $("logoutButton");
+            if (logoutButton) {
+                logoutButton.addEventListener("click", async function () {
+                    logoutButton.disabled = true;
+                    logoutButton.textContent = "Logging out...";
+
+                    try {
+                        await window.supabaseClient.auth.signOut({ scope: "local" });
+                    } catch (error) {
+                        console.error("Logout failed:", error);
+                    }
+
+                    try {
+                        localStorage.removeItem("resq_user_name");
+                        localStorage.removeItem("resq_user_role");
+                        localStorage.removeItem("resq_emergency_id");
+                        localStorage.removeItem("resq_active_emergency_id");
+                    } catch (error) {
+                        console.warn("Could not clear local ResQ data:", error);
+                    }
+
+                    window.location.replace("signin.html");
+                });
+            }
+
+        }
+    );
 
         }
     );
