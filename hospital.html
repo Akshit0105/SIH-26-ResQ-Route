@@ -2459,7 +2459,12 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="js/supabase.js"></script>
-<script src="js/auth.js"></script>
+<script>
+/* Hospital page intentionally does NOT load auth.js.
+   auth.js performs global dashboard routing and can redirect this page
+   before the hospital dashboard finishes loading. Hospital access is
+   verified locally below using the Supabase profile role. */
+</script>
 <script src="js/emergency.js"></script>
 <script src="js/realtime.js"></script>
 
@@ -2684,6 +2689,63 @@
 
             return null;
 
+        }
+
+        /* =====================================================
+           HOSPITAL-ONLY ACCESS CHECK
+
+           Do NOT use localStorage for the role. The authoritative
+           role is the Supabase profiles.role value. This prevents
+           a stale family role from redirecting hospital.html.
+           ===================================================== */
+        const profileResult = await supabaseClient
+            .from("profiles")
+            .select("role, name")
+            .eq("id", user.id)
+            .maybeSingle();
+
+        if (profileResult.error) {
+            throw new Error(
+                "Unable to verify hospital account role: " +
+                profileResult.error.message
+            );
+        }
+
+        const role = String(
+            profileResult.data && profileResult.data.role
+                ? profileResult.data.role
+                : ""
+        ).trim().toLowerCase();
+
+        if (role !== "hospital") {
+            console.error(
+                "ResQ-Route: hospital.html opened by non-hospital account.",
+                { userId: user.id, role: role }
+            );
+
+            document.body.innerHTML = `
+                <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#f4f7fb;font-family:Arial,Helvetica,sans-serif;padding:20px;">
+                    <div style="max-width:460px;background:#fff;border:1px solid #e3e8ef;border-radius:16px;padding:30px;text-align:center;box-shadow:0 12px 35px rgba(23,32,51,.08);">
+                        <div style="font-size:42px;margin-bottom:12px;">🔒</div>
+                        <h2 style="margin:0 0 8px;color:#172033;">Hospital Access Required</h2>
+                        <p style="margin:0 0 20px;color:#687386;font-size:13px;line-height:1.6;">
+                            This account is registered as <strong>${role || "unknown"}</strong>.
+                            Only hospital accounts can access the Hospital ER Dashboard.
+                        </p>
+                        <button type="button" onclick="window.location.replace('signin.html')" style="border:0;background:#e63946;color:#fff;padding:11px 18px;border-radius:8px;font-weight:800;cursor:pointer;">
+                            Return to Sign In
+                        </button>
+                    </div>
+                </div>`;
+
+            return null;
+        }
+
+        if (profileResult.data && profileResult.data.name) {
+            const userName = document.getElementById("hospitalUser");
+            if (userName) {
+                userName.textContent = profileResult.data.name;
+            }
         }
 
 
