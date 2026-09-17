@@ -663,6 +663,37 @@
             }
         }
     </style>
+
+<style id="password-constraints-style">
+.password-requirements {
+    margin-top: 8px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.04);
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.password-requirements small {
+    display: block;
+    margin-bottom: 4px;
+    font-weight: 600;
+}
+
+.password-requirements ul {
+    margin: 0;
+    padding-left: 18px;
+}
+
+.password-requirements li {
+    margin: 2px 0;
+}
+
+.password-requirements li.valid {
+    font-weight: 600;
+}
+</style>
+
 </head>
 
 <body>
@@ -892,9 +923,21 @@
                             name="phone"
                             placeholder="Enter your phone number"
                             autocomplete="tel"
+                        
+                            inputmode="numeric"
+                            maxlength="10"
+                            minlength="10"
+                            pattern="[6-9][0-9]{9}"
+                            spellcheck="false"
+                            aria-describedby="phoneHelp"
                         >
 
-                    </div>
+                    
+                        <div class="help-text" id="phoneHelp">
+                            Enter a valid 10-digit Indian mobile number starting with 6, 7, 8 or 9.
+                        </div>
+
+</div>
 
 
                     <div class="form-group" id="emailGroup">
@@ -941,8 +984,19 @@
                             name="password"
                             placeholder="Create a password"
                             autocomplete="new-password"
-                            minlength="6"
-                        >
+                            minlength="12"
+                         maxlength="12" pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8}" inputmode="text" spellcheck="false">
+<div class="password-requirements" id="passwordRequirements">
+    <small>Password must be exactly 12 characters and contain:</small>
+    <ul>
+        <li id="passwordLengthRule">Exactly 12 characters</li>
+        <li id="passwordUpperRule">At least 1 uppercase letter (A-Z)</li>
+        <li id="passwordLowerRule">At least 1 lowercase letter (a-z)</li>
+        <li id="passwordNumberRule">At least 1 number (0-9)</li>
+        <li id="passwordSpecialRule">At least 1 special character (!@#$%^&*)</li>
+    </ul>
+</div>
+
 
                         <div class="help-text">
                             Use at least 6 characters.
@@ -1187,6 +1241,13 @@
                                     id="contactPhone"
                                     name="contactPhone"
                                     placeholder="Emergency contact phone"
+                                
+                                    inputmode="numeric"
+                                    maxlength="10"
+                                    minlength="10"
+                                    pattern="[6-9][0-9]{9}"
+                                    spellcheck="false"
+                                    autocomplete="tel"
                                 >
                             </div>
 
@@ -2504,6 +2565,115 @@ citizenIdentityDocumentNumber.addEventListener(
            rejecting legitimate formats unnecessarily.
         ========================== */
 
+        /* =========================
+           PHONE NUMBER VALIDATION
+        ========================== */
+
+        function normalizePhoneNumber() {
+            if (!phone) return "";
+
+            const value = phone.value
+                .replace(/\D/g, "")
+                .substring(0, 10);
+
+            phone.value = value;
+            return value;
+        }
+
+
+        function validatePhoneNumber() {
+            if (!phone) return true;
+
+            const value = normalizePhoneNumber();
+
+            phone.classList.remove(
+                "document-valid",
+                "document-invalid"
+            );
+
+            if (!value) {
+                phone.setCustomValidity(
+                    "Phone number is required."
+                );
+                return false;
+            }
+
+            if (!/^[6-9]\d{9}$/.test(value)) {
+                phone.classList.add("document-invalid");
+                phone.setCustomValidity(
+                    "Enter a valid 10-digit Indian mobile number starting with 6, 7, 8 or 9."
+                );
+                return false;
+            }
+
+            phone.classList.add("document-valid");
+            phone.setCustomValidity("");
+            return true;
+        }
+
+
+        function normalizeContactPhoneNumber() {
+            if (!contactPhone) return "";
+
+            const value = contactPhone.value
+                .replace(/\D/g, "")
+                .substring(0, 10);
+
+            contactPhone.value = value;
+            return value;
+        }
+
+
+        function validateContactPhoneNumber() {
+            if (!contactPhone) return true;
+
+            const value = normalizeContactPhoneNumber();
+
+            contactPhone.classList.remove(
+                "document-valid",
+                "document-invalid"
+            );
+
+            if (!value) {
+                contactPhone.setCustomValidity(
+                    "Emergency contact phone number is required."
+                );
+                return false;
+            }
+
+            if (!/^[6-9]\d{9}$/.test(value)) {
+                contactPhone.classList.add("document-invalid");
+                contactPhone.setCustomValidity(
+                    "Enter a valid 10-digit Indian mobile number starting with 6, 7, 8 or 9."
+                );
+                return false;
+            }
+
+            contactPhone.classList.add("document-valid");
+            contactPhone.setCustomValidity("");
+            return true;
+        }
+
+
+        if (phone) {
+            phone.addEventListener("input", validatePhoneNumber);
+            phone.addEventListener("blur", validatePhoneNumber);
+        }
+
+
+        if (contactPhone) {
+            contactPhone.addEventListener(
+                "input",
+                validateContactPhoneNumber
+            );
+
+            contactPhone.addEventListener(
+                "blur",
+                validateContactPhoneNumber
+            );
+        }
+
+
         function normalizeVehicleNumber() {
 
             if (!vehicleNumber) {
@@ -2850,16 +3020,99 @@ citizenIdentityDocumentNumber.addEventListener(
            DRIVER DOCUMENT SUBMIT CHECK
         ========================== */
 
-        signupForm.addEventListener(
+        
+// Password constraints
+const PASSWORD_PATTERN = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{12}$/;
+
+function validatePassword(password) {
+    const passwordInput = document.getElementById("password");
+    if (!passwordInput) return false;
+
+    const value = password || "";
+
+    const lengthRule = document.getElementById("passwordLengthRule");
+    const upperRule = document.getElementById("passwordUpperRule");
+    const lowerRule = document.getElementById("passwordLowerRule");
+    const numberRule = document.getElementById("passwordNumberRule");
+    const specialRule = document.getElementById("passwordSpecialRule");
+
+    const checks = {
+        length: value.length === 12,
+        upper: /[A-Z]/.test(value),
+        lower: /[a-z]/.test(value),
+        number: /\d/.test(value),
+        special: /[^A-Za-z0-9]/.test(value)
+    };
+
+    if (lengthRule) lengthRule.classList.toggle("valid", checks.length);
+    if (upperRule) upperRule.classList.toggle("valid", checks.upper);
+    if (lowerRule) lowerRule.classList.toggle("valid", checks.lower);
+    if (numberRule) numberRule.classList.toggle("valid", checks.number);
+    if (specialRule) specialRule.classList.toggle("valid", checks.special);
+
+    if (value.length > 0 && !PASSWORD_PATTERN.test(value)) {
+        passwordInput.setCustomValidity(
+            "Password must be exactly 12 characters and contain at least one uppercase letter, one lowercase letter, one number, and one special character."
+        );
+        return false;
+    }
+
+    passwordInput.setCustomValidity("");
+    return value.length === 12 && PASSWORD_PATTERN.test(value);
+}
+
+const passwordInput = document.getElementById("password");
+if (passwordInput) {
+    passwordInput.addEventListener("input", function () {
+        validatePassword(this.value);
+    });
+
+    passwordInput.addEventListener("blur", function () {
+        validatePassword(this.value);
+    });
+}
+
+
+signupForm.addEventListener(
             "submit",
             function(event) {
+            if (!validatePhoneNumber()) {
+                event.preventDefault();
+                event.stopImmediatePropagation();
+
+                phone.reportValidity();
+
+                showMessage(
+                    "Please enter a valid 10-digit Indian mobile number.",
+                    "error"
+                );
+
+                return false;
+            }
+
+
 
                 const role =
                     getSelectedRole();
 
                 if (role === "family") {
 
-    if (!validateCitizenIdentityDocument()) {
+    if (!validateContactPhoneNumber()) {
+                event.preventDefault();
+                event.stopImmediatePropagation();
+
+                contactPhone.reportValidity();
+
+                showMessage(
+                    "Please enter a valid emergency contact phone number.",
+                    "error"
+                );
+
+                return false;
+            }
+
+
+            if (!validateCitizenIdentityDocument()) {
 
         event.preventDefault();
         event.stopImmediatePropagation();
