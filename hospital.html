@@ -1638,6 +1638,363 @@
             }
         }
 
+
+        /* =====================================================
+           PATIENT PERSONAL MONITORING DASHBOARD
+           ===================================================== */
+
+        body.patient-dashboard-active {
+            background: #f4f7fb;
+        }
+
+        body.patient-dashboard-active > nav,
+        body.patient-dashboard-active > .dashboard {
+            display: none !important;
+        }
+
+        #patientMonitoringDashboard {
+            display: none;
+            min-height: 100vh;
+            background: #f4f7fb;
+            color: #172033;
+        }
+
+        body.patient-dashboard-active #patientMonitoringDashboard {
+            display: block;
+        }
+
+        .patient-monitor-nav {
+            height: 70px;
+            background: #fff;
+            border-bottom: 1px solid #e5e9ef;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 4%;
+            position: sticky;
+            top: 0;
+            z-index: 20;
+        }
+
+        .patient-monitor-back {
+            border: 1px solid #dce2ea;
+            background: #fff;
+            color: #344054;
+            border-radius: 8px;
+            padding: 9px 14px;
+            font-size: 12px;
+            font-weight: 800;
+            cursor: pointer;
+        }
+
+        .patient-monitor-back:hover {
+            border-color: #e63946;
+            color: #e63946;
+        }
+
+        .patient-monitor-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .patient-monitor-title-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: #fff1f2;
+            color: #e63946;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 19px;
+        }
+
+        .patient-monitor-title h1 {
+            font-size: 18px;
+            margin: 0;
+        }
+
+        .patient-monitor-title p {
+            margin: 3px 0 0;
+            color: #667085;
+            font-size: 11px;
+        }
+
+        .patient-monitor-wrap {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px 4% 45px;
+        }
+
+        .patient-hero {
+            background: #fff;
+            border: 1px solid #e3e8ef;
+            border-radius: 14px;
+            padding: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            box-shadow: 0 5px 18px rgba(23,32,51,.04);
+        }
+
+        .patient-hero-main {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            min-width: 0;
+        }
+
+        .patient-avatar {
+            width: 62px;
+            height: 62px;
+            border-radius: 50%;
+            background: #172033;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            font-size: 22px;
+            flex: 0 0 auto;
+        }
+
+        .patient-hero h2 {
+            font-size: 24px;
+            margin-bottom: 6px;
+        }
+
+        .patient-hero-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px 16px;
+            color: #667085;
+            font-size: 12px;
+        }
+
+        .patient-status-box {
+            text-align: right;
+            min-width: 150px;
+        }
+
+        .patient-status-label {
+            font-size: 9px;
+            font-weight: 900;
+            color: #98a2b3;
+            text-transform: uppercase;
+            letter-spacing: .8px;
+            margin-bottom: 5px;
+        }
+
+        .patient-status-value {
+            display: inline-flex;
+            padding: 7px 12px;
+            border-radius: 999px;
+            font-size: 10px;
+            font-weight: 900;
+            background: #fff1f2;
+            color: #c72535;
+        }
+
+        .patient-monitor-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 14px;
+            margin-top: 16px;
+        }
+
+        .patient-vital-card,
+        .patient-monitor-card {
+            background: #fff;
+            border: 1px solid #e3e8ef;
+            border-radius: 12px;
+            box-shadow: 0 5px 18px rgba(23,32,51,.035);
+        }
+
+        .patient-vital-card {
+            padding: 17px;
+        }
+
+        .patient-vital-card span,
+        .patient-info-label {
+            display: block;
+            color: #98a2b3;
+            font-size: 9px;
+            font-weight: 900;
+            letter-spacing: .7px;
+            text-transform: uppercase;
+        }
+
+        .patient-vital-card strong {
+            display: block;
+            margin-top: 8px;
+            font-size: 22px;
+            color: #172033;
+        }
+
+        .patient-vital-card small {
+            display: block;
+            margin-top: 3px;
+            color: #667085;
+            font-size: 10px;
+        }
+
+        .patient-monitor-two-col {
+            display: grid;
+            grid-template-columns: 1.1fr .9fr;
+            gap: 16px;
+            margin-top: 16px;
+        }
+
+        .patient-monitor-card {
+            padding: 20px;
+        }
+
+        .patient-monitor-card h3 {
+            font-size: 15px;
+            margin-bottom: 15px;
+        }
+
+        .patient-info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 14px;
+        }
+
+        .patient-info-box {
+            border: 1px solid #edf0f4;
+            border-radius: 9px;
+            padding: 12px;
+            background: #fafbfc;
+        }
+
+        .patient-info-value {
+            display: block;
+            margin-top: 5px;
+            color: #172033;
+            font-size: 12px;
+            font-weight: 800;
+            line-height: 1.45;
+            word-break: break-word;
+        }
+
+        .patient-allocation-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .patient-allocation-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 12px;
+            border: 1px solid #edf0f4;
+            border-radius: 9px;
+            background: #fafbfc;
+        }
+
+        .patient-allocation-item strong {
+            font-size: 12px;
+        }
+
+        .patient-allocation-item span {
+            color: #667085;
+            font-size: 10px;
+            text-align: right;
+        }
+
+        .patient-timeline {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+
+        .patient-timeline-item {
+            position: relative;
+            padding: 0 0 16px 23px;
+            border-left: 2px solid #e5e9ef;
+            margin-left: 6px;
+        }
+
+        .patient-timeline-item:last-child {
+            border-left-color: transparent;
+            padding-bottom: 0;
+        }
+
+        .patient-timeline-dot {
+            position: absolute;
+            left: -7px;
+            top: 1px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #e63946;
+            border: 2px solid #fff;
+            box-shadow: 0 0 0 1px #e63946;
+        }
+
+        .patient-timeline-item strong {
+            font-size: 11px;
+        }
+
+        .patient-timeline-item p {
+            margin-top: 3px;
+            color: #667085;
+            font-size: 10px;
+            line-height: 1.5;
+        }
+
+        .patient-timeline-item time {
+            display: block;
+            margin-top: 4px;
+            color: #98a2b3;
+            font-size: 9px;
+        }
+
+        .patient-monitor-empty {
+            color: #98a2b3;
+            font-size: 11px;
+            padding: 12px 0;
+        }
+
+        .patient-monitor-loading {
+            min-height: calc(100vh - 70px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #667085;
+            font-size: 13px;
+        }
+
+        .patient-monitor-error {
+            background: #fff;
+            border: 1px solid #f1c4c8;
+            color: #9f1c2b;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 18px;
+            font-size: 12px;
+        }
+
+        @media (max-width: 950px) {
+            .patient-monitor-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .patient-monitor-two-col { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 650px) {
+            .patient-monitor-nav { height: auto; min-height: 70px; padding: 12px 4%; gap: 10px; }
+            .patient-monitor-title h1 { font-size: 15px; }
+            .patient-monitor-title p { display: none; }
+            .patient-hero { align-items: flex-start; flex-direction: column; }
+            .patient-status-box { text-align: left; }
+            .patient-monitor-grid { grid-template-columns: 1fr 1fr; }
+            .patient-info-grid { grid-template-columns: 1fr; }
+            .patient-hero h2 { font-size: 20px; }
+        }
+
     </style>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 </head>
@@ -4798,8 +5155,7 @@
                     "click",
                     function () {
 
-                        alert(
-                            "Patient data view: " +
+                        openPatientMonitoringDashboard(
                             button.dataset.patient
                         );
 
@@ -5365,6 +5721,460 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 });
+</script>
+
+
+    <!-- =====================================================
+         PATIENT PERSONAL MONITORING DASHBOARD
+         Opens when a hospital user selects VIEW PATIENT / VIEW DATA.
+         ===================================================== -->
+    <section id="patientMonitoringDashboard" aria-live="polite">
+        <div class="patient-monitor-nav">
+            <button type="button" class="patient-monitor-back" id="patientDashboardBack">← Back to Hospital Dashboard</button>
+            <div class="patient-monitor-title">
+                <div class="patient-monitor-title-icon">♥</div>
+                <div>
+                    <h1>Patient Monitoring</h1>
+                    <p>Focused emergency-care workspace</p>
+                </div>
+            </div>
+            <div style="width:145px;"></div>
+        </div>
+        <div class="patient-monitor-wrap" id="patientDashboardContent">
+            <div class="patient-monitor-loading">Loading patient information...</div>
+        </div>
+    </section>
+
+
+<script>
+/* =========================================================
+   RESQ-ROUTE PATIENT MONITORING WORKSPACE
+   Keeps the hospital-only authentication already present in
+   hospital.html. The selected patient is loaded from the
+   authenticated hospital's active emergencies.
+   ========================================================= */
+(function () {
+    "use strict";
+
+    const dashboard = document.getElementById("patientMonitoringDashboard");
+    const content = document.getElementById("patientDashboardContent");
+    const backButton = document.getElementById("patientDashboardBack");
+
+    if (!dashboard || !content) return;
+
+    function esc(value) {
+        return String(value ?? "")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+    function display(value, fallback = "Not available") {
+        if (value === null || value === undefined || String(value).trim() === "") return fallback;
+        return String(value);
+    }
+
+    function formatDate(value) {
+        if (!value) return "Not recorded";
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return display(value);
+        return date.toLocaleString([], {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit"
+        });
+    }
+
+    function initials(name) {
+        return String(name || "P")
+            .trim()
+            .split(/\s+/)
+            .slice(0, 2)
+            .map(part => part.charAt(0).toUpperCase())
+            .join("") || "P";
+    }
+
+    function titleCaseStatus(value) {
+        return String(value || "Not available")
+            .replace(/_/g, " ")
+            .toLowerCase()
+            .replace(/\b\w/g, c => c.toUpperCase());
+    }
+
+    function priorityClass(priority) {
+        const p = String(priority || "").toLowerCase();
+        if (p === "critical") return "red";
+        if (p === "high") return "orange";
+        return "";
+    }
+
+    async function getSelectedEmergency(patientName) {
+        if (!window.supabaseClient || !hospitalId) {
+            throw new Error("Hospital database session is not ready.");
+        }
+
+        const response = await window.supabaseClient
+            .from("emergencies")
+            .select(`
+                id,
+                patient_id,
+                emergency_type,
+                priority,
+                status,
+                latitude,
+                longitude,
+                created_at,
+                updated_at,
+                patients (
+                    id,
+                    name,
+                    age,
+                    gender,
+                    blood_group,
+                    allergies,
+                    medical_conditions,
+                    consent_given
+                )
+            `)
+            .eq("hospital_id", hospitalId)
+            .not("status", "in", "(COMPLETED,CANCELLED)")
+            .order("created_at", { ascending: false });
+
+        if (response.error) throw response.error;
+
+        const emergencies = response.data || [];
+        const wanted = String(patientName || "").trim().toLowerCase();
+
+        const match = emergencies.find(item =>
+            String(item.patients?.name || "").trim().toLowerCase() === wanted
+        );
+
+        if (!match) {
+            throw new Error("This patient could not be found in an active emergency assigned to this hospital.");
+        }
+
+        return match;
+    }
+
+    async function getLatestVitals(emergencyId) {
+        const response = await window.supabaseClient
+            .from("patient_vitals")
+            .select("heart_rate,spo2,blood_pressure,temperature,ecg_status,recorded_at")
+            .eq("emergency_id", emergencyId)
+            .order("recorded_at", { ascending: false })
+            .limit(1);
+
+        if (response.error) {
+            console.warn("Patient vitals could not be loaded:", response.error);
+            return null;
+        }
+
+        return response.data?.[0] || null;
+    }
+
+    async function getPatientAllocations(emergency) {
+        const response = await window.supabaseClient
+            .from("resource_allocations")
+            .select("resource_slot_id,resource_type,allocated_by,status,notes")
+            .eq("hospital_id", hospitalId)
+            .eq("emergency_id", emergency.id)
+            .eq("patient_id", emergency.patient_id)
+            .eq("status", "active");
+
+        if (response.error) {
+            console.warn("Patient resource allocations could not be loaded:", response.error);
+            return [];
+        }
+
+        const allocations = response.data || [];
+        if (!allocations.length) return [];
+
+        const slotIds = [...new Set(allocations.map(a => a.resource_slot_id).filter(Boolean))];
+        let slots = [];
+
+        if (slotIds.length) {
+            const slotResponse = await window.supabaseClient
+                .from("hospital_resource_slots")
+                .select("id,room_id,resource_type,slot_code,status,notes")
+                .in("id", slotIds);
+
+            if (!slotResponse.error) slots = slotResponse.data || [];
+        }
+
+        const roomIds = [...new Set(slots.map(slot => slot.room_id).filter(Boolean))];
+        let rooms = [];
+
+        if (roomIds.length) {
+            const roomResponse = await window.supabaseClient
+                .from("hospital_rooms")
+                .select("id,floor_number,room_number,room_type,status")
+                .in("id", roomIds);
+
+            if (!roomResponse.error) rooms = roomResponse.data || [];
+        }
+
+        const staffIds = [...new Set(allocations.map(a => a.allocated_by).filter(Boolean))];
+        let staff = [];
+
+        if (staffIds.length) {
+            const staffResponse = await window.supabaseClient
+                .from("profiles")
+                .select("id,name,email,phone")
+                .in("id", staffIds);
+
+            if (!staffResponse.error) staff = staffResponse.data || [];
+        }
+
+        return allocations.map(allocation => {
+            const slot = slots.find(item => item.id === allocation.resource_slot_id) || null;
+            const room = slot ? rooms.find(item => item.id === slot.room_id) || null : null;
+            const staffMember = staff.find(item => item.id === allocation.allocated_by) || null;
+
+            return {
+                ...allocation,
+                slot,
+                room,
+                staffMember
+            };
+        });
+    }
+
+    async function getEmergencyEvents(emergencyId) {
+        const response = await window.supabaseClient
+            .from("emergency_events")
+            .select("event_type,description,created_at")
+            .eq("emergency_id", emergencyId)
+            .order("created_at", { ascending: false })
+            .limit(12);
+
+        if (response.error) {
+            console.warn("Patient emergency timeline could not be loaded:", response.error);
+            return [];
+        }
+
+        return response.data || [];
+    }
+
+    function allocationSummary(allocations) {
+        if (!allocations.length) {
+            return {
+                bed: "Not allocated",
+                room: "Not assigned",
+                facility: "Not allocated",
+                responseRoom: "Not assigned",
+                staff: []
+            };
+        }
+
+        const bed = allocations.find(a =>
+            String(a.resource_type || "").toLowerCase() === "bed"
+        ) || allocations[0];
+
+        const staffMap = new Map();
+        allocations.forEach(a => {
+            if (a.staffMember?.id) staffMap.set(a.staffMember.id, a.staffMember);
+        });
+
+        const facilityNames = allocations.map(a => {
+            if (a.resource_type) return a.resource_type;
+            return a.slot?.slot_code || "Resource";
+        });
+
+        const roomLabel = bed.room
+            ? `Room ${display(bed.room.room_number)} • Floor ${display(bed.room.floor_number)}`
+            : "Not assigned";
+
+        return {
+            bed: bed.slot?.slot_code || "Not allocated",
+            room: roomLabel,
+            facility: [...new Set(facilityNames)].join(", ") || "Not allocated",
+            responseRoom: bed.room
+                ? `${display(bed.room.room_type, "Response Room")} • Room ${display(bed.room.room_number)}`
+                : "Not assigned",
+            staff: [...staffMap.values()]
+        };
+    }
+
+    function renderPatientDashboard(emergency, vitals, allocations, events) {
+        const patient = emergency.patients || {};
+        const allocation = allocationSummary(allocations);
+        const priority = String(emergency.priority || "").toUpperCase();
+        const status = titleCaseStatus(emergency.status);
+        const condition = display(emergency.emergency_type);
+        const medicalConditions = display(patient.medical_conditions);
+        const allergies = display(patient.allergies);
+
+        const heartRate = vitals?.heart_rate != null ? `${esc(vitals.heart_rate)} BPM` : "Not recorded";
+        const spo2 = vitals?.spo2 != null ? `${esc(vitals.spo2)}%` : "Not recorded";
+        const bp = display(vitals?.blood_pressure);
+        const temp = vitals?.temperature != null ? `${esc(vitals.temperature)} °C` : "Not recorded";
+        const ecg = display(vitals?.ecg_status);
+
+        const staffHtml = allocation.staff.length
+            ? allocation.staff.map(member => `
+                <div class="patient-allocation-item">
+                    <div>
+                        <strong>${esc(display(member.name))}</strong>
+                        <div style="margin-top:3px;color:#98a2b3;font-size:9px;">Allocated care-team member</div>
+                    </div>
+                    <span>${esc(display(member.phone || member.email, "Contact not available"))}</span>
+                </div>
+            `).join("")
+            : `<div class="patient-monitor-empty">No staff member is recorded as allocated to this patient's active resources.</div>`;
+
+        const timelineHtml = events.length
+            ? events.map(event => `
+                <div class="patient-timeline-item">
+                    <span class="patient-timeline-dot"></span>
+                    <strong>${esc(titleCaseStatus(event.event_type))}</strong>
+                    <p>${esc(display(event.description))}</p>
+                    <time>${esc(formatDate(event.created_at))}</time>
+                </div>
+            `).join("")
+            : `<div class="patient-monitor-empty">No emergency events have been recorded yet.</div>`;
+
+        content.innerHTML = `
+            <div class="patient-hero">
+                <div class="patient-hero-main">
+                    <div class="patient-avatar">${esc(initials(patient.name))}</div>
+                    <div>
+                        <h2>${esc(display(patient.name))}</h2>
+                        <div class="patient-hero-meta">
+                            <span>${esc(display(patient.age, "Age not recorded"))} years</span>
+                            <span>${esc(display(patient.gender, "Gender not recorded"))}</span>
+                            <span>Emergency: ${esc(display(emergency.id))}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="patient-status-box">
+                    <div class="patient-status-label">Current Priority</div>
+                    <span class="patient-status-value ${priorityClass(emergency.priority)}">${esc(priority || "NOT SET")}</span>
+                    <div style="margin-top:7px;font-size:11px;color:#667085;">${esc(status)}</div>
+                </div>
+            </div>
+
+            <div class="patient-monitor-grid">
+                <div class="patient-vital-card"><span>Pulse / Heart Rate</span><strong>${heartRate}</strong><small>Latest recorded reading</small></div>
+                <div class="patient-vital-card"><span>SpO₂</span><strong>${spo2}</strong><small>Latest oxygen saturation</small></div>
+                <div class="patient-vital-card"><span>Blood Pressure</span><strong>${esc(bp)}</strong><small>Latest recorded reading</small></div>
+                <div class="patient-vital-card"><span>Temperature / ECG</span><strong>${temp}</strong><small>ECG: ${esc(ecg)}</small></div>
+            </div>
+
+            <div class="patient-monitor-two-col">
+                <div class="patient-monitor-card">
+                    <h3>Condition & Medical Information</h3>
+                    <div class="patient-info-grid">
+                        <div class="patient-info-box"><span class="patient-info-label">Emergency / Condition</span><strong class="patient-info-value">${esc(condition)}</strong></div>
+                        <div class="patient-info-box"><span class="patient-info-label">Known Medical Conditions</span><strong class="patient-info-value">${esc(medicalConditions)}</strong></div>
+                        <div class="patient-info-box"><span class="patient-info-label">Allergies</span><strong class="patient-info-value">${esc(allergies)}</strong></div>
+                        <div class="patient-info-box"><span class="patient-info-label">Patient Status</span><strong class="patient-info-value">${esc(status)}</strong></div>
+                        <div class="patient-info-box"><span class="patient-info-label">Consent Status</span><strong class="patient-info-value">${patient.consent_given ? "Consent recorded" : "Not recorded"}</strong></div>
+                        <div class="patient-info-box"><span class="patient-info-label">Last Emergency Update</span><strong class="patient-info-value">${esc(formatDate(emergency.updated_at || emergency.created_at))}</strong></div>
+                    </div>
+                </div>
+
+                <div class="patient-monitor-card">
+                    <h3>Current Allocation</h3>
+                    <div class="patient-info-grid">
+                        <div class="patient-info-box"><span class="patient-info-label">Bed Number</span><strong class="patient-info-value">${esc(allocation.bed)}</strong></div>
+                        <div class="patient-info-box"><span class="patient-info-label">Room</span><strong class="patient-info-value">${esc(allocation.room)}</strong></div>
+                        <div class="patient-info-box"><span class="patient-info-label">Facilities Allocated</span><strong class="patient-info-value">${esc(allocation.facility)}</strong></div>
+                        <div class="patient-info-box"><span class="patient-info-label">Response Room</span><strong class="patient-info-value">${esc(allocation.responseRoom)}</strong></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="patient-monitor-two-col">
+                <div class="patient-monitor-card">
+                    <h3>Allocated Care Staff</h3>
+                    <div class="patient-allocation-list">${staffHtml}</div>
+                </div>
+
+                <div class="patient-monitor-card">
+                    <h3>Latest Vital Reading</h3>
+                    <div class="patient-info-grid">
+                        <div class="patient-info-box"><span class="patient-info-label">Heart Rate</span><strong class="patient-info-value">${heartRate}</strong></div>
+                        <div class="patient-info-box"><span class="patient-info-label">SpO₂</span><strong class="patient-info-value">${spo2}</strong></div>
+                        <div class="patient-info-box"><span class="patient-info-label">Blood Pressure</span><strong class="patient-info-value">${esc(bp)}</strong></div>
+                        <div class="patient-info-box"><span class="patient-info-label">ECG</span><strong class="patient-info-value">${esc(ecg)}</strong></div>
+                    </div>
+                    <div style="margin-top:12px;color:#98a2b3;font-size:9px;">Recorded: ${esc(formatDate(vitals?.recorded_at))}</div>
+                </div>
+            </div>
+
+            <div class="patient-monitor-card" style="margin-top:16px;">
+                <h3>Patient Emergency Timeline</h3>
+                <div class="patient-timeline">${timelineHtml}</div>
+            </div>
+        `;
+    }
+
+    async function openPatientMonitoringDashboard(patientName) {
+        document.body.classList.add("patient-dashboard-active");
+        window.location.hash = "patient=" + encodeURIComponent(patientName || "");
+        content.innerHTML = `<div class="patient-monitor-loading">Loading ${esc(patientName)}...</div>`;
+        window.scrollTo({ top: 0, behavior: "instant" });
+
+        try {
+            const emergency = await getSelectedEmergency(patientName);
+            const [vitals, allocations, events] = await Promise.all([
+                getLatestVitals(emergency.id),
+                getPatientAllocations(emergency),
+                getEmergencyEvents(emergency.id)
+            ]);
+
+            renderPatientDashboard(emergency, vitals, allocations, events);
+        } catch (error) {
+            console.error("Patient monitoring dashboard error:", error);
+            content.innerHTML = `
+                <div class="patient-monitor-error">
+                    <strong>Unable to load this patient's monitoring workspace.</strong>
+                    <div style="margin-top:7px;">${esc(error?.message || "Please try again.")}</div>
+                </div>`;
+        }
+    }
+
+    function closePatientMonitoringDashboard(updateHash = true) {
+        document.body.classList.remove("patient-dashboard-active");
+        if (updateHash && window.location.hash) {
+            history.replaceState(null, "", window.location.pathname + window.location.search);
+        }
+        window.scrollTo({ top: 0, behavior: "instant" });
+    }
+
+    if (backButton) {
+        backButton.addEventListener("click", function () {
+            closePatientMonitoringDashboard(true);
+        });
+    }
+
+    window.addEventListener("popstate", function () {
+        if (!window.location.hash.startsWith("#patient=")) {
+            closePatientMonitoringDashboard(false);
+        }
+    });
+
+    window.addEventListener("hashchange", function () {
+        if (!window.location.hash.startsWith("#patient=")) {
+            closePatientMonitoringDashboard(false);
+        }
+    });
+
+    const existingHash = window.location.hash;
+    if (existingHash.startsWith("#patient=")) {
+        const patientName = decodeURIComponent(existingHash.substring("#patient=".length));
+        if (patientName) {
+            openPatientMonitoringDashboard(patientName);
+        }
+    }
+
+    window.openPatientMonitoringDashboard = openPatientMonitoringDashboard;
+    window.closePatientMonitoringDashboard = closePatientMonitoringDashboard;
+})();
 </script>
 
 </body>
