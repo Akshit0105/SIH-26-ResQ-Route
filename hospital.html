@@ -4451,7 +4451,7 @@
        ACTIVE EMERGENCY PATIENTS
        ===================================================== */
 
-    async function loadAllocationPatients() {
+    async function loadAllocationPatients(preferredPatientName) {
 
         const select =
             document.getElementById(
@@ -4575,6 +4575,19 @@
             }
         );
 
+        if (preferredPatientName) {
+            const preferred = Array.from(select.options).find(
+                function (option) {
+                    return String(option.textContent || "").toLowerCase().startsWith(String(preferredPatientName).toLowerCase() + " •");
+                }
+            );
+            if (preferred) select.value = preferred.value;
+        }
+
+        if (!select.value && select.options.length > 1) {
+            select.selectedIndex = 1;
+        }
+
 
         if (
             !patients.length
@@ -4692,7 +4705,7 @@
         }
 
 
-        loadAllocationPatients()
+        loadAllocationPatients(patient)
             .catch(
                 function (error) {
 
@@ -5125,16 +5138,29 @@
                         ) {
 
                             openAllocationModal(
-                                bed.id
+                                bed.id,
+                                button.dataset.patient
                             );
 
+                            return;
                         }
-                        else {
 
-                            alert(
-                                "That bed is not currently available."
+                        /* Prototype fallback: if the requested demo bed is
+                           occupied, use the first available bed instead of
+                           blocking the whole workflow. */
+                        const fallbackBed = hospitalBeds.find(
+                            function (item) {
+                                return item.status === "available";
+                            }
+                        );
+
+                        if (fallbackBed) {
+                            openAllocationModal(
+                                fallbackBed.id,
+                                button.dataset.patient
                             );
-
+                        } else {
+                            alert("No available bed is currently configured for this hospital.");
                         }
 
                     }
@@ -5565,6 +5591,213 @@
 
 
     /* =====================================================
+       PROTOTYPE DATABASE SEEDING
+       Creates safe demo records only when they are missing.
+       These are ordinary Supabase rows, so allocation changes
+       can be tested without hardcoded fake bed state.
+       ===================================================== */
+
+    const PROTOTYPE_PATIENTS = [
+        { name: "Rahul Sharma", age: 54, gender: "Male", blood_group: "B+", allergies: "Penicillin", medical_conditions: "Multiple trauma / suspected fractures", emergency_type: "Road Accident", priority: "critical", heart_rate: 118, spo2: 91, blood_pressure: "146/92", temperature: 38.1, ecg_status: "Sinus tachycardia" },
+        { name: "Aman Singh", age: 46, gender: "Male", blood_group: "O+", allergies: "None known", medical_conditions: "Acute chest pain / suspected cardiac event", emergency_type: "Chest Pain", priority: "high", heart_rate: 104, spo2: 95, blood_pressure: "138/88", temperature: 37.2, ecg_status: "Under observation" },
+        { name: "Simran Kaur", age: 31, gender: "Female", blood_group: "A+", allergies: "None known", medical_conditions: "Fall injury / soft tissue trauma", emergency_type: "Fall Injury", priority: "medium", heart_rate: 88, spo2: 98, blood_pressure: "122/80", temperature: 36.8, ecg_status: "Normal" },
+        { name: "Karan Mehta", age: 62, gender: "Male", blood_group: "O-", allergies: "Sulfa drugs", medical_conditions: "Respiratory distress", emergency_type: "Breathing Difficulty", priority: "critical", heart_rate: 126, spo2: 88, blood_pressure: "154/96", temperature: 38.4, ecg_status: "Requires monitoring" }
+    ];
+
+    const PROTOTYPE_BEDS = [
+        { code: "ICU-03", room: "201", floor: 2, type: "ICU" },
+        { code: "ER-04", room: "101", floor: 1, type: "Emergency" },
+        { code: "WARD-12", room: "102", floor: 1, type: "General Ward" },
+        { code: "ICU-05", room: "201", floor: 2, type: "ICU" },
+        { code: "ER-06", room: "101", floor: 1, type: "Emergency" },
+        { code: "WARD-14", room: "102", floor: 1, type: "General Ward" }
+    ];
+
+    async function ensurePrototypeRooms() {
+        const db = window.supabaseClient;
+        const result = await db.from("hospital_rooms")
+            .select("id,floor_number,room_number,room_type,status")
+            .eq("hospital_id", hospitalId);
+
+        if (result.error) {
+            console.warn("Prototype room lookup skipped:", result.error);
+            return result.data || [];
+        }
+
+        let rooms = result.data || [];
+        const definitions = [
+            { floor_number: 1, room_number: "101", room_type: "Emergency Response", status: "active" },
+            { floor_number: 1, room_number: "102", room_type: "General Ward", status: "active" },
+            { floor_number: 2, room_number: "201", room_type: "ICU", status: "active" }
+        ];
+
+        for (const definition of definitions) {
+            let room = rooms.find(r => String(r.room_number) === definition.room_number);
+            if (!room) {
+                const inserted = await db.from("hospital_rooms").insert({
+                    hospital_id: hospitalId,
+                    floor_number: definition.floor_number,
+                    room_number: definition.room_number,
+                    room_type: definition.room_type,
+                    status: definition.status
+                }).select("id,floor_number,room_number,room_type,status").single();
+
+                if (!inserted.error && inserted.data) {
+                    room = inserted.data;
+                    rooms.push(room);
+                } else if (inserted.error) {
+                    console.warn("Prototype room seed skipped:", inserted.error);
+                }
+            }
+        }
+        return rooms;
+    }
+
+    async function ensurePrototypeBeds() {
+        const db = window.supabaseClient;
+        const rooms = await ensurePrototypeRooms();
+        const existingResult = await db.from("hospital_resource_slots")
+            .select("id,slot_code,status,patient_id,emergency_id,room_id")
+            .eq("hospital_id", hospitalId)
+            .eq("resource_type", "Bed");
+
+        if (existingResult.error) {
+            console.warn("Prototype bed lookup failed:", existingResult.error);
+            return;
+        }
+
+        const existing = existingResult.data || [];
+
+        for (const definition of PROTOTYPE_BEDS) {
+            const alreadyThere = existing.find(b => String(b.slot_code).toUpperCase() === definition.code);
+            if (alreadyThere) {
+                // If a prototype bed is empty, make it available for testing.
+                if (!alreadyThere.patient_id && !alreadyThere.emergency_id && String(alreadyThere.status).toLowerCase() !== "available") {
+                    await db.from("hospital_resource_slots")
+                        .update({ status: "available", notes: "ResQ-Route prototype bed" })
+                        .eq("id", alreadyThere.id).eq("hospital_id", hospitalId);
+                }
+                continue;
+            }
+
+            const room = rooms.find(r => String(r.room_number) === definition.room);
+            const inserted = await db.from("hospital_resource_slots").insert({
+                hospital_id: hospitalId,
+                room_id: room?.id || null,
+                resource_type: "Bed",
+                slot_code: definition.code,
+                status: "available",
+                patient_id: null,
+                emergency_id: null,
+                notes: "ResQ-Route prototype bed"
+            });
+
+            if (inserted.error) console.warn("Prototype bed seed skipped:", definition.code, inserted.error);
+        }
+    }
+
+    async function ensurePrototypePatientsAndVitals() {
+        const db = window.supabaseClient;
+        const userResult = await db.auth.getUser();
+        const user = userResult?.data?.user;
+        if (!user) return;
+
+        const emergencyResult = await db.from("emergencies")
+            .select("id,patient_id,emergency_type,priority,status,patients(id,name,age,gender,blood_group,allergies,medical_conditions,consent_given)")
+            .eq("hospital_id", hospitalId)
+            .not("status", "in", "(COMPLETED,CANCELLED)");
+
+        if (emergencyResult.error) {
+            console.warn("Prototype emergency lookup skipped:", emergencyResult.error);
+            return;
+        }
+
+        let emergencies = emergencyResult.data || [];
+
+        for (const demo of PROTOTYPE_PATIENTS) {
+            let emergency = emergencies.find(e => String(e.patients?.name || "").toLowerCase() === demo.name.toLowerCase());
+            let patientId = emergency?.patient_id || null;
+
+            if (!patientId) {
+                const patientLookup = await db.from("patients")
+                    .select("id,name,age,gender,blood_group,allergies,medical_conditions,consent_given")
+                    .eq("user_id", user.id)
+                    .eq("name", demo.name)
+                    .limit(1);
+
+                if (!patientLookup.error && patientLookup.data?.[0]) patientId = patientLookup.data[0].id;
+            }
+
+            if (!patientId) {
+                const patientInsert = await db.from("patients").insert({
+                    user_id: user.id,
+                    name: demo.name,
+                    age: demo.age,
+                    gender: demo.gender,
+                    blood_group: demo.blood_group,
+                    allergies: demo.allergies,
+                    medical_conditions: demo.medical_conditions,
+                    consent_given: true,
+                    consent_timestamp: new Date().toISOString()
+                }).select("id,name,age,gender,blood_group,allergies,medical_conditions,consent_given").single();
+
+                if (patientInsert.error) {
+                    console.warn("Prototype patient seed skipped:", demo.name, patientInsert.error);
+                    continue;
+                }
+                patientId = patientInsert.data.id;
+            }
+
+            if (!emergency) {
+                const emergencyInsert = await db.from("emergencies").insert({
+                    patient_id: patientId,
+                    requester_id: user.id,
+                    emergency_type: demo.emergency_type,
+                    priority: demo.priority,
+                    latitude: 30.9010,
+                    longitude: 75.8573,
+                    hospital_id: hospitalId,
+                    status: "ARRIVED_AT_HOSPITAL"
+                }).select("id,patient_id,emergency_type,priority,status,created_at,updated_at,patients(id,name,age,gender,blood_group,allergies,medical_conditions,consent_given)").single();
+
+                if (emergencyInsert.error) {
+                    console.warn("Prototype emergency seed skipped:", demo.name, emergencyInsert.error);
+                    continue;
+                }
+                emergency = emergencyInsert.data;
+                emergencies.push(emergency);
+            }
+
+            const vitalCheck = await db.from("patient_vitals")
+                .select("id")
+                .eq("emergency_id", emergency.id)
+                .limit(1);
+
+            if (!vitalCheck.error && !(vitalCheck.data || []).length) {
+                const vitalInsert = await db.from("patient_vitals").insert({
+                    emergency_id: emergency.id,
+                    heart_rate: demo.heart_rate,
+                    spo2: demo.spo2,
+                    blood_pressure: demo.blood_pressure,
+                    temperature: demo.temperature,
+                    ecg_status: demo.ecg_status
+                });
+                if (vitalInsert.error) console.warn("Prototype vital seed skipped:", demo.name, vitalInsert.error);
+            }
+        }
+    }
+
+    async function ensurePrototypeData() {
+        try {
+            await ensurePrototypeBeds();
+            await ensurePrototypePatientsAndVitals();
+            console.log("ResQ-Route prototype data check completed.");
+        } catch (error) {
+            console.warn("Prototype data setup did not fully complete:", error);
+        }
+    }
+
+    /* =====================================================
        INITIALIZATION
        ===================================================== */
 
@@ -5578,6 +5811,7 @@
                 return;
             }
 
+            await ensurePrototypeData();
             await loadBedInventory();
 
 
@@ -5723,6 +5957,19 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 </script>
 
+
+    <style>
+        .prototype-badge {
+            display:inline-flex; align-items:center; gap:6px; padding:5px 9px;
+            border-radius:999px; background:#fff4e5; color:#9a5b00;
+            border:1px solid #ffd9a8; font-size:9px; font-weight:800;
+        }
+        .patient-demo-note {
+            margin:0 0 14px; padding:10px 12px; border-radius:9px;
+            background:#fffaf0; border:1px solid #f5d9a6; color:#7a5a20;
+            font-size:10px; line-height:1.5;
+        }
+    </style>
 
     <!-- =====================================================
          PATIENT PERSONAL MONITORING DASHBOARD
@@ -6038,6 +6285,7 @@ document.addEventListener("DOMContentLoaded", function () {
             : `<div class="patient-monitor-empty">No emergency events have been recorded yet.</div>`;
 
         content.innerHTML = `
+            <div class="patient-demo-note"><span class="prototype-badge">PROTOTYPE DATA</span> Default monitoring values are being used where live records are not yet available. Allocation actions write to Supabase when the required tables and policies are enabled.</div>
             <div class="patient-hero">
                 <div class="patient-hero-main">
                     <div class="patient-avatar">${esc(initials(patient.name))}</div>
@@ -6121,11 +6369,25 @@ document.addEventListener("DOMContentLoaded", function () {
 
         try {
             const emergency = await getSelectedEmergency(patientName);
-            const [vitals, allocations, events] = await Promise.all([
+            let [vitals, allocations, events] = await Promise.all([
                 getLatestVitals(emergency.id),
                 getPatientAllocations(emergency),
                 getEmergencyEvents(emergency.id)
             ]);
+
+            if (!vitals) {
+                const demo = PROTOTYPE_PATIENTS.find(item => String(item.name).toLowerCase() === String(emergency.patients?.name || "").toLowerCase());
+                if (demo) {
+                    vitals = {
+                        heart_rate: demo.heart_rate,
+                        spo2: demo.spo2,
+                        blood_pressure: demo.blood_pressure,
+                        temperature: demo.temperature,
+                        ecg_status: demo.ecg_status,
+                        recorded_at: new Date().toISOString()
+                    };
+                }
+            }
 
             renderPatientDashboard(emergency, vitals, allocations, events);
         } catch (error) {
