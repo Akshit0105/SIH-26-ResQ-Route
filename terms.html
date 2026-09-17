@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terms & Conditions | ResQ-Route</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            background: #f5f7fb;
+            color: #1f2937;
+            line-height: 1.65;
+        }
+        .topbar {
+            background: #ffffff;
+            border-bottom: 1px solid #e5e7eb;
+            padding: 18px 6%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .brand {
+            font-size: 22px;
+            font-weight: 800;
+            color: #111827;
+        }
+        .brand span { color: #e63946; }
+        .back {
+            text-decoration: none;
+            color: #374151;
+            font-weight: 700;
+        }
+        .container {
+            width: min(950px, 92%);
+            margin: 40px auto 70px;
+        }
+        .hero, .section {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 16px;
+            padding: 28px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 30px rgba(15, 23, 42, .05);
+        }
+        .hero h1 { margin: 0 0 8px; font-size: 32px; }
+        .hero p { margin: 7px 0; color: #667085; }
+        .role-badge {
+            display: inline-block;
+            margin-top: 12px;
+            padding: 7px 12px;
+            border-radius: 999px;
+            background: #fff1f2;
+            color: #be123c;
+            font-weight: 800;
+            font-size: 13px;
+        }
+        h2 { margin-top: 0; font-size: 21px; }
+        h3 { font-size: 17px; margin-bottom: 6px; }
+        ul { padding-left: 22px; }
+        li { margin: 7px 0; }
+        .notice {
+            background: #f8fafc;
+            border-left: 4px solid #e63946;
+            padding: 14px 16px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+        .permission {
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 16px;
+            margin: 12px 0;
+        }
+        .permission strong { display: block; margin-bottom: 5px; }
+        footer {
+            text-align: center;
+            color: #667085;
+            font-size: 13px;
+            margin-top: 28px;
+        }
+        @media (max-width: 650px) {
+            .topbar { padding: 16px 4%; }
+            .container { width: 94%; margin-top: 22px; }
+            .hero, .section { padding: 21px; }
+            .hero h1 { font-size: 26px; }
+        }
+    </style>
+</head>
+<body>
+
+<header class="topbar">
+    <div class="brand">ResQ<span>-Route</span></div>
+    <a class="back" href="signup.html">← Back to Sign Up</a>
+</header>
+
+<main class="container">
+
+    <section class="hero">
+        <h1 id="pageTitle">Terms & Conditions</h1>
+        <p id="intro"></p>
+        <div class="role-badge" id="roleBadge"></div>
+        <div class="notice">
+            ResQ-Route is an emergency coordination prototype. It does not replace
+            emergency services, doctors, hospitals, ambulance operators, or other
+            professional medical services.
+        </div>
+    </section>
+
+    <section class="section">
+        <h2>1. General Terms</h2>
+        <ul>
+            <li>You must provide information that is accurate to the best of your knowledge.</li>
+            <li>You are responsible for keeping your account credentials secure.</li>
+            <li>Access to emergency information is limited to the role and emergency-related purpose for which access is granted.</li>
+            <li>You must not misuse, copy, disclose, or attempt to access emergency information belonging to another person without authorization.</li>
+            <li>System availability, routing, ETA, location and other automated information may contain errors and must not be treated as the sole basis for medical decisions.</li>
+            <li>ResQ-Route may record system activity for security, auditing, troubleshooting and emergency coordination.</li>
+        </ul>
+    </section>
+
+    <section class="section" id="roleSection"></section>
+
+    <section class="section">
+        <h2>3. Data Protection & Controlled Access</h2>
+        <ul>
+            <li>Only information required for emergency coordination should be accessed or shared.</li>
+            <li>Medical information should be visible only to authorized participants involved in the active emergency.</li>
+            <li>Location data should be used for emergency response, tracking and coordination purposes.</li>
+            <li>Emergency contacts receive information only within the scope authorized by the patient/citizen and the system.</li>
+            <li>Users must report suspected unauthorized access, incorrect emergency information or security issues.</li>
+        </ul>
+    </section>
+
+    <section class="section">
+        <h2>4. Emergency & Medical Disclaimer</h2>
+        <p>
+            ResQ-Route helps coordinate emergency information and communication.
+            It does not diagnose conditions, prescribe treatment, guarantee an ambulance
+            arrival time, guarantee hospital admission, or replace professional medical judgment.
+        </p>
+        <p>
+            In a real emergency, users should also contact the appropriate local emergency
+            service or medical professional.
+        </p>
+    </section>
+
+    <section class="section">
+        <h2>5. Consent & Withdrawal</h2>
+        <p>
+            Consent should be collected before optional personal or medical information is
+            used for the purposes described on this page. Where technically supported,
+            consent may be withdrawn for future sharing, subject to records that must be
+            retained for security, legal, audit or emergency-response purposes.
+        </p>
+        <p>
+            The permissions shown below are specific to the selected ResQ-Route role.
+            They are not permission to access unrelated users, emergencies or hospital records.
+        </p>
+    </section>
+
+    <section class="section">
+        <h2>6. Prototype Status</h2>
+        <p>
+            This version is designed for demonstration and SIH-style prototyping.
+            Production deployment should add appropriate legal review, privacy notices,
+            security controls, identity verification, audit controls, retention policies
+            and integrations with authorized emergency/identity providers.
+        </p>
+    </section>
+
+    <footer>
+        ResQ-Route • Terms & Conditions • Prototype Version
+    </footer>
+</main>
+
+<script>
+(function () {
+    const role = new URLSearchParams(window.location.search).get("role") || "family";
+    const roleSection = document.getElementById("roleSection");
+    const roleBadge = document.getElementById("roleBadge");
+    const intro = document.getElementById("intro");
+
+    const content = {
+        family: {
+            title: "Citizen / Family Terms & Permissions",
+            badge: "CITIZEN / FAMILY",
+            intro: "These terms explain what ResQ-Route may collect, use and share when you register as a Citizen / Family user.",
+            permissions: [
+                ["Medical information", "You authorize relevant medical information such as age, blood group, allergies and medical conditions to be stored for emergency coordination and shared with authorized emergency personnel involved in your active emergency."],
+                ["Emergency contact", "You authorize your registered emergency contact to receive emergency notifications and controlled access to relevant emergency information during an active emergency."],
+                ["Location", "You authorize the system to use your emergency location for dispatch, ambulance tracking, route coordination and hospital coordination during an active emergency."],
+                ["Emergency status", "You allow the system to show emergency status, ambulance assignment, ETA, destination hospital and relevant patient-condition updates to authorized participants."],
+                ["Emergency communication", "You agree that ResQ-Route may use your registered contact details to send emergency-related notifications, alerts and coordination messages."]
+            ]
+        },
+        driver: {
+            title: "Ambulance / Driver Terms & Permissions",
+            badge: "AMBULANCE / DRIVER",
+            intro: "These terms explain the operational, identity and emergency-data permissions required for an ambulance / driver account.",
+            permissions: [
+                ["Identity verification", "You authorize ResQ-Route and its authorized verification service, where enabled, to verify the identity document information submitted for driver onboarding. Sensitive identity documents should be processed through secure backend/provider integrations, not exposed client-side."],
+                ["Ambulance information", "You authorize the system to associate your approved driver account with the registered ambulance and its operational status."],
+                ["Location tracking", "You authorize collection of ambulance location, route, speed and ETA information while you are participating in an active emergency assignment."],
+                ["Emergency information", "You may access patient and emergency information only when required for an assigned emergency and only to the extent necessary for transport and coordination."],
+                ["Status updates", "You authorize the system to record operational events such as accepting an assignment, arriving at the patient, transporting the patient and reaching the hospital."],
+                ["Emergency notifications", "You agree to receive dispatch, assignment, route, patient-care coordination and hospital-arrival notifications."]
+            ]
+        },
+        hospital: {
+            title: "Hospital / ER Terms & Permissions",
+            badge: "HOSPITAL / ER",
+            intro: "These terms explain the hospital and ER permissions required to coordinate incoming emergencies and hospital readiness.",
+            permissions: [
+                ["Staff identity", "You authorize ResQ-Route to associate your account with the hospital, department, designation and staff ID supplied during registration."],
+                ["Incoming emergency data", "You authorize access to emergency information required to prepare for an incoming patient, including emergency type, priority, location and relevant transport information."],
+                ["Patient medical information", "Authorized hospital/ER staff may access relevant patient information and vitals for an active emergency when required for emergency preparation and care coordination."],
+                ["Ambulance tracking", "You authorize access to ambulance location, status and ETA information for incoming emergency coordination."],
+                ["Hospital readiness", "You authorize designated hospital staff to view and update relevant readiness/resource information such as ER capacity and available emergency resources."],
+                ["Audit and notifications", "You agree that emergency access and operational actions may be recorded for security, coordination and audit purposes, and that the account may receive emergency-related notifications."]
+            ]
+        }
+    };
+
+    const data = content[role] || content.family;
+
+    document.title = data.title + " | ResQ-Route";
+    roleBadge.textContent = data.badge;
+    intro.textContent = data.intro;
+
+    roleSection.innerHTML = `
+        <h2>2. Permissions for This Role</h2>
+        <p>The following permissions are requested because they are required for the selected role:</p>
+        ${data.permissions.map(function (item) {
+            return `<div class="permission"><strong>${item[0]}</strong><span>${item[1]}</span></div>`;
+        }).join("")}
+    `;
+})();
+</script>
+
+</body>
+</html>

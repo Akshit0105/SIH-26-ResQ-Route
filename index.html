@@ -1,0 +1,5614 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        ResQ-Route | Smart Emergency Response Network
+    </title>
+
+
+    <style>
+
+        /* =====================================================
+           GLOBAL
+        ===================================================== */
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+
+        body {
+
+            font-family:
+                Inter,
+                "Segoe UI",
+                Arial,
+                sans-serif;
+
+            color: #172033;
+
+            background:
+                #f8fafc;
+
+            overflow-x: hidden;
+
+            cursor: default;
+        }
+
+
+        a {
+            text-decoration: none;
+            color: inherit;
+        }
+
+
+        button {
+            font-family: inherit;
+        }
+
+
+        ::selection {
+            background: #fecaca;
+            color: #7f1d1d;
+        }
+
+
+
+        /* =====================================================
+           MOUSE EFFECTS
+        ===================================================== */
+
+        #cursorGlow {
+
+            position: fixed;
+
+            width: 260px;
+            height: 260px;
+
+            border-radius: 50%;
+
+            pointer-events: none;
+
+            z-index: 9999;
+
+            background:
+                radial-gradient(
+                    circle,
+                    rgba(239,68,68,0.10),
+                    rgba(239,68,68,0.035) 35%,
+                    transparent 70%
+                );
+
+            transform:
+                translate(-50%, -50%);
+
+            transition:
+                left 0.08s linear,
+                top 0.08s linear;
+        }
+
+
+        #cursorDot {
+
+            position: fixed;
+
+            width: 7px;
+            height: 7px;
+
+            border-radius: 50%;
+
+            background: #ef4444;
+
+            pointer-events: none;
+
+            z-index: 10000;
+
+            transform:
+                translate(-50%, -50%);
+
+            box-shadow:
+                0 0 14px
+                rgba(239,68,68,0.45);
+        }
+
+
+
+        /* =====================================================
+           BACKGROUND
+        ===================================================== */
+
+        .background {
+
+            position: fixed;
+
+            inset: 0;
+
+            z-index: -20;
+
+            overflow: hidden;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #ffffff 0%,
+                    #f8fafc 48%,
+                    #fef2f2 100%
+                );
+        }
+
+
+        .grid {
+
+            position: absolute;
+
+            inset: 0;
+
+            opacity: 0.45;
+
+            background-image:
+
+                linear-gradient(
+                    rgba(15,23,42,0.035) 1px,
+                    transparent 1px
+                ),
+
+                linear-gradient(
+                    90deg,
+                    rgba(15,23,42,0.035) 1px,
+                    transparent 1px
+                );
+
+            background-size:
+                55px 55px;
+
+            mask-image:
+                linear-gradient(
+                    to bottom,
+                    black,
+                    transparent 90%
+                );
+        }
+
+
+        .blob {
+
+            position: absolute;
+
+            border-radius: 50%;
+
+            filter: blur(60px);
+
+            opacity: 0.45;
+
+            animation:
+                blobFloat 10s ease-in-out infinite;
+        }
+
+
+        .blob-red {
+
+            width: 400px;
+            height: 400px;
+
+            background:
+                rgba(239,68,68,0.12);
+
+            top: -180px;
+            left: -120px;
+        }
+
+
+        .blob-blue {
+
+            width: 350px;
+            height: 350px;
+
+            background:
+                rgba(59,130,246,0.09);
+
+            right: -130px;
+            top: 25%;
+
+            animation-delay:
+                -3s;
+        }
+
+
+        .blob-pink {
+
+            width: 420px;
+            height: 420px;
+
+            background:
+                rgba(244,63,94,0.07);
+
+            left: 35%;
+            bottom: -250px;
+
+            animation-delay:
+                -6s;
+        }
+
+
+        @keyframes blobFloat {
+
+            0%,
+            100% {
+
+                transform:
+                    translate(0,0)
+                    scale(1);
+
+            }
+
+            50% {
+
+                transform:
+                    translate(35px,-25px)
+                    scale(1.08);
+
+            }
+        }
+
+
+
+        /* =====================================================
+           PARTICLES
+        ===================================================== */
+
+        .particles {
+
+            position: fixed;
+
+            inset: 0;
+
+            pointer-events: none;
+
+            z-index: -5;
+        }
+
+
+        .particle {
+
+            position: absolute;
+
+            width: 4px;
+            height: 4px;
+
+            border-radius: 50%;
+
+            background:
+                rgba(239,68,68,0.35);
+
+            animation:
+                particleFloat linear infinite;
+        }
+
+
+        .particle:nth-child(1) {
+            left: 10%;
+            top: 20%;
+            animation-duration: 9s;
+        }
+
+        .particle:nth-child(2) {
+            left: 25%;
+            top: 70%;
+            animation-duration: 12s;
+        }
+
+        .particle:nth-child(3) {
+            left: 40%;
+            top: 30%;
+            animation-duration: 10s;
+        }
+
+        .particle:nth-child(4) {
+            left: 60%;
+            top: 80%;
+            animation-duration: 14s;
+        }
+
+        .particle:nth-child(5) {
+            left: 75%;
+            top: 22%;
+            animation-duration: 11s;
+        }
+
+        .particle:nth-child(6) {
+            left: 88%;
+            top: 62%;
+            animation-duration: 13s;
+        }
+
+        .particle:nth-child(7) {
+            left: 52%;
+            top: 15%;
+            animation-duration: 8s;
+        }
+
+        .particle:nth-child(8) {
+            left: 15%;
+            top: 48%;
+            animation-duration: 15s;
+        }
+
+
+        @keyframes particleFloat {
+
+            0% {
+
+                transform:
+                    translateY(0);
+
+                opacity:
+                    0;
+
+            }
+
+            20% {
+                opacity: 1;
+            }
+
+            80% {
+                opacity: 1;
+            }
+
+            100% {
+
+                transform:
+                    translateY(-120px);
+
+                opacity:
+                    0;
+
+            }
+        }
+
+
+
+        /* =====================================================
+           NAVBAR
+        ===================================================== */
+
+        .navbar {
+
+            position: sticky;
+
+            top: 0;
+
+            z-index: 1000;
+
+            height: 76px;
+
+            padding:
+                0 5.5%;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: space-between;
+
+            background:
+                rgba(255,255,255,0.84);
+
+            backdrop-filter:
+                blur(20px);
+
+            border-bottom:
+                1px solid #e5e7eb;
+        }
+
+
+        .logo {
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 11px;
+        }
+
+
+        .logo-icon {
+
+            width: 43px;
+            height: 43px;
+
+            display: flex;
+
+            align-items: center;
+            justify-content: center;
+
+            border-radius: 13px;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #fff1f2,
+                    #ffe4e6
+                );
+
+            border:
+                1px solid #fecdd3;
+
+            box-shadow:
+                0 8px 22px
+                rgba(239,68,68,0.10);
+
+            animation:
+                logoPulse 3s ease-in-out infinite;
+        }
+
+
+        @keyframes logoPulse {
+
+            0%,
+            100% {
+                transform:
+                    translateY(0);
+            }
+
+            50% {
+                transform:
+                    translateY(-3px);
+            }
+        }
+
+
+        .logo-name {
+
+            color: #111827;
+
+            font-size: 18px;
+
+            font-weight: 800;
+        }
+
+
+        .logo-subtitle {
+
+            margin-top: 2px;
+
+            color: #94a3b8;
+
+            font-size: 8px;
+
+            letter-spacing: 1px;
+        }
+
+
+        .nav-center {
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 5px;
+        }
+
+
+        .nav-link {
+
+            padding:
+                9px 13px;
+
+            border-radius: 9px;
+
+            color: #64748b;
+
+            font-size: 13px;
+
+            transition:
+                0.2s ease;
+        }
+
+
+        .nav-link:hover {
+
+            color: #111827;
+
+            background:
+                #f1f5f9;
+        }
+
+
+        .dropdown {
+
+            position: relative;
+        }
+
+
+        .dropdown-button {
+
+            border: none;
+
+            background: transparent;
+
+            cursor: pointer;
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 6px;
+        }
+
+
+        .arrow {
+
+            font-size: 9px;
+
+            transition:
+                0.25s ease;
+        }
+
+
+        .dropdown:hover .arrow {
+
+            transform:
+                rotate(180deg);
+        }
+
+
+        .dropdown-menu {
+
+            position: absolute;
+
+            top:
+                calc(100% + 12px);
+
+            left: 50%;
+
+            width: 245px;
+
+            padding: 8px;
+
+            border-radius: 15px;
+
+            background:
+                rgba(255,255,255,0.98);
+
+            border:
+                1px solid #e5e7eb;
+
+            box-shadow:
+                0 25px 60px
+                rgba(15,23,42,0.13);
+
+            opacity: 0;
+
+            visibility: hidden;
+
+            transform:
+                translate(-50%, -10px);
+
+            transition:
+                0.22s ease;
+        }
+
+
+        .dropdown:hover .dropdown-menu {
+
+            opacity: 1;
+
+            visibility: visible;
+
+            transform:
+                translate(-50%,0);
+        }
+
+
+        .dropdown-item {
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 10px;
+
+            padding: 11px;
+
+            border-radius: 10px;
+
+            transition:
+                0.2s ease;
+        }
+
+
+        .dropdown-item:hover {
+
+            background:
+                #f8fafc;
+
+            transform:
+                translateX(3px);
+        }
+
+
+        .dropdown-icon {
+
+            width: 34px;
+            height: 34px;
+
+            display: flex;
+
+            align-items: center;
+            justify-content: center;
+
+            border-radius: 9px;
+
+            background:
+                #fff1f2;
+        }
+
+
+        .dropdown-item strong {
+
+            display: block;
+
+            color: #1e293b;
+
+            font-size: 12px;
+        }
+
+
+        .dropdown-item span {
+
+            display: block;
+
+            margin-top: 2px;
+
+            color: #94a3b8;
+
+            font-size: 9px;
+        }
+
+
+        .nav-actions {
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 8px;
+        }
+
+
+        .signin {
+
+            padding:
+                9px 15px;
+
+            color: #475569;
+
+            border-radius: 9px;
+
+            font-size: 13px;
+
+            transition:
+                0.2s ease;
+        }
+
+
+        .signin:hover {
+
+            color: #111827;
+
+            background:
+                #f1f5f9;
+        }
+
+
+        .signup {
+
+            padding:
+                9px 17px;
+
+            border-radius: 10px;
+
+            color: white;
+
+            background:
+                #ef4444;
+
+            font-size: 13px;
+
+            font-weight: 650;
+
+            box-shadow:
+                0 7px 20px
+                rgba(239,68,68,0.18);
+
+            transition:
+                0.25s ease;
+        }
+
+
+        .signup:hover {
+
+            background:
+                #dc2626;
+
+            transform:
+                translateY(-2px);
+
+            box-shadow:
+                0 12px 27px
+                rgba(239,68,68,0.25);
+        }
+
+
+
+        /* =====================================================
+           HERO
+        ===================================================== */
+
+        .hero {
+
+            max-width:
+                1350px;
+
+            min-height:
+                720px;
+
+            margin:
+                auto;
+
+            padding:
+                55px 5.5% 45px;
+
+            display:
+                grid;
+
+            grid-template-columns:
+                1fr 0.95fr;
+
+            align-items:
+                center;
+
+            gap:
+                55px;
+        }
+
+
+        .hero-content {
+
+            animation:
+                heroReveal 0.8s ease both;
+        }
+
+
+        @keyframes heroReveal {
+
+            from {
+
+                opacity: 0;
+
+                transform:
+                    translateY(25px);
+
+            }
+
+            to {
+
+                opacity: 1;
+
+                transform:
+                    translateY(0);
+
+            }
+        }
+
+
+        .live-badge {
+
+            display: inline-flex;
+
+            align-items: center;
+
+            gap: 8px;
+
+            padding:
+                8px 13px;
+
+            border-radius:
+                999px;
+
+            background:
+                #f0fdfa;
+
+            border:
+                1px solid #ccfbf1;
+
+            color:
+                #0f766e;
+
+            font-size:
+                9px;
+
+            font-weight:
+                750;
+
+            letter-spacing:
+                1px;
+
+            margin-bottom:
+                21px;
+        }
+
+
+        .live-dot {
+
+            width: 7px;
+            height: 7px;
+
+            border-radius: 50%;
+
+            background:
+                #14b8a6;
+
+            box-shadow:
+                0 0 0 4px
+                rgba(20,184,166,0.10);
+
+            animation:
+                livePulse 1.8s infinite;
+        }
+
+
+        @keyframes livePulse {
+
+            0% {
+                box-shadow:
+                    0 0 0 0
+                    rgba(20,184,166,0.25);
+            }
+
+            70% {
+                box-shadow:
+                    0 0 0 8px
+                    rgba(20,184,166,0);
+            }
+
+            100% {
+                box-shadow:
+                    0 0 0 0
+                    rgba(20,184,166,0);
+            }
+        }
+
+
+        .hero h1 {
+
+            max-width:
+                720px;
+
+            color:
+                #111827;
+
+            font-size:
+                clamp(48px,5.3vw,76px);
+
+            line-height:
+                0.99;
+
+            letter-spacing:
+                -3.5px;
+
+            font-weight:
+                800;
+
+            margin-bottom:
+                24px;
+        }
+
+
+        .hero h1 span {
+
+            color:
+                #ef4444;
+
+            position:
+                relative;
+        }
+
+
+        .hero h1 span::after {
+
+            content:
+                "";
+
+            position:
+                absolute;
+
+            left: 0;
+
+            right: 10px;
+
+            bottom: -5px;
+
+            height: 3px;
+
+            border-radius:
+                99px;
+
+            background:
+                linear-gradient(
+                    90deg,
+                    #ef4444,
+                    transparent
+                );
+
+            animation:
+                lineGrow 1.1s
+                0.5s ease both;
+        }
+
+
+        @keyframes lineGrow {
+
+            from {
+                transform:
+                    scaleX(0);
+
+                transform-origin:
+                    left;
+            }
+
+            to {
+                transform:
+                    scaleX(1);
+
+                transform-origin:
+                    left;
+            }
+        }
+
+
+        .hero-description {
+
+            max-width:
+                630px;
+
+            color:
+                #64748b;
+
+            font-size:
+                15px;
+
+            line-height:
+                1.8;
+
+            margin-bottom:
+                28px;
+        }
+
+
+
+        /* =====================================================
+           HERO BUTTONS
+        ===================================================== */
+
+        .hero-buttons {
+
+            display:
+                flex;
+
+            align-items:
+                center;
+
+            gap:
+                11px;
+
+            flex-wrap:
+                wrap;
+        }
+
+
+        .emergency-button {
+
+            position:
+                relative;
+
+            overflow:
+                hidden;
+
+            display:
+                inline-flex;
+
+            align-items:
+                center;
+
+            justify-content:
+                center;
+
+            gap:
+                9px;
+
+            padding:
+                15px 22px;
+
+            min-width:
+                255px;
+
+            border-radius:
+                12px;
+
+            color:
+                white;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #ef4444,
+                    #dc2626
+                );
+
+            font-size:
+                12px;
+
+            font-weight:
+                750;
+
+            box-shadow:
+                0 12px 28px
+                rgba(239,68,68,0.20);
+
+            transition:
+                0.25s ease;
+        }
+
+
+        .emergency-button:hover {
+
+            transform:
+                translateY(-3px);
+
+            box-shadow:
+                0 17px 36px
+                rgba(239,68,68,0.28);
+        }
+
+
+        .emergency-button::after {
+
+            content:
+                "";
+
+            position:
+                absolute;
+
+            width:
+                50px;
+
+            height:
+                200%;
+
+            top:
+                -50%;
+
+            left:
+                -80px;
+
+            background:
+                rgba(255,255,255,0.20);
+
+            transform:
+                rotate(20deg);
+
+            transition:
+                0.6s ease;
+        }
+
+
+        .emergency-button:hover::after {
+
+            left:
+                110%;
+        }
+
+
+        .portal-button {
+
+            display:
+                inline-flex;
+
+            align-items:
+                center;
+
+            justify-content:
+                center;
+
+            gap:
+                8px;
+
+            padding:
+                15px 22px;
+
+            min-width:
+                145px;
+
+            border-radius:
+                12px;
+
+            color:
+                #334155;
+
+            background:
+                white;
+
+            border:
+                1px solid #e2e8f0;
+
+            font-size:
+                12px;
+
+            font-weight:
+                650;
+
+            box-shadow:
+                0 6px 20px
+                rgba(15,23,42,0.04);
+
+            transition:
+                0.25s ease;
+        }
+
+
+        .portal-button:hover {
+
+            transform:
+                translateY(-3px);
+
+            border-color:
+                #cbd5e1;
+
+            box-shadow:
+                0 12px 28px
+                rgba(15,23,42,0.08);
+        }
+
+
+        .emergency-note {
+
+            margin-top:
+                11px;
+
+            color:
+                #94a3b8;
+
+            font-size:
+                9px;
+        }
+
+
+
+        /* =====================================================
+           HERO TRUST
+        ===================================================== */
+
+        .trust-row {
+
+            display:
+                flex;
+
+            align-items:
+                center;
+
+            gap:
+                17px;
+
+            flex-wrap:
+                wrap;
+
+            margin-top:
+                26px;
+
+            padding-top:
+                20px;
+
+            border-top:
+                1px solid #eef2f7;
+        }
+
+
+        .trust {
+
+            display:
+                flex;
+
+            align-items:
+                center;
+
+            gap:
+                5px;
+
+            color:
+                #94a3b8;
+
+            font-size:
+                9px;
+        }
+
+
+
+        /* =====================================================
+           HERO VISUAL
+        ===================================================== */
+
+        .visual {
+
+            position:
+                relative;
+
+            min-height:
+                540px;
+
+            display:
+                flex;
+
+            align-items:
+                center;
+
+            justify-content:
+                center;
+
+            animation:
+                visualReveal 0.9s 0.15s ease both;
+        }
+
+
+        @keyframes visualReveal {
+
+            from {
+
+                opacity: 0;
+
+                transform:
+                    translateX(35px)
+                    scale(0.97);
+
+            }
+
+            to {
+
+                opacity: 1;
+
+                transform:
+                    translateX(0)
+                    scale(1);
+
+            }
+        }
+
+
+
+        /* =====================================================
+           ORBIT
+        ===================================================== */
+
+        .orbit {
+
+            position:
+                absolute;
+
+            width:
+                510px;
+
+            height:
+                510px;
+
+            border-radius:
+                50%;
+
+            border:
+                1px dashed
+                rgba(239,68,68,0.18);
+
+            animation:
+                orbitRotate 25s linear infinite;
+        }
+
+
+        .orbit::before {
+
+            content:
+                "";
+
+            position:
+                absolute;
+
+            inset:
+                55px;
+
+            border-radius:
+                50%;
+
+            border:
+                1px dashed
+                rgba(59,130,246,0.14);
+        }
+
+
+        .orbit-dot {
+
+            position:
+                absolute;
+
+            width:
+                10px;
+
+            height:
+                10px;
+
+            border-radius:
+                50%;
+
+            background:
+                #ef4444;
+
+            top:
+                45px;
+
+            left:
+                50%;
+
+            box-shadow:
+                0 0 15px
+                rgba(239,68,68,0.35);
+        }
+
+
+        @keyframes orbitRotate {
+
+            from {
+                transform:
+                    rotate(0deg);
+            }
+
+            to {
+                transform:
+                    rotate(360deg);
+            }
+        }
+
+
+
+        /* =====================================================
+           RESPONSE CARD
+        ===================================================== */
+
+        .response-card {
+
+            position:
+                relative;
+
+            width:
+                410px;
+
+            padding:
+                20px;
+
+            border-radius:
+                23px;
+
+            background:
+                rgba(255,255,255,0.96);
+
+            border:
+                1px solid #e2e8f0;
+
+            box-shadow:
+                0 35px 80px
+                rgba(15,23,42,0.12);
+
+            z-index:
+                5;
+
+            transform-style:
+                preserve-3d;
+
+            transition:
+                transform 0.15s ease;
+        }
+
+
+        .card-top {
+
+            display:
+                flex;
+
+            align-items:
+                center;
+
+            justify-content:
+                space-between;
+
+            padding-bottom:
+                15px;
+
+            border-bottom:
+                1px solid #f1f5f9;
+        }
+
+
+        .card-title {
+
+            display:
+                flex;
+
+            align-items:
+                center;
+
+            gap:
+                10px;
+        }
+
+
+        .card-icon {
+
+            width:
+                39px;
+
+            height:
+                39px;
+
+            display:
+                flex;
+
+            align-items:
+                center;
+
+            justify-content:
+                center;
+
+            border-radius:
+                10px;
+
+            background:
+                #fff1f2;
+
+            border:
+                1px solid #fecdd3;
+        }
+
+
+        .card-title strong {
+
+            display:
+                block;
+
+            color:
+                #1e293b;
+
+            font-size:
+                13px;
+        }
+
+
+        .card-title span {
+
+            display:
+                block;
+
+            margin-top:
+                3px;
+
+            color:
+                #94a3b8;
+
+            font-size:
+                8px;
+        }
+
+
+        .card-live {
+
+            display:
+                flex;
+
+            align-items:
+                center;
+
+            gap:
+                5px;
+
+            color:
+                #16a34a;
+
+            font-size:
+                8px;
+
+            font-weight:
+                750;
+        }
+
+
+        .card-live i {
+
+            width:
+                6px;
+
+            height:
+                6px;
+
+            border-radius:
+                50%;
+
+            background:
+                #22c55e;
+
+            animation:
+                blink 1.4s infinite;
+        }
+
+
+        @keyframes blink {
+
+            50% {
+                opacity:
+                    0.35;
+            }
+        }
+
+
+
+        /* =====================================================
+           MAP
+        ===================================================== */
+
+        .map {
+
+            position:
+                relative;
+
+            height:
+                235px;
+
+            margin:
+                16px 0;
+
+            overflow:
+                hidden;
+
+            border-radius:
+                16px;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #eef2f7,
+                    #f8fafc
+                );
+
+            border:
+                1px solid #e2e8f0;
+        }
+
+
+        .map-grid {
+
+            position:
+                absolute;
+
+            inset:
+                0;
+
+            opacity:
+                0.8;
+
+            background-image:
+
+                linear-gradient(
+                    25deg,
+                    transparent 46%,
+                    #dbe3ec 47%,
+                    #dbe3ec 49%,
+                    transparent 50%
+                ),
+
+                linear-gradient(
+                    145deg,
+                    transparent 46%,
+                    #dbe3ec 47%,
+                    #dbe3ec 49%,
+                    transparent 50%
+                );
+
+            background-size:
+                90px 90px,
+                75px 75px;
+        }
+
+
+        .road {
+
+            position:
+                absolute;
+
+            height:
+                5px;
+
+            border-radius:
+                99px;
+
+            background:
+                white;
+
+            border:
+                1px solid #dbe3ec;
+        }
+
+
+        .road-1 {
+
+            width:
+                330px;
+
+            left:
+                5px;
+
+            top:
+                155px;
+
+            transform:
+                rotate(-25deg);
+        }
+
+
+        .road-2 {
+
+            width:
+                280px;
+
+            left:
+                115px;
+
+            top:
+                70px;
+
+            transform:
+                rotate(53deg);
+        }
+
+
+        .road-3 {
+
+            width:
+                250px;
+
+            left:
+                145px;
+
+            top:
+                180px;
+
+            transform:
+                rotate(-5deg);
+        }
+
+
+        .road-4 {
+
+            width:
+                180px;
+
+            left:
+                185px;
+
+            top:
+                40px;
+
+            transform:
+                rotate(5deg);
+        }
+
+
+
+        /* =====================================================
+           ROUTE
+        ===================================================== */
+
+        .route {
+
+            position:
+                absolute;
+
+            width:
+                270px;
+
+            height:
+                100px;
+
+            left:
+                65px;
+
+            top:
+                78px;
+
+            border-top:
+                3px dashed #ef4444;
+
+            border-radius:
+                50%;
+
+            transform:
+                rotate(11deg);
+
+            filter:
+                drop-shadow(
+                    0 0 4px
+                    rgba(239,68,68,0.25)
+                );
+
+            animation:
+                routeMove 2s ease-in-out infinite;
+        }
+
+
+        @keyframes routeMove {
+
+            0%,
+            100% {
+                opacity:
+                    0.65;
+            }
+
+            50% {
+                opacity:
+                    1;
+            }
+        }
+
+
+
+        /* =====================================================
+           MAP MARKERS
+        ===================================================== */
+
+        .marker {
+
+            position:
+                absolute;
+
+            width:
+                15px;
+
+            height:
+                15px;
+
+            border-radius:
+                50%;
+
+            z-index:
+                5;
+        }
+
+
+        .marker::before {
+
+            content:
+                "";
+
+            position:
+                absolute;
+
+            inset:
+                4px;
+
+            border-radius:
+                50%;
+
+            background:
+                currentColor;
+        }
+
+
+        .marker::after {
+
+            content:
+                "";
+
+            position:
+                absolute;
+
+            inset:
+                -7px;
+
+            border:
+                1px solid currentColor;
+
+            border-radius:
+                50%;
+
+            animation:
+                markerRing 2s infinite;
+        }
+
+
+        @keyframes markerRing {
+
+            0% {
+                transform:
+                    scale(0.7);
+
+                opacity:
+                    0.5;
+            }
+
+            70% {
+                transform:
+                    scale(1.5);
+
+                opacity:
+                    0;
+            }
+
+            100% {
+                opacity:
+                    0;
+            }
+        }
+
+
+        .citizen {
+            left:
+                60px;
+
+            top:
+                125px;
+
+            color:
+                #ef4444;
+        }
+
+
+        .ambulance {
+            left:
+                185px;
+
+            top:
+                110px;
+
+            color:
+                #f59e0b;
+
+            animation:
+                ambulanceMove 3s ease-in-out infinite;
+        }
+
+
+        @keyframes ambulanceMove {
+
+            0%,
+            100% {
+                transform:
+                    translateX(0);
+            }
+
+            50% {
+                transform:
+                    translateX(22px);
+            }
+        }
+
+
+        .hospital {
+            right:
+                55px;
+
+            top:
+                95px;
+
+            color:
+                #0ea5e9;
+        }
+
+
+        .map-label {
+
+            position:
+                absolute;
+
+            padding:
+                5px 7px;
+
+            border-radius:
+                6px;
+
+            background:
+                rgba(255,255,255,0.95);
+
+            border:
+                1px solid #e2e8f0;
+
+            color:
+                #64748b;
+
+            font-size:
+                8px;
+
+            box-shadow:
+                0 4px 10px
+                rgba(15,23,42,0.05);
+        }
+
+
+        .label-1 {
+
+            left:
+                34px;
+
+            top:
+                146px;
+        }
+
+
+        .label-2 {
+
+            left:
+                160px;
+
+            top:
+                76px;
+        }
+
+
+        .label-3 {
+
+            right:
+                20px;
+
+            top:
+                68px;
+        }
+
+
+
+        /* =====================================================
+           CARD STATS
+        ===================================================== */
+
+        .card-stats {
+
+            display:
+                grid;
+
+            grid-template-columns:
+                repeat(3,1fr);
+
+            gap:
+                8px;
+        }
+
+
+        .stat {
+
+            padding:
+                11px;
+
+            border-radius:
+                10px;
+
+            background:
+                #f8fafc;
+
+            border:
+                1px solid #eef2f7;
+        }
+
+
+        .stat strong {
+
+            display:
+                block;
+
+            color:
+                #1e293b;
+
+            font-size:
+                14px;
+        }
+
+
+        .stat span {
+
+            display:
+                block;
+
+            margin-top:
+                3px;
+
+            color:
+                #94a3b8;
+
+            font-size:
+                8px;
+        }
+
+
+
+        /* =====================================================
+           FLOATING NOTIFICATIONS
+        ===================================================== */
+
+        .floating {
+
+            position:
+                absolute;
+
+            display:
+                flex;
+
+            align-items:
+                center;
+
+            gap:
+                9px;
+
+            padding:
+                11px 14px;
+
+            border-radius:
+                13px;
+
+            background:
+                rgba(255,255,255,0.96);
+
+            border:
+                1px solid #e2e8f0;
+
+            box-shadow:
+                0 18px 45px
+                rgba(15,23,42,0.10);
+
+            z-index:
+                10;
+
+            animation:
+                floatingCard 4s ease-in-out infinite;
+        }
+
+
+        @keyframes floatingCard {
+
+            0%,
+            100% {
+                transform:
+                    translateY(0);
+            }
+
+            50% {
+                transform:
+                    translateY(-10px);
+            }
+        }
+
+
+        .floating-icon {
+
+            width:
+                32px;
+
+            height:
+                32px;
+
+            display:
+                flex;
+
+            align-items:
+                center;
+
+            justify-content:
+                center;
+
+            border-radius:
+                9px;
+
+            background:
+                #f8fafc;
+        }
+
+
+        .floating strong {
+
+            display:
+                block;
+
+            color:
+                #334155;
+
+            font-size:
+                10px;
+        }
+
+
+        .floating span {
+
+            display:
+                block;
+
+            margin-top:
+                2px;
+
+            color:
+                #94a3b8;
+
+            font-size:
+                8px;
+        }
+
+
+        .float-1 {
+
+            left:
+                -20px;
+
+            top:
+                75px;
+        }
+
+
+        .float-2 {
+
+            right:
+                -25px;
+
+            bottom:
+                115px;
+
+            animation-delay:
+                -1.5s;
+        }
+
+
+        .float-3 {
+
+            right:
+                10px;
+
+            top:
+                30px;
+
+            animation-delay:
+                -2.5s;
+        }
+
+
+
+        /* =====================================================
+           LIVE TICKER
+        ===================================================== */
+
+        .ticker {
+
+            width:
+                100%;
+
+            overflow:
+                hidden;
+
+            border-top:
+                1px solid #e5e7eb;
+
+            border-bottom:
+                1px solid #e5e7eb;
+
+            background:
+                rgba(255,255,255,0.75);
+        }
+
+
+        .ticker-track {
+
+            width:
+                max-content;
+
+            display:
+                flex;
+
+            gap:
+                45px;
+
+            padding:
+                11px 0;
+
+            animation:
+                tickerMove 30s linear infinite;
+        }
+
+
+        .ticker-item {
+
+            display:
+                flex;
+
+            align-items:
+                center;
+
+            gap:
+                8px;
+
+            color:
+                #64748b;
+
+            font-size:
+                9px;
+
+            white-space:
+                nowrap;
+        }
+
+
+        .ticker-item b {
+
+            color:
+                #ef4444;
+        }
+
+
+        @keyframes tickerMove {
+
+            from {
+                transform:
+                    translateX(0);
+            }
+
+            to {
+                transform:
+                    translateX(-50%);
+            }
+        }
+
+
+
+        /* =====================================================
+           QUICK STATS
+        ===================================================== */
+
+        .quick-stats {
+
+            max-width:
+                1200px;
+
+            margin:
+                0 auto;
+
+            padding:
+                42px 6% 60px;
+
+            display:
+                grid;
+
+            grid-template-columns:
+                repeat(4,1fr);
+
+            gap:
+                12px;
+        }
+
+
+        .quick-stat {
+
+            padding:
+                20px;
+
+            border-radius:
+                15px;
+
+            background:
+                white;
+
+            border:
+                1px solid #e5e7eb;
+
+            box-shadow:
+                0 7px 25px
+                rgba(15,23,42,0.035);
+
+            text-align:
+                center;
+
+            transition:
+                0.3s ease;
+        }
+
+
+        .quick-stat:hover {
+
+            transform:
+                translateY(-5px);
+
+            box-shadow:
+                0 15px 35px
+                rgba(15,23,42,0.07);
+        }
+
+
+        .quick-stat strong {
+
+            display:
+                block;
+
+            color:
+                #111827;
+
+            font-size:
+                25px;
+
+            margin-bottom:
+                4px;
+        }
+
+
+        .quick-stat span {
+
+            color:
+                #94a3b8;
+
+            font-size:
+                9px;
+        }
+
+
+
+        /* =====================================================
+           SECTION
+        ===================================================== */
+
+        .section {
+
+            max-width:
+                1200px;
+
+            margin:
+                auto;
+
+            padding:
+                50px 6% 80px;
+        }
+
+
+        .section-heading {
+
+            text-align:
+                center;
+
+            margin-bottom:
+                32px;
+        }
+
+
+        .section-label {
+
+            color:
+                #ef4444;
+
+            font-size:
+                9px;
+
+            font-weight:
+                750;
+
+            letter-spacing:
+                1.4px;
+
+            margin-bottom:
+                8px;
+        }
+
+
+        .section-heading h2 {
+
+            color:
+                #111827;
+
+            font-size:
+                31px;
+
+            letter-spacing:
+                -1px;
+
+            margin-bottom:
+                8px;
+        }
+
+
+        .section-heading p {
+
+            max-width:
+                550px;
+
+            margin:
+                auto;
+
+            color:
+                #94a3b8;
+
+            font-size:
+                11px;
+
+            line-height:
+                1.7;
+        }
+
+
+
+        /* =====================================================
+           SYSTEM CARDS
+        ===================================================== */
+
+        .system-grid {
+
+            display:
+                grid;
+
+            grid-template-columns:
+                repeat(3,1fr);
+
+            gap:
+                14px;
+        }
+
+
+        .system-card {
+
+            position:
+                relative;
+
+            overflow:
+                hidden;
+
+            min-height:
+                230px;
+
+            padding:
+                25px;
+
+            border-radius:
+                18px;
+
+            background:
+                rgba(255,255,255,0.92);
+
+            border:
+                1px solid #e5e7eb;
+
+            box-shadow:
+                0 8px 28px
+                rgba(15,23,42,0.04);
+
+            transition:
+                0.3s ease;
+        }
+
+
+        .system-card::before {
+
+            content:
+                "";
+
+            position:
+                absolute;
+
+            width:
+                140px;
+
+            height:
+                140px;
+
+            right:
+                -60px;
+
+            top:
+                -60px;
+
+            border-radius:
+                50%;
+
+            background:
+                rgba(239,68,68,0.07);
+
+            filter:
+                blur(15px);
+        }
+
+
+        .system-card:hover {
+
+            transform:
+                translateY(-8px);
+
+            box-shadow:
+                0 20px 45px
+                rgba(15,23,42,0.08);
+
+            border-color:
+                #dbe3ec;
+        }
+
+
+        .system-icon {
+
+            width:
+                46px;
+
+            height:
+                46px;
+
+            display:
+                flex;
+
+            align-items:
+                center;
+
+            justify-content:
+                center;
+
+            border-radius:
+                12px;
+
+            margin-bottom:
+                17px;
+
+            font-size:
+                20px;
+        }
+
+
+        .red {
+            background:
+                #fff1f2;
+
+            border:
+                1px solid #fecdd3;
+        }
+
+
+        .orange {
+            background:
+                #fffbeb;
+
+            border:
+                1px solid #fde68a;
+        }
+
+
+        .blue {
+            background:
+                #eff6ff;
+
+            border:
+                1px solid #bfdbfe;
+        }
+
+
+        .system-card h3 {
+
+            color:
+                #1e293b;
+
+            font-size:
+                15px;
+
+            margin-bottom:
+                8px;
+        }
+
+
+        .system-card p {
+
+            color:
+                #94a3b8;
+
+            font-size:
+                10px;
+
+            line-height:
+                1.7;
+        }
+
+
+        .system-link {
+
+            display:
+                inline-flex;
+
+            margin-top:
+                16px;
+
+            color:
+                #64748b;
+
+            font-size:
+                9px;
+
+            font-weight:
+                650;
+
+            transition:
+                0.2s ease;
+        }
+
+
+        .system-card:hover .system-link {
+
+            color:
+                #ef4444;
+
+            transform:
+                translateX(5px);
+        }
+
+
+
+        /* =====================================================
+           NETWORK SECTION
+        ===================================================== */
+
+        .network-section {
+
+            max-width:
+                1200px;
+
+            margin:
+                auto;
+
+            padding:
+                20px 6% 90px;
+        }
+
+
+        .network-panel {
+
+            position:
+                relative;
+
+            min-height:
+                350px;
+
+            overflow:
+                hidden;
+
+            border-radius:
+                22px;
+
+            background:
+                white;
+
+            border:
+                1px solid #e5e7eb;
+
+            box-shadow:
+                0 12px 40px
+                rgba(15,23,42,0.05);
+
+            padding:
+                35px;
+        }
+
+
+        .network-lines {
+
+            position:
+                absolute;
+
+            inset:
+                0;
+
+            opacity:
+                0.7;
+
+            background-image:
+                linear-gradient(
+                    30deg,
+                    transparent 48%,
+                    #e2e8f0 49%,
+                    transparent 50%
+                );
+
+            background-size:
+                100px 100px;
+        }
+
+
+        .network-node {
+
+            position:
+                absolute;
+
+            width:
+                90px;
+
+            height:
+                90px;
+
+            border-radius:
+                50%;
+
+            display:
+                flex;
+
+            align-items:
+                center;
+
+            justify-content:
+                center;
+
+            background:
+                white;
+
+            border:
+                2px solid #e2e8f0;
+
+            box-shadow:
+                0 10px 30px
+                rgba(15,23,42,0.08);
+
+            font-size:
+                26px;
+
+            z-index:
+                3;
+
+            transition:
+                0.3s ease;
+        }
+
+
+        .network-node:hover {
+
+            transform:
+                scale(1.12);
+
+            border-color:
+                #fecaca;
+
+            box-shadow:
+                0 15px 35px
+                rgba(239,68,68,0.13);
+        }
+
+
+        .node-citizen {
+
+            left:
+                13%;
+
+            top:
+                45%;
+        }
+
+
+        .node-ambulance {
+
+            left:
+                46%;
+
+            top:
+                20%;
+        }
+
+
+        .node-hospital {
+
+            right:
+                13%;
+
+            top:
+                45%;
+        }
+
+
+        .node-dispatch {
+
+            left:
+                46%;
+
+            bottom:
+                10%;
+        }
+
+
+        .connection {
+
+            position:
+                absolute;
+
+            height:
+                2px;
+
+            background:
+                linear-gradient(
+                    90deg,
+                    #fecaca,
+                    #cbd5e1,
+                    #bfdbfe
+                );
+
+            transform-origin:
+                left center;
+
+            z-index:
+                1;
+        }
+
+
+        .connection-1 {
+
+            width:
+                270px;
+
+            left:
+                20%;
+
+            top:
+                49%;
+
+            transform:
+                rotate(-22deg);
+        }
+
+
+        .connection-2 {
+
+            width:
+                275px;
+
+            left:
+                53%;
+
+            top:
+                47%;
+
+            transform:
+                rotate(22deg);
+        }
+
+
+        .connection-3 {
+
+            width:
+                150px;
+
+            left:
+                50%;
+
+            top:
+                43%;
+
+            transform:
+                rotate(90deg);
+        }
+
+
+        .connection-4 {
+
+            width:
+                155px;
+
+            left:
+                25%;
+
+            top:
+                58%;
+
+            transform:
+                rotate(22deg);
+        }
+
+
+        .node-label {
+
+            position:
+                absolute;
+
+            bottom:
+                -30px;
+
+            left:
+                50%;
+
+            transform:
+                translateX(-50%);
+
+            white-space:
+                nowrap;
+
+            color:
+                #64748b;
+
+            font-size:
+                9px;
+
+            font-weight:
+                650;
+        }
+
+
+
+        /* =====================================================
+           PROCESS
+        ===================================================== */
+
+        .process-grid {
+
+            display:
+                grid;
+
+            grid-template-columns:
+                repeat(4,1fr);
+
+            gap:
+                12px;
+        }
+
+
+        .process-card {
+
+            position:
+                relative;
+
+            padding:
+                23px;
+
+            border-radius:
+                16px;
+
+            background:
+                white;
+
+            border:
+                1px solid #e5e7eb;
+
+            box-shadow:
+                0 7px 25px
+                rgba(15,23,42,0.035);
+
+            transition:
+                0.3s ease;
+        }
+
+
+        .process-card:hover {
+
+            transform:
+                translateY(-5px);
+
+            border-color:
+                #fecaca;
+        }
+
+
+        .process-number {
+
+            width:
+                34px;
+
+            height:
+                34px;
+
+            display:
+                flex;
+
+            align-items:
+                center;
+
+            justify-content:
+                center;
+
+            border-radius:
+                10px;
+
+            background:
+                #fff1f2;
+
+            color:
+                #ef4444;
+
+            font-size:
+                11px;
+
+            font-weight:
+                750;
+
+            margin-bottom:
+                15px;
+        }
+
+
+        .process-card h3 {
+
+            color:
+                #1e293b;
+
+            font-size:
+                12px;
+
+            margin-bottom:
+                6px;
+        }
+
+
+        .process-card p {
+
+            color:
+                #94a3b8;
+
+            font-size:
+                9px;
+
+            line-height:
+                1.6;
+        }
+
+
+
+        /* =====================================================
+           FAQ
+        ===================================================== */
+
+        .faq {
+
+            max-width:
+                750px;
+
+            margin:
+                auto;
+
+            display:
+                flex;
+
+            flex-direction:
+                column;
+
+            gap:
+                8px;
+        }
+
+
+        .faq details {
+
+            background:
+                white;
+
+            border:
+                1px solid #e5e7eb;
+
+            border-radius:
+                13px;
+
+            padding:
+                15px 17px;
+
+            transition:
+                0.2s ease;
+        }
+
+
+        .faq details:hover {
+
+            border-color:
+                #cbd5e1;
+        }
+
+
+        .faq summary {
+
+            cursor:
+                pointer;
+
+            color:
+                #334155;
+
+            font-size:
+                11px;
+
+            font-weight:
+                650;
+
+            list-style:
+                none;
+
+            display:
+                flex;
+
+            justify-content:
+                space-between;
+
+            align-items:
+                center;
+        }
+
+
+        .faq summary::after {
+
+            content:
+                "+";
+
+            color:
+                #ef4444;
+
+            font-size:
+                16px;
+        }
+
+
+        .faq details[open] summary::after {
+
+            content:
+                "−";
+        }
+
+
+        .faq p {
+
+            color:
+                #94a3b8;
+
+            font-size:
+                10px;
+
+            line-height:
+                1.7;
+
+            padding-top:
+                10px;
+        }
+
+
+
+        /* =====================================================
+           CTA
+        ===================================================== */
+
+        .cta-section {
+
+            max-width:
+                1200px;
+
+            margin:
+                auto;
+
+            padding:
+                20px 6% 90px;
+        }
+
+
+        .cta {
+
+            position:
+                relative;
+
+            overflow:
+                hidden;
+
+            padding:
+                45px;
+
+            border-radius:
+                23px;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #fff1f2,
+                    #ffffff
+                );
+
+            border:
+                1px solid #fecdd3;
+
+            display:
+                flex;
+
+            align-items:
+                center;
+
+            justify-content:
+                space-between;
+
+            gap:
+                25px;
+        }
+
+
+        .cta::before {
+
+            content:
+                "";
+
+            position:
+                absolute;
+
+            width:
+                250px;
+
+            height:
+                250px;
+
+            border-radius:
+                50%;
+
+            right:
+                -80px;
+
+            top:
+                -120px;
+
+            background:
+                rgba(239,68,68,0.08);
+
+            filter:
+                blur(20px);
+        }
+
+
+        .cta h2 {
+
+            color:
+                #111827;
+
+            font-size:
+                25px;
+
+            margin-bottom:
+                7px;
+        }
+
+
+        .cta p {
+
+            color:
+                #64748b;
+
+            font-size:
+                10px;
+        }
+
+
+        .cta-button {
+
+            position:
+                relative;
+
+            z-index:
+                2;
+
+            white-space:
+                nowrap;
+
+            padding:
+                13px 20px;
+
+            border-radius:
+                11px;
+
+            background:
+                #ef4444;
+
+            color:
+                white;
+
+            font-size:
+                11px;
+
+            font-weight:
+                700;
+
+            box-shadow:
+                0 10px 25px
+                rgba(239,68,68,0.20);
+
+            transition:
+                0.25s ease;
+        }
+
+
+        .cta-button:hover {
+
+            background:
+                #dc2626;
+
+            transform:
+                translateY(-3px);
+        }
+
+
+
+        /* =====================================================
+           FOOTER
+        ===================================================== */
+
+        footer {
+
+            border-top:
+                1px solid #e5e7eb;
+
+            background:
+                rgba(255,255,255,0.75);
+
+            padding:
+                30px 6%;
+
+            display:
+                flex;
+
+            align-items:
+                center;
+
+            justify-content:
+                space-between;
+
+            color:
+                #94a3b8;
+
+            font-size:
+                9px;
+        }
+
+
+        .footer-brand {
+
+            display:
+                flex;
+
+            align-items:
+                center;
+
+            gap:
+                8px;
+        }
+
+
+        .footer-logo {
+
+            width:
+                27px;
+
+            height:
+                27px;
+
+            display:
+                flex;
+
+            align-items:
+                center;
+
+            justify-content:
+                center;
+
+            border-radius:
+                8px;
+
+            background:
+                #fff1f2;
+        }
+
+
+        .footer-links {
+
+            display:
+                flex;
+
+            gap:
+                18px;
+        }
+
+
+        .footer-links a {
+
+            transition:
+                0.2s ease;
+        }
+
+
+        .footer-links a:hover {
+
+            color:
+                #ef4444;
+        }
+
+
+
+        /* =====================================================
+           SCROLL REVEAL
+        ===================================================== */
+
+        .reveal {
+
+            opacity:
+                0;
+
+            transform:
+                translateY(30px);
+
+            transition:
+                opacity 0.7s ease,
+                transform 0.7s ease;
+        }
+
+
+        .reveal.visible {
+
+            opacity:
+                1;
+
+            transform:
+                translateY(0);
+        }
+
+
+
+        /* =====================================================
+           RESPONSIVE
+        ===================================================== */
+
+        @media(max-width:1050px) {
+
+            .nav-center {
+                display:
+                    none;
+            }
+
+
+            .hero {
+
+                grid-template-columns:
+                    1fr;
+
+                text-align:
+                    center;
+
+                padding-top:
+                    60px;
+            }
+
+
+            .hero-content {
+
+                display:
+                    flex;
+
+                flex-direction:
+                    column;
+
+                align-items:
+                    center;
+            }
+
+
+            .hero-description {
+                margin-left:
+                    auto;
+
+                margin-right:
+                    auto;
+            }
+
+
+            .visual {
+                min-height:
+                    520px;
+            }
+
+
+            .quick-stats {
+                grid-template-columns:
+                    repeat(2,1fr);
+            }
+        }
+
+
+
+        @media(max-width:800px) {
+
+            .navbar {
+                padding:
+                    0 20px;
+            }
+
+
+            .logo-subtitle {
+                display:
+                    none;
+            }
+
+
+            .hero {
+                padding:
+                    45px 20px 60px;
+            }
+
+
+            .hero h1 {
+                font-size:
+                    48px;
+            }
+
+
+            .system-grid {
+                grid-template-columns:
+                    1fr;
+            }
+
+
+            .process-grid {
+                grid-template-columns:
+                    repeat(2,1fr);
+            }
+
+
+            .network-panel {
+                min-height:
+                    430px;
+            }
+
+
+            .node-citizen {
+                left:
+                    8%;
+            }
+
+
+            .node-hospital {
+                right:
+                    8%;
+            }
+
+
+            .connection {
+                opacity:
+                    0.5;
+            }
+
+
+            .cta {
+                flex-direction:
+                    column;
+
+                align-items:
+                    flex-start;
+            }
+        }
+
+
+
+        @media(max-width:550px) {
+
+            #cursorGlow,
+            #cursorDot {
+                display:
+                    none;
+            }
+
+
+            .navbar {
+                height:
+                    68px;
+            }
+
+
+            .nav-actions {
+                gap:
+                    3px;
+            }
+
+
+            .signin {
+                padding:
+                    8px 8px;
+            }
+
+
+            .signup {
+                padding:
+                    8px 11px;
+            }
+
+
+            .hero {
+                min-height:
+                    auto;
+
+                padding:
+                    45px 18px 45px;
+            }
+
+
+            .hero h1 {
+                font-size:
+                    40px;
+
+                letter-spacing:
+                    -2px;
+            }
+
+
+            .hero-description {
+                font-size:
+                    13px;
+            }
+
+
+            .hero-buttons {
+                width:
+                    100%;
+
+                flex-direction:
+                    column;
+            }
+
+
+            .emergency-button,
+            .portal-button {
+                width:
+                    100%;
+            }
+
+
+            .trust-row {
+                justify-content:
+                    center;
+            }
+
+
+            .visual {
+                min-height:
+                    420px;
+            }
+
+
+            .response-card {
+                width:
+                    94%;
+
+                padding:
+                    14px;
+            }
+
+
+            .map {
+                height:
+                    195px;
+            }
+
+
+            .orbit {
+                width:
+                    330px;
+
+                height:
+                    330px;
+            }
+
+
+            .floating {
+                transform:
+                    scale(0.75);
+            }
+
+
+            .float-1 {
+                left:
+                    -25px;
+            }
+
+
+            .float-2 {
+                right:
+                    -30px;
+            }
+
+
+            .float-3 {
+                right:
+                    -20px;
+            }
+
+
+            .quick-stats {
+                grid-template-columns:
+                    repeat(2,1fr);
+
+                padding:
+                    25px 18px 45px;
+            }
+
+
+            .section,
+            .network-section,
+            .cta-section {
+                padding-left:
+                    18px;
+
+                padding-right:
+                    18px;
+            }
+
+
+            .section-heading h2 {
+                font-size:
+                    26px;
+            }
+
+
+            .process-grid {
+                grid-template-columns:
+                    1fr;
+            }
+
+
+            .network-panel {
+                min-height:
+                    500px;
+
+                padding:
+                    20px;
+            }
+
+
+            .network-node {
+                width:
+                    65px;
+
+                height:
+                    65px;
+
+                font-size:
+                    19px;
+            }
+
+
+            .node-citizen {
+                left:
+                    7%;
+
+                top:
+                    40%;
+            }
+
+
+            .node-ambulance {
+                left:
+                    39%;
+
+                top:
+                    18%;
+            }
+
+
+            .node-hospital {
+                right:
+                    7%;
+
+                top:
+                    40%;
+            }
+
+
+            .node-dispatch {
+                left:
+                    39%;
+
+                bottom:
+                    14%;
+            }
+
+
+            .connection-1,
+            .connection-2 {
+                width:
+                    110px;
+            }
+
+
+            .connection-4 {
+                width:
+                    90px;
+            }
+
+
+            footer {
+                flex-direction:
+                    column;
+
+                gap:
+                    15px;
+
+                text-align:
+                    center;
+            }
+
+
+            .footer-links {
+                flex-wrap:
+                    wrap;
+
+                justify-content:
+                    center;
+            }
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+    <!-- =====================================================
+         BACKGROUND
+    ====================================================== -->
+
+    <div class="background">
+
+        <div class="grid"></div>
+
+        <div class="blob blob-red"></div>
+
+        <div class="blob blob-blue"></div>
+
+        <div class="blob blob-pink"></div>
+
+    </div>
+
+
+    <div class="particles">
+
+        <span class="particle"></span>
+        <span class="particle"></span>
+        <span class="particle"></span>
+        <span class="particle"></span>
+        <span class="particle"></span>
+        <span class="particle"></span>
+        <span class="particle"></span>
+        <span class="particle"></span>
+
+    </div>
+
+
+    <div id="cursorGlow"></div>
+
+    <div id="cursorDot"></div>
+
+
+
+    <!-- =====================================================
+         NAVBAR
+    ====================================================== -->
+
+    <header class="navbar">
+
+
+        <a
+            href="index.html"
+            class="logo"
+        >
+
+            <div class="logo-icon">
+                🚑
+            </div>
+
+            <div>
+
+                <div class="logo-name">
+                    ResQ-Route
+                </div>
+
+                <div class="logo-subtitle">
+                    SMART CITY EMERGENCY NETWORK
+                </div>
+
+            </div>
+
+        </a>
+
+
+
+        <nav class="nav-center">
+
+
+            <a
+                href="#platform"
+                class="nav-link"
+            >
+                Platform
+            </a>
+
+
+            <div class="dropdown">
+
+                <button
+                    class="nav-link dropdown-button"
+                >
+
+                    How It Works
+
+                    <span class="arrow">
+                        ▼
+                    </span>
+
+                </button>
+
+
+                <div class="dropdown-menu">
+
+
+                    <a
+                        href="#process"
+                        class="dropdown-item"
+                    >
+
+                        <div class="dropdown-icon">
+                            🚨
+                        </div>
+
+                        <div>
+
+                            <strong>
+                                Emergency Request
+                            </strong>
+
+                            <span>
+                                Report an emergency
+                            </span>
+
+                        </div>
+
+                    </a>
+
+
+                    <a
+                        href="#network"
+                        class="dropdown-item"
+                    >
+
+                        <div class="dropdown-icon">
+                            🚑
+                        </div>
+
+                        <div>
+
+                            <strong>
+                                Smart Dispatch
+                            </strong>
+
+                            <span>
+                                Coordinate ambulance response
+                            </span>
+
+                        </div>
+
+                    </a>
+
+
+                    <a
+                        href="#network"
+                        class="dropdown-item"
+                    >
+
+                        <div class="dropdown-icon">
+                            🏥
+                        </div>
+
+                        <div>
+
+                            <strong>
+                                Hospital Preparation
+                            </strong>
+
+                            <span>
+                                Prepare the receiving ER
+                            </span>
+
+                        </div>
+
+                    </a>
+
+                </div>
+
+            </div>
+
+
+            <a
+                href="#network"
+                class="nav-link"
+            >
+                Network
+            </a>
+
+
+            <a
+                href="#faq"
+                class="nav-link"
+            >
+                FAQ
+            </a>
+
+        </nav>
+
+
+
+        <div class="nav-actions">
+
+            <a
+                href="signin.html"
+                class="signin"
+            >
+                Sign In
+            </a>
+
+            <a
+                href="signup.html"
+                class="signup"
+            >
+                Sign Up
+            </a>
+
+        </div>
+
+    </header>
+
+
+
+    <!-- =====================================================
+         HERO
+    ====================================================== -->
+
+    <main>
+
+
+        <section class="hero">
+
+
+            <div class="hero-content">
+
+
+                <div class="live-badge">
+
+                    <span class="live-dot"></span>
+
+                    LIVE EMERGENCY RESPONSE NETWORK
+
+                </div>
+
+
+                <h1>
+
+                    Emergency Response,
+
+                    <br>
+
+                    <span>
+                        Reimagined.
+                    </span>
+
+                </h1>
+
+
+                <p class="hero-description">
+
+                    ResQ-Route connects citizens, ambulances
+                    and hospitals through one intelligent
+                    emergency orchestration network, helping
+                    coordinate the right response at the right time.
+
+                </p>
+
+
+                <div class="hero-buttons">
+
+
+                    <a
+                        href="emergency.html"
+                        class="emergency-button"
+                    >
+
+                        🚨
+
+                        Request Emergency Assistance
+
+                    </a>
+
+
+                    <a
+                        href="signin.html"
+                        class="portal-button"
+                    >
+
+                        Access Portal
+
+                        →
+
+                    </a>
+
+                </div>
+
+
+                <div class="emergency-note">
+
+                    🔒 No account required for emergency assistance.
+
+                </div>
+
+
+                <div class="trust-row">
+
+
+                    <div class="trust">
+                        🔐 Secure Authentication
+                    </div>
+
+
+                    <div class="trust">
+                        📍 Live Location
+                    </div>
+
+
+                    <div class="trust">
+                        🔄 Realtime Coordination
+                    </div>
+
+
+                    <div class="trust">
+                        ☁️ Centralized Data
+                    </div>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- =================================================
+                 HERO VISUAL
+            ================================================== -->
+
+            <div class="visual">
+
+
+                <div class="orbit">
+
+                    <div class="orbit-dot"></div>
+
+                </div>
+
+
+                <div class="floating float-1">
+
+                    <div class="floating-icon">
+                        🚨
+                    </div>
+
+                    <div>
+
+                        <strong>
+                            Emergency detected
+                        </strong>
+
+                        <span>
+                            Location received
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <div class="floating float-2">
+
+                    <div class="floating-icon">
+                        🏥
+                    </div>
+
+                    <div>
+
+                        <strong>
+                            ER notified
+                        </strong>
+
+                        <span>
+                            Preparation started
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <div class="floating float-3">
+
+                    <div class="floating-icon">
+                        ⚡
+                    </div>
+
+                    <div>
+
+                        <strong>
+                            ETA 08 min
+                        </strong>
+
+                        <span>
+                            Route optimized
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+
+                <!-- RESPONSE CARD -->
+
+                <div
+                    class="response-card"
+                    id="responseCard"
+                >
+
+
+                    <div class="card-top">
+
+
+                        <div class="card-title">
+
+                            <div class="card-icon">
+                                🚑
+                            </div>
+
+                            <div>
+
+                                <strong>
+                                    ResQ Response Network
+                                </strong>
+
+                                <span>
+                                    Emergency orchestration
+                                </span>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="card-live">
+
+                            <i></i>
+
+                            LIVE
+
+                        </div>
+
+                    </div>
+
+
+
+                    <!-- MAP -->
+
+                    <div class="map">
+
+
+                        <div class="map-grid"></div>
+
+
+                        <div class="road road-1"></div>
+
+                        <div class="road road-2"></div>
+
+                        <div class="road road-3"></div>
+
+                        <div class="road road-4"></div>
+
+
+                        <div class="route"></div>
+
+
+                        <div class="marker citizen"></div>
+
+                        <div class="marker ambulance"></div>
+
+                        <div class="marker hospital"></div>
+
+
+                        <div class="map-label label-1">
+                            Citizen
+                        </div>
+
+
+                        <div class="map-label label-2">
+                            Ambulance
+                        </div>
+
+
+                        <div class="map-label label-3">
+                            Hospital
+                        </div>
+
+                    </div>
+
+
+
+                    <!-- STATS -->
+
+                    <div class="card-stats">
+
+
+                        <div class="stat">
+
+                            <strong>
+                                03
+                            </strong>
+
+                            <span>
+                                Connected nodes
+                            </span>
+
+                        </div>
+
+
+                        <div class="stat">
+
+                            <strong>
+                                08m
+                            </strong>
+
+                            <span>
+                                Estimated arrival
+                            </span>
+
+                        </div>
+
+
+                        <div class="stat">
+
+                            <strong>
+                                LIVE
+                            </strong>
+
+                            <span>
+                                Coordination
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- =====================================================
+             TICKER
+        ====================================================== -->
+
+        <div class="ticker">
+
+            <div class="ticker-track">
+
+
+                <div class="ticker-item">
+                    🚨 <b>Emergency:</b> Response network active
+                </div>
+
+
+                <div class="ticker-item">
+                    📍 Location services available
+                </div>
+
+
+                <div class="ticker-item">
+                    🚑 Ambulance coordination enabled
+                </div>
+
+
+                <div class="ticker-item">
+                    🏥 Hospital ER preparation connected
+                </div>
+
+
+                <div class="ticker-item">
+                    🔄 Realtime synchronization enabled
+                </div>
+
+
+                <div class="ticker-item">
+                    ⚡ Route optimization active
+                </div>
+
+
+                <div class="ticker-item">
+                    🚨 <b>Emergency:</b> Response network active
+                </div>
+
+
+                <div class="ticker-item">
+                    📍 Location services available
+                </div>
+
+
+                <div class="ticker-item">
+                    🚑 Ambulance coordination enabled
+                </div>
+
+
+                <div class="ticker-item">
+                    🏥 Hospital ER preparation connected
+                </div>
+
+
+                <div class="ticker-item">
+                    🔄 Realtime synchronization enabled
+                </div>
+
+
+                <div class="ticker-item">
+                    ⚡ Route optimization active
+                </div>
+
+            </div>
+
+        </div>
+
+
+
+        <!-- =====================================================
+             QUICK STATS
+        ====================================================== -->
+
+        <section class="quick-stats reveal">
+
+
+            <div class="quick-stat">
+
+                <strong>
+                    3
+                </strong>
+
+                <span>
+                    Connected Response Roles
+                </span>
+
+            </div>
+
+
+            <div class="quick-stat">
+
+                <strong>
+                    1
+                </strong>
+
+                <span>
+                    Unified Emergency Network
+                </span>
+
+            </div>
+
+
+            <div class="quick-stat">
+
+                <strong>
+                    24/7
+                </strong>
+
+                <span>
+                    Emergency Workflow
+                </span>
+
+            </div>
+
+
+            <div class="quick-stat">
+
+                <strong>
+                    LIVE
+                </strong>
+
+                <span>
+                    Realtime Coordination
+                </span>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- =====================================================
+             PLATFORM
+        ====================================================== -->
+
+        <section
+            class="section reveal"
+            id="platform"
+        >
+
+
+            <div class="section-heading">
+
+                <div class="section-label">
+                    ONE CONNECTED PLATFORM
+                </div>
+
+                <h2>
+                    Everyone sees what matters.
+                </h2>
+
+                <p>
+
+                    ResQ-Route connects the critical participants
+                    involved in emergency response through a
+                    synchronized operational network.
+
+                </p>
+
+            </div>
+
+
+
+            <div class="system-grid">
+
+
+                <div class="system-card">
+
+                    <div class="system-icon red">
+                        🏥
+                    </div>
+
+                    <h3>
+                        Hospital ER
+                    </h3>
+
+                    <p>
+
+                        Receive incoming patient information,
+                        ambulance ETA, vitals and emergency
+                        preparation updates before arrival.
+
+                    </p>
+
+                    <a
+                        href="signin.html"
+                        class="system-link"
+                    >
+                        Hospital Portal →
+                    </a>
+
+                </div>
+
+
+
+                <div class="system-card">
+
+                    <div class="system-icon orange">
+                        🚑
+                    </div>
+
+                    <h3>
+                        Ambulance Operations
+                    </h3>
+
+                    <p>
+
+                        Manage dispatch information, route
+                        guidance, patient details, traffic
+                        conditions and destination updates.
+
+                    </p>
+
+                    <a
+                        href="signin.html"
+                        class="system-link"
+                    >
+                        Driver Portal →
+                    </a>
+
+                </div>
+
+
+
+                <div class="system-card">
+
+                    <div class="system-icon blue">
+                        👨‍👩‍👧
+                    </div>
+
+                    <h3>
+                        Citizen & Family
+                    </h3>
+
+                    <p>
+
+                        Follow ambulance location, hospital
+                        destination, emergency progress and
+                        patient condition from one dashboard.
+
+                    </p>
+
+                    <a
+                        href="signin.html"
+                        class="system-link"
+                    >
+                        Family Portal →
+                    </a>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- =====================================================
+             NETWORK
+        ====================================================== -->
+
+        <section
+            class="network-section reveal"
+            id="network"
+        >
+
+
+            <div class="section-heading">
+
+                <div class="section-label">
+                    EMERGENCY ORCHESTRATION
+                </div>
+
+                <h2>
+                    One emergency. One network.
+                </h2>
+
+                <p>
+
+                    Information flows between citizens,
+                    dispatch operations, ambulances and
+                    receiving hospitals.
+
+                </p>
+
+            </div>
+
+
+            <div class="network-panel">
+
+
+                <div class="network-lines"></div>
+
+
+                <div class="connection connection-1"></div>
+
+                <div class="connection connection-2"></div>
+
+                <div class="connection connection-3"></div>
+
+                <div class="connection connection-4"></div>
+
+
+
+                <div class="network-node node-citizen">
+
+                    👨‍👩‍👧
+
+                    <span class="node-label">
+                        Citizen
+                    </span>
+
+                </div>
+
+
+                <div class="network-node node-ambulance">
+
+                    🚑
+
+                    <span class="node-label">
+                        Ambulance
+                    </span>
+
+                </div>
+
+
+                <div class="network-node node-hospital">
+
+                    🏥
+
+                    <span class="node-label">
+                        Hospital
+                    </span>
+
+                </div>
+
+
+                <div class="network-node node-dispatch">
+
+                    ⚡
+
+                    <span class="node-label">
+                        Smart Dispatch
+                    </span>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- =====================================================
+             PROCESS
+        ====================================================== -->
+
+        <section
+            class="section reveal"
+            id="process"
+        >
+
+
+            <div class="section-heading">
+
+                <div class="section-label">
+                    RESPONSE PIPELINE
+                </div>
+
+                <h2>
+                    From emergency to care.
+                </h2>
+
+                <p>
+
+                    A coordinated workflow keeps the response
+                    moving through every critical stage.
+
+                </p>
+
+            </div>
+
+
+
+            <div class="process-grid">
+
+
+                <div class="process-card">
+
+                    <div class="process-number">
+                        01
+                    </div>
+
+                    <h3>
+                        Emergency Reported
+                    </h3>
+
+                    <p>
+
+                        Emergency details and location
+                        enter the response network.
+
+                    </p>
+
+                </div>
+
+
+                <div class="process-card">
+
+                    <div class="process-number">
+                        02
+                    </div>
+
+                    <h3>
+                        Smart Dispatch
+                    </h3>
+
+                    <p>
+
+                        Available ambulance and response
+                        information are coordinated.
+
+                    </p>
+
+                </div>
+
+
+                <div class="process-card">
+
+                    <div class="process-number">
+                        03
+                    </div>
+
+                    <h3>
+                        Patient Transport
+                    </h3>
+
+                    <p>
+
+                        Ambulance receives route,
+                        patient and destination information.
+
+                    </p>
+
+                </div>
+
+
+                <div class="process-card">
+
+                    <div class="process-number">
+                        04
+                    </div>
+
+                    <h3>
+                        Hospital Prepared
+                    </h3>
+
+                    <p>
+
+                        Receiving ER gets patient information
+                        before ambulance arrival.
+
+                    </p>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- =====================================================
+             FAQ
+        ====================================================== -->
+
+        <section
+            class="section reveal"
+            id="faq"
+        >
+
+
+            <div class="section-heading">
+
+                <div class="section-label">
+                    RESQ-ROUTE
+                </div>
+
+                <h2>
+                    Frequently asked questions.
+                </h2>
+
+                <p>
+                    A few useful answers before humanity
+                    presses the giant red emergency button.
+                </p>
+
+            </div>
+
+
+
+            <div class="faq">
+
+
+                <details>
+
+                    <summary>
+                        Do I need an account to request emergency assistance?
+                    </summary>
+
+                    <p>
+
+                        The emergency request flow is designed
+                        to allow emergency assistance without
+                        requiring the citizen to first create
+                        an account.
+
+                    </p>
+
+                </details>
+
+
+                <details>
+
+                    <summary>
+                        Who can access emergency information?
+                    </summary>
+
+                    <p>
+
+                        Information is intended to be shared
+                        according to the user's role and the
+                        emergency workflow, with access controlled
+                        by the backend security rules.
+
+                    </p>
+
+                </details>
+
+
+                <details>
+
+                    <summary>
+                        How does the ambulance dashboard work?
+                    </summary>
+
+                    <p>
+
+                        The ambulance dashboard receives assigned
+                        emergency information, route details,
+                        patient information and destination updates.
+
+                    </p>
+
+                </details>
+
+
+                <details>
+
+                    <summary>
+                        What does the hospital receive?
+                    </summary>
+
+                    <p>
+
+                        The hospital dashboard can receive incoming
+                        emergency details, patient information,
+                        ambulance ETA, vitals and preparation
+                        information.
+
+                    </p>
+
+                </details>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- =====================================================
+             CTA
+        ====================================================== -->
+
+        <section class="cta-section reveal">
+
+
+            <div class="cta">
+
+
+                <div>
+
+                    <h2>
+                        Be ready when every second matters.
+                    </h2>
+
+                    <p>
+                        Access the ResQ-Route emergency network.
+                    </p>
+
+                </div>
+
+
+                <a
+                    href="emergency.html"
+                    class="cta-button"
+                >
+                    🚨 Request Assistance →
+                </a>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+
+    <!-- =====================================================
+         FOOTER
+    ====================================================== -->
+
+    <footer>
+
+
+        <div class="footer-brand">
+
+            <div class="footer-logo">
+                🚑
+            </div>
+
+            <div>
+                © 2026 ResQ-Route · Smart City Emergency Network
+            </div>
+
+        </div>
+
+
+        <div class="footer-links">
+
+            <a href="signin.html">
+                Sign In
+            </a>
+
+            <a href="signup.html">
+                Sign Up
+            </a>
+
+            <a href="emergency.html">
+                Emergency Assistance
+            </a>
+
+            <a href="#faq">
+                FAQ
+            </a>
+
+        </div>
+
+    </footer>
+
+
+
+    <!-- =====================================================
+         JAVASCRIPT
+    ====================================================== -->
+
+    <script>
+
+
+        /* =================================================
+           CURSOR FOLLOWING GLOW
+        ================================================= */
+
+        const cursorGlow =
+            document.getElementById(
+                "cursorGlow"
+            );
+
+
+        const cursorDot =
+            document.getElementById(
+                "cursorDot"
+            );
+
+
+        let mouseX = 0;
+
+        let mouseY = 0;
+
+        let glowX = 0;
+
+        let glowY = 0;
+
+
+        document.addEventListener(
+            "mousemove",
+            event => {
+
+                mouseX =
+                    event.clientX;
+
+                mouseY =
+                    event.clientY;
+
+
+                if (cursorDot) {
+
+                    cursorDot.style.left =
+                        mouseX + "px";
+
+                    cursorDot.style.top =
+                        mouseY + "px";
+
+                }
+
+            }
+        );
+
+
+        function animateCursor() {
+
+            glowX +=
+                (mouseX - glowX) * 0.10;
+
+            glowY +=
+                (mouseY - glowY) * 0.10;
+
+
+            if (cursorGlow) {
+
+                cursorGlow.style.left =
+                    glowX + "px";
+
+                cursorGlow.style.top =
+                    glowY + "px";
+
+            }
+
+
+            requestAnimationFrame(
+                animateCursor
+            );
+
+        }
+
+
+        animateCursor();
+
+
+
+        /* =================================================
+           HERO 3D MOUSE MOVEMENT
+        ================================================= */
+
+        const visual =
+            document.querySelector(
+                ".visual"
+            );
+
+
+        const responseCard =
+            document.getElementById(
+                "responseCard"
+            );
+
+
+        if (
+            visual &&
+            responseCard &&
+            window.innerWidth > 800
+        ) {
+
+            visual.addEventListener(
+                "mousemove",
+                event => {
+
+                    const rect =
+                        visual.getBoundingClientRect();
+
+
+                    const x =
+                        event.clientX -
+                        rect.left;
+
+
+                    const y =
+                        event.clientY -
+                        rect.top;
+
+
+                    const centerX =
+                        rect.width / 2;
+
+
+                    const centerY =
+                        rect.height / 2;
+
+
+                    const rotateX =
+                        ((centerY - y) /
+                            centerY) *
+                        5;
+
+
+                    const rotateY =
+                        ((x - centerX) /
+                            centerX) *
+                        6;
+
+
+                    responseCard.style.transform =
+                        `
+                        perspective(1000px)
+                        rotateX(${rotateX}deg)
+                        rotateY(${rotateY}deg)
+                        translateY(-5px)
+                        `;
+
+                }
+            );
+
+
+            visual.addEventListener(
+                "mouseleave",
+                () => {
+
+                    responseCard.style.transform =
+                        "perspective(1000px) rotateX(0deg) rotateY(0deg)";
+
+                }
+            );
+
+        }
+
+
+
+        /* =================================================
+           SCROLL REVEAL
+        ================================================= */
+
+        const revealElements =
+            document.querySelectorAll(
+                ".reveal"
+            );
+
+
+        const revealObserver =
+            new IntersectionObserver(
+
+                entries => {
+
+                    entries.forEach(
+                        entry => {
+
+                            if (
+                                entry.isIntersecting
+                            ) {
+
+                                entry.target.classList.add(
+                                    "visible"
+                                );
+
+                                revealObserver.unobserve(
+                                    entry.target
+                                );
+
+                            }
+
+                        }
+                    );
+
+                },
+
+                {
+                    threshold: 0.12
+                }
+
+            );
+
+
+        revealElements.forEach(
+            element => {
+
+                revealObserver.observe(
+                    element
+                );
+
+            }
+        );
+
+
+
+        /* =================================================
+           LIVE ETA ANIMATION
+        ================================================= */
+
+        const statETA =
+            document.querySelector(
+                ".stat:nth-child(2) strong"
+            );
+
+
+        let eta =
+            8;
+
+
+        setInterval(
+            () => {
+
+                eta--;
+
+                if (eta <= 5) {
+                    eta = 9;
+                }
+
+
+                if (statETA) {
+
+                    statETA.textContent =
+                        eta + "m";
+
+                }
+
+            },
+
+            2500
+        );
+
+
+
+        /* =================================================
+           NETWORK NODE PULSE
+        ================================================= */
+
+        const nodes =
+            document.querySelectorAll(
+                ".network-node"
+            );
+
+
+        nodes.forEach(
+            (node, index) => {
+
+                node.addEventListener(
+                    "mouseenter",
+                    () => {
+
+                        node.style.boxShadow =
+                            `
+                            0 0 0 8px
+                            rgba(239,68,68,0.06),
+                            0 15px 40px
+                            rgba(15,23,42,0.10)
+                            `;
+
+                    }
+                );
+
+
+                node.addEventListener(
+                    "mouseleave",
+                    () => {
+
+                        node.style.boxShadow =
+                            "";
+
+                    }
+                );
+
+            }
+        );
+
+
+
+        /* =================================================
+           BUTTON RIPPLE
+        ================================================= */
+
+        const buttons =
+            document.querySelectorAll(
+                ".emergency-button, .portal-button, .cta-button"
+            );
+
+
+        buttons.forEach(
+            button => {
+
+                button.addEventListener(
+                    "click",
+                    event => {
+
+                        const ripple =
+                            document.createElement(
+                                "span"
+                            );
+
+
+                        ripple.style.position =
+                            "absolute";
+
+                        ripple.style.width =
+                            "10px";
+
+                        ripple.style.height =
+                            "10px";
+
+                        ripple.style.borderRadius =
+                            "50%";
+
+                        ripple.style.background =
+                            "rgba(255,255,255,0.35)";
+
+                        ripple.style.left =
+                            event.offsetX + "px";
+
+                        ripple.style.top =
+                            event.offsetY + "px";
+
+                        ripple.style.transform =
+                            "translate(-50%,-50%)";
+
+                        ripple.style.pointerEvents =
+                            "none";
+
+
+                        ripple.animate(
+
+                            [
+                                {
+                                    width: "10px",
+                                    height: "10px",
+                                    opacity: 0.8
+                                },
+
+                                {
+                                    width: "450px",
+                                    height: "450px",
+                                    opacity: 0
+                                }
+                            ],
+
+                            {
+                                duration: 650,
+                                easing: "ease-out"
+                            }
+
+                        );
+
+
+                        button.appendChild(
+                            ripple
+                        );
+
+
+                        setTimeout(
+                            () => {
+
+                                ripple.remove();
+
+                            },
+
+                            700
+                        );
+
+                    }
+                );
+
+            }
+        );
+
+
+
+        /* =================================================
+           CARD TILT FOR SYSTEM CARDS
+        ================================================= */
+
+        const systemCards =
+            document.querySelectorAll(
+                ".system-card"
+            );
+
+
+        systemCards.forEach(
+            card => {
+
+                card.addEventListener(
+                    "mousemove",
+                    event => {
+
+                        if (
+                            window.innerWidth < 800
+                        ) {
+                            return;
+                        }
+
+
+                        const rect =
+                            card.getBoundingClientRect();
+
+
+                        const x =
+                            event.clientX -
+                            rect.left;
+
+
+                        const y =
+                            event.clientY -
+                            rect.top;
+
+
+                        const rotateY =
+                            ((x -
+                                rect.width / 2) /
+                                rect.width) *
+                            3;
+
+
+                        const rotateX =
+                            ((rect.height / 2 -
+                                y) /
+                                rect.height) *
+                            3;
+
+
+                        card.style.transform =
+                            `
+                            perspective(700px)
+                            rotateX(${rotateX}deg)
+                            rotateY(${rotateY}deg)
+                            translateY(-8px)
+                            `;
+
+                    }
+                );
+
+
+                card.addEventListener(
+                    "mouseleave",
+                    () => {
+
+                        card.style.transform =
+                            "";
+
+                    }
+                );
+
+            }
+        );
+
+
+
+        /* =================================================
+           RANDOM STATUS TEXT
+        ================================================= */
+
+        const liveStatus =
+            document.querySelector(
+                ".card-live"
+            );
+
+
+        const statusMessages = [
+
+            "LIVE",
+
+            "SYNC",
+
+            "CONNECTED",
+
+            "LIVE"
+
+        ];
+
+
+        let statusIndex =
+            0;
+
+
+        setInterval(
+            () => {
+
+                statusIndex =
+                    (statusIndex + 1) %
+                    statusMessages.length;
+
+
+                if (liveStatus) {
+
+                    liveStatus.innerHTML =
+                        `
+                        <i></i>
+                        ${statusMessages[statusIndex]}
+                        `;
+
+                }
+
+            },
+
+            3000
+        );
+
+    </script>
+
+
+</body>
+
+</html>

@@ -1,0 +1,4991 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <meta
+        http-equiv="Cache-Control"
+        content="no-store, no-cache, must-revalidate"
+    >
+
+    <meta
+        http-equiv="Pragma"
+        content="no-cache"
+    >
+
+    <meta
+        http-equiv="Expires"
+        content="0"
+    >
+
+    <title>
+        Hospital Bed Management | ResQ-Route
+    </title>
+
+
+    <link
+        rel="stylesheet"
+        href="css/style.css"
+    >
+
+
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    >
+
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+
+        body {
+
+            margin: 0;
+
+            background: #f5f7fb;
+
+            color: #172033;
+
+            font-family:
+                Inter,
+                Arial,
+                sans-serif;
+
+        }
+
+
+        /* =====================================================
+           NAVBAR
+           ===================================================== */
+
+        .layout-nav {
+
+            height: 72px;
+
+            background: white;
+
+            border-bottom: 1px solid #e2e8f0;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: space-between;
+
+            padding: 0 30px;
+
+            position: sticky;
+
+            top: 0;
+
+            z-index: 100;
+
+        }
+
+
+        .brand {
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 11px;
+
+        }
+
+
+        .brand-icon {
+
+            width: 38px;
+
+            height: 38px;
+
+            background: #ef3340;
+
+            color: white;
+
+            border-radius: 10px;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            font-weight: 900;
+
+        }
+
+
+        .brand-name {
+
+            font-size: 18px;
+
+            font-weight: 900;
+
+        }
+
+
+        .brand-sub {
+
+            font-size: 8px;
+
+            color: #64748b;
+
+            letter-spacing: .7px;
+
+            font-weight: 800;
+
+        }
+
+
+        .back-dashboard {
+
+            text-decoration: none;
+
+            color: #334155;
+
+            border: 1px solid #dbe2ea;
+
+            background: white;
+
+            padding: 9px 13px;
+
+            border-radius: 8px;
+
+            font-size: 11px;
+
+            font-weight: 800;
+
+        }
+
+
+        .back-dashboard:hover {
+
+            border-color: #ef3340;
+
+            color: #ef3340;
+
+        }
+
+
+        /* =====================================================
+           MAIN
+           ===================================================== */
+
+        .layout-main {
+
+            max-width: 1400px;
+
+            margin: auto;
+
+            padding: 30px;
+
+        }
+
+
+        .page-header {
+
+            display: flex;
+
+            justify-content: space-between;
+
+            align-items: flex-start;
+
+            margin-bottom: 25px;
+
+            gap: 20px;
+
+        }
+
+
+        .page-header h1 {
+
+            margin: 0;
+
+            font-size: 28px;
+
+            font-weight: 900;
+
+        }
+
+
+        .page-header p {
+
+            margin: 7px 0 0;
+
+            color: #64748b;
+
+            font-size: 13px;
+
+        }
+
+
+        .operational {
+
+            background: #f0fdf4;
+
+            color: #15803d;
+
+            padding: 8px 12px;
+
+            border-radius: 999px;
+
+            font-size: 10px;
+
+            font-weight: 900;
+
+            white-space: nowrap;
+
+        }
+
+
+        .operational span {
+
+            display: inline-block;
+
+            width: 7px;
+
+            height: 7px;
+
+            border-radius: 50%;
+
+            background: #16a34a;
+
+            margin-right: 6px;
+
+        }
+
+
+        /* =====================================================
+           COMMON CARD
+           ===================================================== */
+
+        .card {
+
+            background: white;
+
+            border: 1px solid #e2e8f0;
+
+            border-radius: 14px;
+
+            box-shadow:
+                0 3px 12px rgba(
+                    15,
+                    23,
+                    42,
+                    .04
+                );
+
+        }
+
+
+        /* =====================================================
+           SETUP
+           ===================================================== */
+
+        #setupView {
+
+            max-width: 1050px;
+
+            margin: auto;
+
+        }
+
+
+        .setup-header {
+
+            padding: 25px;
+
+            border-bottom: 1px solid #e2e8f0;
+
+        }
+
+
+        .setup-header h2 {
+
+            margin: 0;
+
+            font-size: 20px;
+
+            font-weight: 900;
+
+        }
+
+
+        .setup-header p {
+
+            margin: 7px 0 0;
+
+            color: #64748b;
+
+            font-size: 12px;
+
+            line-height: 1.6;
+
+        }
+
+
+        .setup-body {
+
+            padding: 25px;
+
+        }
+
+
+        .info {
+
+            padding: 13px 15px;
+
+            background: #eff6ff;
+
+            border: 1px solid #bfdbfe;
+
+            border-radius: 9px;
+
+            color: #1d4ed8;
+
+            font-size: 11px;
+
+            line-height: 1.6;
+
+            margin-bottom: 22px;
+
+        }
+
+
+        .field {
+
+            display: flex;
+
+            flex-direction: column;
+
+            gap: 6px;
+
+        }
+
+
+        .field label {
+
+            font-size: 11px;
+
+            font-weight: 800;
+
+            color: #334155;
+
+        }
+
+
+        input,
+        select {
+
+            width: 100%;
+
+            border: 1px solid #dbe2ea;
+
+            border-radius: 8px;
+
+            padding: 10px 11px;
+
+            outline: none;
+
+            background: white;
+
+            color: #172033;
+
+            font-size: 12px;
+
+        }
+
+
+        input:focus,
+        select:focus {
+
+            border-color: #ef3340;
+
+            box-shadow:
+                0 0 0 3px
+                rgba(
+                    239,
+                    51,
+                    64,
+                    .08
+                );
+
+        }
+
+
+        .floor-configs {
+
+            display: flex;
+
+            flex-direction: column;
+
+            gap: 16px;
+
+            margin-top: 20px;
+
+        }
+
+
+        .floor-config {
+
+            border: 1px solid #e2e8f0;
+
+            border-radius: 12px;
+
+            overflow: hidden;
+
+        }
+
+
+        .floor-config-head {
+
+            background: #f8fafc;
+
+            padding: 14px 16px;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: space-between;
+
+            gap: 15px;
+
+            border-bottom: 1px solid #e2e8f0;
+
+        }
+
+
+        .floor-title {
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 10px;
+
+            font-weight: 900;
+
+            font-size: 14px;
+
+        }
+
+
+        .floor-icon {
+
+            width: 32px;
+
+            height: 32px;
+
+            border-radius: 8px;
+
+            background: #fef2f2;
+
+            color: #dc2626;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+        }
+
+
+        .room-count {
+
+            width: 75px;
+
+        }
+
+
+        .room-configs {
+
+            padding: 15px;
+
+            display: flex;
+
+            flex-direction: column;
+
+            gap: 10px;
+
+        }
+
+
+        .room-row {
+
+            display: grid;
+
+            grid-template-columns:
+                1fr
+                1fr
+                130px;
+
+            gap: 10px;
+
+            padding: 12px;
+
+            border: 1px solid #edf1f5;
+
+            background: #fcfdff;
+
+            border-radius: 9px;
+
+        }
+
+
+        .actions {
+
+            margin-top: 22px;
+
+            padding-top: 18px;
+
+            border-top: 1px solid #e2e8f0;
+
+            display: flex;
+
+            justify-content: flex-end;
+
+            gap: 9px;
+
+        }
+
+
+        .btn {
+
+            border: 0;
+
+            border-radius: 8px;
+
+            padding: 10px 15px;
+
+            font-size: 11px;
+
+            font-weight: 800;
+
+            cursor: pointer;
+
+        }
+
+
+        .btn-primary {
+
+            background: #dc2626;
+
+            color: white;
+
+        }
+
+
+        .btn-primary:hover {
+
+            background: #b91c1c;
+
+        }
+
+
+        .btn-dark {
+
+            background: #172033;
+
+            color: white;
+
+        }
+
+
+        .btn-light {
+
+            background: #f1f5f9;
+
+            color: #334155;
+
+        }
+
+
+        .btn:disabled {
+
+            opacity: .6;
+
+            cursor: not-allowed;
+
+        }
+
+
+        /* =====================================================
+           FLOOR CARDS
+           ===================================================== */
+
+        .floor-grid {
+
+            display: grid;
+
+            grid-template-columns:
+                repeat(
+                    auto-fill,
+                    minmax(
+                        270px,
+                        1fr
+                    )
+                );
+
+            gap: 16px;
+
+        }
+
+
+        .floor-card {
+
+            padding: 20px;
+
+        }
+
+
+        .floor-card-top {
+
+            display: flex;
+
+            justify-content: space-between;
+
+            align-items: center;
+
+            margin-bottom: 18px;
+
+        }
+
+
+        .floor-card-title {
+
+            font-size: 16px;
+
+            font-weight: 900;
+
+        }
+
+
+        .floor-card-sub {
+
+            font-size: 10px;
+
+            color: #64748b;
+
+            margin-top: 3px;
+
+        }
+
+
+        .floor-stats {
+
+            display: grid;
+
+            grid-template-columns:
+                repeat(3, 1fr);
+
+            gap: 7px;
+
+            margin-bottom: 15px;
+
+        }
+
+
+        .stat {
+
+            background: #f8fafc;
+
+            border-radius: 8px;
+
+            padding: 10px 5px;
+
+            text-align: center;
+
+        }
+
+
+        .stat strong {
+
+            display: block;
+
+            font-size: 18px;
+
+            font-weight: 900;
+
+        }
+
+
+        .stat span {
+
+            font-size: 8px;
+
+            color: #64748b;
+
+            font-weight: 800;
+
+        }
+
+
+        .green {
+
+            color: #16a34a;
+
+        }
+
+
+        .red {
+
+            color: #dc2626;
+
+        }
+
+
+        .open-btn {
+
+            width: 100%;
+
+            border: 0;
+
+            background: #172033;
+
+            color: white;
+
+            padding: 10px;
+
+            border-radius: 8px;
+
+            cursor: pointer;
+
+            font-size: 11px;
+
+            font-weight: 800;
+
+        }
+
+
+        .open-btn:hover {
+
+            background: #26334a;
+
+        }
+
+
+        /* =====================================================
+           TOOLBAR
+           ===================================================== */
+
+        .toolbar {
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: space-between;
+
+            gap: 15px;
+
+            margin-bottom: 18px;
+
+        }
+
+
+        .back-btn {
+
+            border: 1px solid #dbe2ea;
+
+            background: white;
+
+            color: #475569;
+
+            border-radius: 8px;
+
+            padding: 9px 13px;
+
+            cursor: pointer;
+
+            font-size: 11px;
+
+            font-weight: 800;
+
+        }
+
+
+        .summary {
+
+            font-size: 12px;
+
+            font-weight: 800;
+
+        }
+
+
+        /* =====================================================
+           ROOM GRID
+           ===================================================== */
+
+        .room-grid {
+
+            display: grid;
+
+            grid-template-columns:
+                repeat(
+                    auto-fill,
+                    minmax(
+                        300px,
+                        1fr
+                    )
+                );
+
+            gap: 16px;
+
+        }
+
+
+        .room-card {
+
+            padding: 18px;
+
+        }
+
+
+        .room-top {
+
+            display: flex;
+
+            justify-content: space-between;
+
+            align-items: flex-start;
+
+            margin-bottom: 14px;
+
+        }
+
+
+        .room-number {
+
+            font-size: 17px;
+
+            font-weight: 900;
+
+        }
+
+
+        .room-type {
+
+            display: inline-block;
+
+            margin-top: 4px;
+
+            padding: 4px 7px;
+
+            background: #eff6ff;
+
+            color: #1d4ed8;
+
+            border-radius: 5px;
+
+            font-size: 8px;
+
+            font-weight: 900;
+
+            text-transform: uppercase;
+
+        }
+
+
+        .available-count {
+
+            text-align: right;
+
+            color: #16a34a;
+
+            font-size: 20px;
+
+            font-weight: 900;
+
+        }
+
+
+        .available-count small {
+
+            display: block;
+
+            color: #64748b;
+
+            font-size: 8px;
+
+        }
+
+
+        .mini-beds {
+
+            border-top: 1px solid #edf1f5;
+
+            padding-top: 13px;
+
+            display: grid;
+
+            grid-template-columns:
+                repeat(
+                    auto-fill,
+                    minmax(
+                        55px,
+                        1fr
+                    )
+                );
+
+            gap: 6px;
+
+        }
+
+
+        .mini-bed {
+
+            border-radius: 7px;
+
+            padding: 8px 4px;
+
+            text-align: center;
+
+            font-size: 8px;
+
+            font-weight: 900;
+
+            border: 1px solid;
+
+        }
+
+
+        .mini-bed.available {
+
+            background: #f0fdf4;
+
+            color: #15803d;
+
+            border-color: #bbf7d0;
+
+        }
+
+
+        .mini-bed.occupied {
+
+            background: #fef2f2;
+
+            color: #b91c1c;
+
+            border-color: #fecaca;
+
+        }
+
+
+        .mini-bed.maintenance {
+
+            background: #fffbeb;
+
+            color: #a16207;
+
+            border-color: #fde68a;
+
+        }
+
+
+        .room-open {
+
+            width: 100%;
+
+            margin-top: 13px;
+
+            padding: 9px;
+
+            background: white;
+
+            border: 1px solid #dbe2ea;
+
+            border-radius: 8px;
+
+            cursor: pointer;
+
+            font-size: 10px;
+
+            font-weight: 800;
+
+        }
+
+
+        .room-open:hover {
+
+            border-color: #dc2626;
+
+            color: #dc2626;
+
+        }
+
+
+        /* =====================================================
+           ROOM DETAIL
+           ===================================================== */
+
+        .room-header {
+
+            padding: 20px;
+
+            margin-bottom: 16px;
+
+            display: flex;
+
+            justify-content: space-between;
+
+            align-items: center;
+
+            gap: 20px;
+
+        }
+
+
+        .room-header h2 {
+
+            margin: 0;
+
+            font-size: 20px;
+
+            font-weight: 900;
+
+        }
+
+
+        .room-header p {
+
+            margin: 5px 0 0;
+
+            color: #64748b;
+
+            font-size: 11px;
+
+        }
+
+
+        .room-stats {
+
+            display: flex;
+
+            gap: 8px;
+
+        }
+
+
+        .room-stat {
+
+            min-width: 70px;
+
+            text-align: center;
+
+            background: #f8fafc;
+
+            border-radius: 8px;
+
+            padding: 9px;
+
+        }
+
+
+        .room-stat strong {
+
+            display: block;
+
+            font-size: 17px;
+
+        }
+
+
+        .room-stat span {
+
+            font-size: 8px;
+
+            color: #64748b;
+
+            font-weight: 800;
+
+        }
+
+
+        .beds-card {
+
+            padding: 20px;
+
+        }
+
+
+        .beds-header {
+
+            display: flex;
+
+            justify-content: space-between;
+
+            align-items: center;
+
+            gap: 15px;
+
+            margin-bottom: 18px;
+
+        }
+
+
+        .beds-header h3 {
+
+            margin: 0;
+
+            font-size: 16px;
+
+            font-weight: 900;
+
+        }
+
+
+        .beds-header p {
+
+            margin: 4px 0 0;
+
+            font-size: 10px;
+
+            color: #64748b;
+
+        }
+
+
+        .legend {
+
+            display: flex;
+
+            gap: 10px;
+
+            flex-wrap: wrap;
+
+        }
+
+
+        .legend-item {
+
+            font-size: 9px;
+
+            color: #64748b;
+
+            font-weight: 700;
+
+        }
+
+
+        .legend-item::before {
+
+            content: "";
+
+            display: inline-block;
+
+            width: 9px;
+
+            height: 9px;
+
+            border-radius: 3px;
+
+            margin-right: 4px;
+
+            background: #16a34a;
+
+        }
+
+
+        .legend-item.occupied::before {
+
+            background: #dc2626;
+
+        }
+
+
+        .legend-item.maintenance::before {
+
+            background: #d97706;
+
+        }
+
+
+        .bed-grid {
+
+            display: grid;
+
+            grid-template-columns:
+                repeat(
+                    auto-fill,
+                    minmax(
+                        125px,
+                        1fr
+                    )
+                );
+
+            gap: 12px;
+
+        }
+
+
+        .bed {
+
+            min-height: 115px;
+
+            padding: 13px;
+
+            border-radius: 11px;
+
+            border: 2px solid;
+
+            display: flex;
+
+            flex-direction: column;
+
+            justify-content: space-between;
+
+        }
+
+
+        .bed.available {
+
+            background: #f0fdf4;
+
+            border-color: #86efac;
+
+            color: #166534;
+
+            cursor: pointer;
+
+        }
+
+
+        .bed.available:hover {
+
+            border-color: #16a34a;
+
+            transform: translateY(-2px);
+
+        }
+
+
+        .bed.occupied {
+
+            background: #fef2f2;
+
+            border-color: #fca5a5;
+
+            color: #991b1b;
+
+        }
+
+
+        .bed.maintenance {
+
+            background: #fffbeb;
+
+            border-color: #fcd34d;
+
+            color: #92400e;
+
+        }
+
+
+        .bed-code {
+
+            font-size: 13px;
+
+            font-weight: 900;
+
+        }
+
+
+        .bed-status {
+
+            font-size: 8px;
+
+            font-weight: 900;
+
+        }
+
+
+        .bed-patient {
+
+            margin-top: 5px;
+
+            font-size: 9px;
+
+            font-weight: 700;
+
+        }
+
+
+        /* =====================================================
+           MODAL
+           ===================================================== */
+
+        .modal {
+
+            position: fixed;
+
+            inset: 0;
+
+            background:
+                rgba(
+                    15,
+                    23,
+                    42,
+                    .55
+                );
+
+            display: none;
+
+            align-items: center;
+
+            justify-content: center;
+
+            padding: 20px;
+
+            z-index: 500;
+
+        }
+
+
+        .modal.show {
+
+            display: flex;
+
+        }
+
+
+        .modal-box {
+
+            width: min(
+                500px,
+                100%
+            );
+
+            background: white;
+
+            border-radius: 14px;
+
+            overflow: hidden;
+
+            box-shadow:
+                0 25px 70px
+                rgba(
+                    15,
+                    23,
+                    42,
+                    .25
+                );
+
+        }
+
+
+        .modal-head {
+
+            padding: 18px 20px;
+
+            border-bottom: 1px solid #e2e8f0;
+
+            display: flex;
+
+            justify-content: space-between;
+
+            align-items: center;
+
+        }
+
+
+        .modal-head h3 {
+
+            margin: 0;
+
+            font-size: 16px;
+
+            font-weight: 900;
+
+        }
+
+
+        .close {
+
+            width: 32px;
+
+            height: 32px;
+
+            border: 0;
+
+            background: #f1f5f9;
+
+            border-radius: 7px;
+
+            cursor: pointer;
+
+        }
+
+
+        .modal-body {
+
+            padding: 20px;
+
+        }
+
+
+        .selected-bed {
+
+            padding: 13px;
+
+            border-radius: 9px;
+
+            background: #f0fdf4;
+
+            border: 1px solid #bbf7d0;
+
+            margin-bottom: 16px;
+
+        }
+
+
+        .selected-bed small {
+
+            display: block;
+
+            color: #15803d;
+
+            font-size: 8px;
+
+            font-weight: 900;
+
+        }
+
+
+        .selected-bed strong {
+
+            display: block;
+
+            margin-top: 3px;
+
+            color: #166534;
+
+            font-size: 16px;
+
+        }
+
+
+        .modal-actions {
+
+            display: flex;
+
+            justify-content: flex-end;
+
+            gap: 8px;
+
+            margin-top: 18px;
+
+        }
+
+
+        /* =====================================================
+           LOADING
+           ===================================================== */
+
+        .loading {
+
+            min-height: 300px;
+
+            display: flex;
+
+            flex-direction: column;
+
+            align-items: center;
+
+            justify-content: center;
+
+            gap: 10px;
+
+            color: #64748b;
+
+            font-size: 12px;
+
+        }
+
+
+        .spinner {
+
+            width: 30px;
+
+            height: 30px;
+
+            border: 3px solid #e2e8f0;
+
+            border-top-color: #dc2626;
+
+            border-radius: 50%;
+
+            animation:
+                spin .8s linear infinite;
+
+        }
+
+
+        @keyframes spin {
+
+            to {
+                transform: rotate(360deg);
+            }
+
+        }
+
+
+        .empty {
+
+            padding: 45px;
+
+            text-align: center;
+
+            border: 1px dashed #cbd5e1;
+
+            border-radius: 12px;
+
+            color: #64748b;
+
+            font-size: 12px;
+
+        }
+
+
+        .empty i {
+
+            display: block;
+
+            font-size: 30px;
+
+            margin-bottom: 10px;
+
+            color: #94a3b8;
+
+        }
+
+
+        /* =====================================================
+           TOAST
+           ===================================================== */
+
+        #toast {
+
+            position: fixed;
+
+            right: 20px;
+
+            bottom: 20px;
+
+            z-index: 900;
+
+            padding: 12px 15px;
+
+            border-radius: 8px;
+
+            font-size: 11px;
+
+            font-weight: 800;
+
+            display: none;
+
+        }
+
+
+        #toast.success {
+
+            display: block;
+
+            background: #dcfce7;
+
+            color: #166534;
+
+        }
+
+
+        #toast.error {
+
+            display: block;
+
+            background: #fee2e2;
+
+            color: #991b1b;
+
+        }
+
+
+        @media (max-width: 700px) {
+
+            .layout-main {
+
+                padding: 20px 12px;
+
+            }
+
+            .layout-nav {
+
+                padding: 0 14px;
+
+            }
+
+            .page-header {
+
+                flex-direction: column;
+
+            }
+
+            .room-row {
+
+                grid-template-columns: 1fr;
+
+            }
+
+            .room-header {
+
+                flex-direction: column;
+
+                align-items: flex-start;
+
+            }
+
+            .beds-header {
+
+                flex-direction: column;
+
+                align-items: flex-start;
+
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<header class="layout-nav">
+
+    <div class="brand">
+
+        <div class="brand-icon">
+            R
+        </div>
+
+        <div>
+
+            <div class="brand-name">
+                ResQ-Route
+            </div>
+
+            <div class="brand-sub">
+                SMART CITY EMERGENCY NETWORK
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <a
+        href="hospital.html"
+        class="back-dashboard"
+    >
+
+        <i class="fa-solid fa-arrow-left"></i>
+
+        Hospital Dashboard
+
+    </a>
+
+</header>
+
+
+
+<main class="layout-main">
+
+
+    <div class="page-header">
+
+        <div>
+
+            <h1>
+                Hospital Bed Management
+            </h1>
+
+            <p id="pageDescription">
+                Configure your hospital's physical layout.
+            </p>
+
+        </div>
+
+
+        <div class="operational">
+
+            <span></span>
+
+            ER OPERATIONAL
+
+        </div>
+
+    </div>
+
+
+
+    <!-- =====================================================
+         LOADING
+         ===================================================== -->
+
+    <div
+        id="loadingView"
+        class="loading"
+    >
+
+        <div class="spinner"></div>
+
+        Loading hospital layout...
+
+    </div>
+
+
+
+    <!-- =====================================================
+         SETUP VIEW
+         ===================================================== -->
+
+    <section
+        id="setupView"
+        class="card"
+        style="display:none;"
+    >
+
+        <div class="setup-header">
+
+            <h2>
+                Configure Hospital Layout
+            </h2>
+
+            <p>
+                Enter the actual number of floors, rooms and beds
+                in your hospital. This configuration is saved for
+                this hospital only.
+            </p>
+
+        </div>
+
+
+        <div class="setup-body">
+
+
+            <div class="info">
+
+                <i class="fa-solid fa-circle-info"></i>
+
+                Each hospital can have a completely different
+                physical structure. First configure the building,
+                then ResQ-Route will generate the floor, room and
+                bed management interface automatically.
+
+            </div>
+
+
+            <div
+                class="field"
+                style="max-width:220px;"
+            >
+
+                <label>
+                    Number of Floors
+                </label>
+
+                <input
+                    id="floorCount"
+                    type="number"
+                    min="1"
+                    max="50"
+                    value="1"
+                >
+
+            </div>
+
+
+            <div
+                id="floorConfigs"
+                class="floor-configs"
+            ></div>
+
+
+            <div class="actions">
+
+                <button
+                    id="generateBtn"
+                    type="button"
+                    class="btn btn-light"
+                >
+
+                    <i class="fa-solid fa-layer-group"></i>
+
+                    Generate Floors
+
+                </button>
+
+
+                <button
+                    id="saveBtn"
+                    type="button"
+                    class="btn btn-primary"
+                >
+
+                    <i class="fa-solid fa-check"></i>
+
+                    Save Hospital Layout
+
+                </button>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+
+    <!-- =====================================================
+         FLOOR VIEW
+         ===================================================== -->
+
+    <section
+    id="floorView"
+    style="display:none;"
+>
+
+    <div
+        id="floorGrid"
+        class="floor-grid"
+    ></div>
+
+
+    <!-- DEVELOPMENT RESET -->
+
+    <div
+        style="
+            margin-top:28px;
+            padding:18px;
+            text-align:center;
+            background:white;
+            border:1px dashed #fecaca;
+            border-radius:12px;
+        "
+    >
+
+        <div
+            style="
+                font-size:11px;
+                font-weight:800;
+                color:#991b1b;
+                margin-bottom:6px;
+            "
+        >
+
+            Development Layout Controls
+
+        </div>
+
+
+        <div
+            style="
+                font-size:10px;
+                color:#64748b;
+                margin-bottom:12px;
+            "
+        >
+
+            Reset the current hospital floor, room and bed
+            configuration and enter it again.
+
+        </div>
+
+
+        <button
+            id="resetLayoutBtn"
+            type="button"
+            class="btn"
+            style="
+                background:#fff1f2;
+                color:#b91c1c;
+                border:1px solid #fecdd3;
+            "
+        >
+
+            <i class="fa-solid fa-rotate-left"></i>
+
+            Reset Hospital Layout
+
+        </button>
+
+    </div>
+
+</section>
+
+
+
+    <!-- =====================================================
+         ROOM VIEW
+         ===================================================== -->
+
+    <section
+        id="roomView"
+        style="display:none;"
+    >
+
+        <div class="toolbar">
+
+            <button
+                id="backFloorsBtn"
+                type="button"
+                class="back-btn"
+            >
+
+                <i class="fa-solid fa-arrow-left"></i>
+
+                Back to Floors
+
+            </button>
+
+
+            <div
+                id="floorSummary"
+                class="summary"
+            ></div>
+
+        </div>
+
+
+        <div
+            id="roomGrid"
+            class="room-grid"
+        ></div>
+
+    </section>
+
+
+
+    <!-- =====================================================
+         BED VIEW
+         ===================================================== -->
+
+    <section
+        id="bedView"
+        style="display:none;"
+    >
+
+        <div class="toolbar">
+
+            <button
+                id="backRoomsBtn"
+                type="button"
+                class="back-btn"
+            >
+
+                <i class="fa-solid fa-arrow-left"></i>
+
+                Back to Rooms
+
+            </button>
+
+        </div>
+
+
+        <div
+            id="roomHeader"
+            class="card room-header"
+        ></div>
+
+
+        <div class="card beds-card">
+
+            <div class="beds-header">
+
+                <div>
+
+                    <h3>
+                        Bed Availability
+                    </h3>
+
+                    <p>
+                        Click an available green bed to allocate
+                        it to an active emergency patient.
+                    </p>
+
+                </div>
+
+
+                <div class="legend">
+
+                    <span class="legend-item">
+                        Available
+                    </span>
+
+                    <span
+                        class="legend-item occupied"
+                    >
+                        Occupied
+                    </span>
+
+                    <span
+                        class="legend-item maintenance"
+                    >
+                        Maintenance
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <div
+                id="bedGrid"
+                class="bed-grid"
+            ></div>
+
+        </div>
+
+    </section>
+
+</main>
+
+
+
+<!-- =========================================================
+     ALLOCATION MODAL
+     ========================================================= -->
+
+<div
+    id="allocationModal"
+    class="modal"
+>
+
+    <div class="modal-box">
+
+
+        <div class="modal-head">
+
+            <h3>
+                Allocate Hospital Bed
+            </h3>
+
+
+            <button
+                id="closeModalBtn"
+                type="button"
+                class="close"
+            >
+
+                <i class="fa-solid fa-xmark"></i>
+
+            </button>
+
+        </div>
+
+
+        <div class="modal-body">
+
+
+            <div class="selected-bed">
+
+                <small>
+                    SELECTED BED
+                </small>
+
+                <strong id="selectedBedText">
+                    BED
+                </strong>
+
+            </div>
+
+
+            <div class="field">
+
+                <label>
+                    Emergency Patient
+                </label>
+
+                <select
+                    id="patientSelect"
+                >
+
+                    <option value="">
+                        Loading patients...
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div
+                style="
+                    margin-top:12px;
+                    padding:10px;
+                    border-radius:8px;
+                    background:#fffbeb;
+                    border:1px solid #fde68a;
+                    color:#92400e;
+                    font-size:10px;
+                    line-height:1.5;
+                "
+            >
+
+                Only active emergency patients assigned to
+                this hospital are shown.
+
+            </div>
+
+
+            <div class="modal-actions">
+
+                <button
+                    id="cancelBtn"
+                    type="button"
+                    class="btn btn-light"
+                >
+                    Cancel
+                </button>
+
+
+                <button
+                    id="allocateBtn"
+                    type="button"
+                    class="btn btn-primary"
+                >
+
+                    <i class="fa-solid fa-bed"></i>
+
+                    Allocate Bed
+
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+
+<div id="toast"></div>
+
+
+
+<!-- =========================================================
+     SUPABASE
+     ========================================================= -->
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script src="js/supabase.js"></script>
+
+<script src="js/auth.js"></script>
+
+
+<script>
+
+"use strict";
+
+
+/* =========================================================
+   STATE
+   ========================================================= */
+
+const state = {
+
+    supabase: null,
+
+    user: null,
+
+    hospitalId: null,
+
+    rooms: [],
+
+    floors: [],
+
+    selectedFloor: null,
+
+    selectedRoom: null,
+
+    selectedBed: null,
+
+    patients: []
+
+};
+
+
+/* =========================================================
+   DOM
+   ========================================================= */
+
+const loadingView =
+    document.getElementById(
+        "loadingView"
+    );
+
+const setupView =
+    document.getElementById(
+        "setupView"
+    );
+
+const floorView =
+    document.getElementById(
+        "floorView"
+    );
+
+const roomView =
+    document.getElementById(
+        "roomView"
+    );
+
+const bedView =
+    document.getElementById(
+        "bedView"
+    );
+
+
+/* =========================================================
+   SUPABASE
+   ========================================================= */
+
+function getSupabase() {
+
+    if (
+        window.resqRoute &&
+        window.resqRoute.supabase
+    ) {
+
+        return window.resqRoute.supabase;
+
+    }
+
+
+    if (
+        window.supabaseClient
+    ) {
+
+        return window.supabaseClient;
+
+    }
+
+
+    return null;
+
+}
+
+
+/* =========================================================
+   TOAST
+   ========================================================= */
+
+function toast(
+    message,
+    type = "success"
+) {
+
+    const element =
+        document.getElementById(
+            "toast"
+        );
+
+
+    element.textContent =
+        message;
+
+
+    element.className =
+        type;
+
+
+    clearTimeout(
+        element.timer
+    );
+
+
+    element.timer =
+        setTimeout(
+            function() {
+
+                element.className =
+                    "";
+
+            },
+            4000
+        );
+
+}
+
+
+/* =========================================================
+   HTML ESCAPE
+   ========================================================= */
+
+function escapeHtml(
+    value
+) {
+
+    return String(
+        value ?? ""
+    )
+
+        .replace(
+            /&/g,
+            "&amp;"
+        )
+
+        .replace(
+            /</g,
+            "&lt;"
+        )
+
+        .replace(
+            />/g,
+            "&gt;"
+        )
+
+        .replace(
+            /"/g,
+            "&quot;"
+        )
+
+        .replace(
+            /'/g,
+            "&#039;"
+        );
+
+}
+
+
+/* =========================================================
+   VIEW CONTROL
+   ========================================================= */
+
+function hideViews() {
+
+    setupView.style.display =
+        "none";
+
+    floorView.style.display =
+        "none";
+
+    roomView.style.display =
+        "none";
+
+    bedView.style.display =
+        "none";
+
+}
+
+
+function showSetup() {
+
+    hideViews();
+
+    setupView.style.display =
+        "block";
+
+    document.getElementById(
+        "pageDescription"
+    ).textContent =
+        "Configure your hospital's physical layout.";
+
+}
+
+
+function showFloors() {
+
+    hideViews();
+
+    floorView.style.display =
+        "block";
+
+    document.getElementById(
+        "pageDescription"
+    ).textContent =
+        "Select a floor to view its rooms and bed availability.";
+
+    renderFloors();
+
+}
+
+
+function showRooms(
+    floorNumber
+) {
+
+    state.selectedFloor =
+        floorNumber;
+
+    hideViews();
+
+    roomView.style.display =
+        "block";
+
+    document.getElementById(
+        "pageDescription"
+    ).textContent =
+        "Select a room to view its individual beds.";
+
+    renderRooms();
+
+}
+
+
+function showBeds(
+    room
+) {
+
+    state.selectedRoom =
+        room;
+
+    hideViews();
+
+    bedView.style.display =
+        "block";
+
+    document.getElementById(
+        "pageDescription"
+    ).textContent =
+        "Select an available green bed to allocate it.";
+
+    renderBeds();
+
+}
+
+
+/* =========================================================
+   GET CURRENT USER
+   ========================================================= */
+
+async function getUser() {
+
+    const {
+        data,
+        error
+    } =
+        await state.supabase.auth.getUser();
+
+
+    if (error) {
+
+        throw error;
+
+    }
+
+
+    if (
+        !data.user
+    ) {
+
+        window.location.replace(
+            "signin.html"
+        );
+
+        return null;
+
+    }
+
+
+    return data.user;
+
+}
+
+
+/* =========================================================
+   GET HOSPITAL
+   ========================================================= */
+
+async function getHospitalId() {
+
+    const {
+        data,
+        error
+    } =
+        await state.supabase
+
+            .from(
+                "hospital_staff"
+            )
+
+            .select(
+                "hospital_id"
+            )
+
+            .eq(
+                "user_id",
+                state.user.id
+            )
+
+            .limit(1)
+
+            .maybeSingle();
+
+
+    if (error) {
+
+        throw error;
+
+    }
+
+
+    if (
+        !data ||
+        !data.hospital_id
+    ) {
+
+        throw new Error(
+            "No hospital is assigned to this account."
+        );
+
+    }
+
+
+    return data.hospital_id;
+
+}
+
+
+/* =========================================================
+   GENERATE SETUP
+   ========================================================= */
+
+function generateFloors() {
+
+    const count =
+        Number(
+            document.getElementById(
+                "floorCount"
+            ).value
+        );
+
+
+    if (
+        !Number.isInteger(count) ||
+        count < 1 ||
+        count > 50
+    ) {
+
+        toast(
+            "Enter between 1 and 50 floors.",
+            "error"
+        );
+
+        return;
+
+    }
+
+
+    const container =
+        document.getElementById(
+            "floorConfigs"
+        );
+
+
+    container.innerHTML =
+        "";
+
+
+    for (
+        let floor = 1;
+        floor <= count;
+        floor++
+    ) {
+
+        const element =
+            document.createElement(
+                "div"
+            );
+
+
+        element.className =
+            "floor-config";
+
+
+        element.innerHTML = `
+
+            <div class="floor-config-head">
+
+                <div class="floor-title">
+
+                    <div class="floor-icon">
+                        F${floor}
+                    </div>
+
+                    Floor ${floor}
+
+                </div>
+
+
+                <input
+                    class="room-count"
+                    type="number"
+                    min="1"
+                    max="100"
+                    value="1"
+                    data-floor="${floor}"
+                    title="Number of rooms"
+                >
+
+            </div>
+
+
+            <div
+                class="room-configs"
+                id="rooms-${floor}"
+            ></div>
+
+        `;
+
+
+        container.appendChild(
+            element
+        );
+
+
+        renderRoomInputs(
+            floor,
+            1
+        );
+
+
+        element
+            .querySelector(
+                ".room-count"
+            )
+            .addEventListener(
+                "input",
+                function() {
+
+                    renderRoomInputs(
+                        floor,
+                        Number(
+                            this.value
+                        )
+                    );
+
+                }
+            );
+
+    }
+
+}
+
+
+/* =========================================================
+   ROOM INPUTS
+   ========================================================= */
+
+function renderRoomInputs(
+    floor,
+    count
+) {
+
+    const container =
+        document.getElementById(
+            `rooms-${floor}`
+        );
+
+
+    if (!container) {
+
+        return;
+
+    }
+
+
+    count =
+        Math.max(
+            1,
+            Math.min(
+                100,
+                Number(count) || 1
+            )
+        );
+
+
+    container.innerHTML =
+        "";
+
+
+    for (
+        let index = 1;
+        index <= count;
+        index++
+    ) {
+
+        const defaultRoom =
+            `${floor}${String(index).padStart(2, "0")}`;
+
+
+        const row =
+            document.createElement(
+                "div"
+            );
+
+
+        row.className =
+            "room-row";
+
+
+        row.innerHTML = `
+
+            <div class="field">
+
+                <label>
+                    Room Number
+                </label>
+
+                <input
+                    class="room-number"
+                    value="${defaultRoom}"
+                    maxlength="30"
+                >
+
+            </div>
+
+
+            <div class="field">
+
+                <label>
+                    Room Type
+                </label>
+
+                <select class="room-type">
+
+                    <option>
+                        General Ward
+                    </option>
+
+                    <option>
+                        Emergency
+                    </option>
+
+                    <option>
+                        ICU
+                    </option>
+
+                    <option>
+                        Trauma
+                    </option>
+
+                    <option>
+                        Isolation
+                    </option>
+
+                    <option>
+                        Cardiology
+                    </option>
+
+                    <option>
+                        Pediatric
+                    </option>
+
+                    <option>
+                        Maternity
+                    </option>
+
+                    <option>
+                        Other
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div class="field">
+
+                <label>
+                    Number of Beds
+                </label>
+
+                <input
+                    class="bed-count"
+                    type="number"
+                    min="1"
+                    max="100"
+                    value="4"
+                >
+
+            </div>
+
+        `;
+
+
+        container.appendChild(
+            row
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   COLLECT SETUP
+   ========================================================= */
+
+function collectSetup() {
+
+    const floors =
+        [];
+
+
+    document
+        .querySelectorAll(
+            ".floor-config"
+        )
+        .forEach(
+            function(
+                floorElement
+            ) {
+
+                const floor =
+                    Number(
+                        floorElement
+                            .querySelector(
+                                ".floor-icon"
+                            )
+                            .textContent
+                            .replace(
+                                "F",
+                                ""
+                            )
+                    );
+
+
+                const rooms =
+                    [];
+
+
+                floorElement
+                    .querySelectorAll(
+                        ".room-row"
+                    )
+                    .forEach(
+                        function(row) {
+
+                            rooms.push({
+
+                                roomNumber:
+                                    row
+                                        .querySelector(
+                                            ".room-number"
+                                        )
+                                        .value
+                                        .trim(),
+
+                                roomType:
+                                    row
+                                        .querySelector(
+                                            ".room-type"
+                                        )
+                                        .value,
+
+                                bedCount:
+                                    Number(
+                                        row
+                                            .querySelector(
+                                                ".bed-count"
+                                            )
+                                            .value
+                                    )
+
+                            });
+
+                        }
+                    );
+
+
+                floors.push({
+
+                    floor,
+
+                    rooms
+
+                });
+
+            }
+        );
+
+
+    return floors;
+
+}
+
+
+/* =========================================================
+   VALIDATE SETUP
+   ========================================================= */
+
+function validateSetup(
+    floors
+) {
+
+    if (
+        !floors.length
+    ) {
+
+        return "At least one floor is required.";
+
+    }
+
+
+    const roomNumbers =
+        new Set();
+
+
+    for (
+        const floor of floors
+    ) {
+
+        if (
+            !floor.rooms.length
+        ) {
+
+            return (
+                `Floor ${floor.floor} ` +
+                "must contain at least one room."
+            );
+
+        }
+
+
+        for (
+            const room of floor.rooms
+        ) {
+
+            if (
+                !room.roomNumber
+            ) {
+
+                return "Every room needs a room number.";
+
+            }
+
+
+            if (
+                roomNumbers.has(
+                    room.roomNumber
+                )
+            ) {
+
+                return (
+                    `Room ${room.roomNumber} ` +
+                    "is duplicated."
+                );
+
+            }
+
+
+            roomNumbers.add(
+                room.roomNumber
+            );
+
+
+            if (
+                !Number.isInteger(
+                    room.bedCount
+                ) ||
+                room.bedCount < 1 ||
+                room.bedCount > 100
+            ) {
+
+                return (
+                    `Room ${room.roomNumber} ` +
+                    "must have 1-100 beds."
+                );
+
+            }
+
+        }
+
+    }
+
+
+    return null;
+
+}
+
+
+/* =========================================================
+   SAVE LAYOUT
+   ========================================================= */
+
+async function saveLayout() {
+
+    const floors =
+        collectSetup();
+
+
+    const validation =
+        validateSetup(
+            floors
+        );
+
+
+    if (validation) {
+
+        toast(
+            validation,
+            "error"
+        );
+
+        return;
+
+    }
+
+
+    const button =
+        document.getElementById(
+            "saveBtn"
+        );
+
+
+    button.disabled =
+        true;
+
+
+    button.innerHTML =
+        `
+            <i class="fa-solid fa-spinner fa-spin"></i>
+            Saving...
+        `;
+
+
+    try {
+
+        /*
+         * Save room first.
+         */
+
+        for (
+            const floor of floors
+        ) {
+
+            for (
+                const room of floor.rooms
+            ) {
+
+                const {
+                    data: roomData,
+                    error: roomError
+                } =
+                    await state.supabase
+
+                        .from(
+                            "hospital_rooms"
+                        )
+
+                        .insert({
+
+                            hospital_id:
+                                state.hospitalId,
+
+                            floor_number:
+                                floor.floor,
+
+                            room_number:
+                                room.roomNumber,
+
+                            room_type:
+                                room.roomType,
+
+                            status:
+                                "available"
+
+                        })
+
+                        .select(
+                            "id"
+                        )
+
+                        .single();
+
+
+                if (roomError) {
+
+                    throw roomError;
+
+                }
+
+
+                const beds =
+                    [];
+
+
+                for (
+                    let number = 1;
+                    number <= room.bedCount;
+                    number++
+                ) {
+
+                    beds.push({
+
+                        hospital_id:
+                            state.hospitalId,
+
+                        room_id:
+                            roomData.id,
+
+                        resource_type:
+                            "Bed",
+
+                        slot_code:
+                            `F${floor.floor}-R${room.roomNumber}-B${String(number).padStart(2, "0")}`,
+
+                        status:
+                            "available"
+
+                    });
+
+                }
+
+
+                const {
+                    error: bedError
+                } =
+                    await state.supabase
+
+                        .from(
+                            "hospital_resource_slots"
+                        )
+
+                        .insert(
+                            beds
+                        );
+
+
+                if (bedError) {
+
+                    throw bedError;
+
+                }
+
+            }
+
+        }
+
+
+        toast(
+            "Hospital layout saved successfully."
+        );
+
+
+        await loadLayout();
+
+    }
+    catch (error) {
+
+        console.error(
+            "Layout save error:",
+            error
+        );
+
+
+        toast(
+            error.message ||
+            "Unable to save hospital layout.",
+            "error"
+        );
+
+    }
+    finally {
+
+        button.disabled =
+            false;
+
+
+        button.innerHTML =
+            `
+                <i class="fa-solid fa-check"></i>
+                Save Hospital Layout
+            `;
+
+    }
+
+}
+
+
+/* =========================================================
+   LOAD ROOMS
+   ========================================================= */
+
+async function loadLayout() {
+
+    const {
+        data,
+        error
+    } =
+        await state.supabase
+
+            .from(
+                "hospital_rooms"
+            )
+
+            .select(
+                "*"
+            )
+
+            .eq(
+                "hospital_id",
+                state.hospitalId
+            )
+
+            .order(
+                "floor_number",
+                {
+                    ascending: true
+                }
+            )
+
+            .order(
+                "room_number",
+                {
+                    ascending: true
+                }
+            );
+
+
+    if (error) {
+
+        throw error;
+
+    }
+
+
+    state.rooms =
+        data || [];
+
+
+    if (
+        !state.rooms.length
+    ) {
+
+        showSetup();
+
+        generateFloors();
+
+        return;
+
+    }
+
+
+    await loadBeds();
+
+
+    showFloors();
+
+}
+
+
+/* =========================================================
+   LOAD BEDS
+   ========================================================= */
+
+async function loadBeds() {
+
+    const {
+        data,
+        error
+    } =
+        await state.supabase
+
+            .from(
+                "hospital_resource_slots"
+            )
+
+            .select(
+                "*"
+            )
+
+            .eq(
+                "hospital_id",
+                state.hospitalId
+            )
+
+            .eq(
+                "resource_type",
+                "Bed"
+            );
+
+
+    if (error) {
+
+        throw error;
+
+    }
+
+
+    state.rooms =
+        state.rooms.map(
+            function(room) {
+
+                return {
+
+                    ...room,
+
+                    beds:
+                        (data || [])
+                            .filter(
+                                function(bed) {
+
+                                    return (
+                                        bed.room_id ===
+                                        room.id
+                                    );
+
+                                }
+                            )
+
+                };
+
+            }
+        );
+
+}
+
+
+/* =========================================================
+   BUILD FLOORS
+   ========================================================= */
+
+function buildFloors() {
+
+    const map =
+        new Map();
+
+
+    state.rooms.forEach(
+        function(room) {
+
+            const floor =
+                Number(
+                    room.floor_number
+                );
+
+
+            if (
+                !map.has(
+                    floor
+                )
+            ) {
+
+                map.set(
+                    floor,
+                    []
+                );
+
+            }
+
+
+            map
+                .get(floor)
+                .push(room);
+
+        }
+    );
+
+
+    state.floors =
+        Array.from(
+            map.entries()
+        )
+            .sort(
+                (
+                    a,
+                    b
+                ) =>
+                    a[0] - b[0]
+            )
+            .map(
+                function(
+                    [
+                        floor,
+                        rooms
+                    ]
+                ) {
+
+                    const beds =
+                        rooms.flatMap(
+                            room =>
+                                room.beds || []
+                        );
+
+
+                    return {
+
+                        floor,
+
+                        rooms,
+
+                        available:
+                            beds.filter(
+                                b =>
+                                    b.status ===
+                                    "available"
+                            ).length,
+
+                        occupied:
+                            beds.filter(
+                                b =>
+                                    b.status ===
+                                    "occupied"
+                            ).length,
+
+                        maintenance:
+                            beds.filter(
+                                b =>
+                                    b.status ===
+                                    "maintenance"
+                            ).length,
+
+                        total:
+                            beds.length
+
+                    };
+
+                }
+            );
+
+}
+
+
+/* =========================================================
+   RENDER FLOORS
+   ========================================================= */
+
+function renderFloors() {
+
+    buildFloors();
+
+
+    const container =
+        document.getElementById(
+            "floorGrid"
+        );
+
+
+    container.innerHTML =
+        "";
+
+
+    state.floors.forEach(
+        function(floor) {
+
+            const card =
+                document.createElement(
+                    "div"
+                );
+
+
+            card.className =
+                "card floor-card";
+
+
+            card.innerHTML = `
+
+                <div class="floor-card-top">
+
+                    <div>
+
+                        <div class="floor-card-title">
+                            Floor ${floor.floor}
+                        </div>
+
+                        <div class="floor-card-sub">
+                            ${floor.rooms.length} rooms
+                        </div>
+
+                    </div>
+
+                    <i
+                        class="fa-solid fa-layer-group"
+                        style="
+                            color:#2563eb;
+                            font-size:18px;
+                        "
+                    ></i>
+
+                </div>
+
+
+                <div class="floor-stats">
+
+                    <div class="stat">
+
+                        <strong class="green">
+                            ${floor.available}
+                        </strong>
+
+                        <span>
+                            AVAILABLE
+                        </span>
+
+                    </div>
+
+
+                    <div class="stat">
+
+                        <strong class="red">
+                            ${floor.occupied}
+                        </strong>
+
+                        <span>
+                            OCCUPIED
+                        </span>
+
+                    </div>
+
+
+                    <div class="stat">
+
+                        <strong>
+                            ${floor.total}
+                        </strong>
+
+                        <span>
+                            TOTAL
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <button
+                    type="button"
+                    class="open-btn"
+                >
+
+                    Open Floor
+
+                    <i class="fa-solid fa-arrow-right"></i>
+
+                </button>
+
+            `;
+
+
+            card
+                .querySelector(
+                    ".open-btn"
+                )
+                .addEventListener(
+                    "click",
+                    function() {
+
+                        showRooms(
+                            floor.floor
+                        );
+
+                    }
+                );
+
+
+            container.appendChild(
+                card
+            );
+
+        }
+    );
+
+}
+
+
+/* =========================================================
+   RENDER ROOMS
+   ========================================================= */
+
+function renderRooms() {
+
+    const floor =
+        state.floors.find(
+            f =>
+                f.floor ===
+                state.selectedFloor
+        );
+
+
+    if (!floor) {
+
+        showFloors();
+
+        return;
+
+    }
+
+
+    document.getElementById(
+        "floorSummary"
+    ).textContent =
+        `Floor ${floor.floor} • ` +
+        `${floor.available} beds available • ` +
+        `${floor.total} total beds`;
+
+
+    const container =
+        document.getElementById(
+            "roomGrid"
+        );
+
+
+    container.innerHTML =
+        "";
+
+
+    floor.rooms.forEach(
+        function(room) {
+
+            const beds =
+                room.beds || [];
+
+
+            const available =
+                beds.filter(
+                    b =>
+                        b.status ===
+                        "available"
+                ).length;
+
+
+            const miniBeds =
+                beds
+                    .map(
+                        function(bed) {
+
+                            return `
+
+                                <div
+                                    class="mini-bed ${escapeHtml(
+                                        bed.status
+                                    )}"
+                                >
+
+                                    ${escapeHtml(
+                                        getBedName(
+                                            bed.slot_code
+                                        )
+                                    )}
+
+                                </div>
+
+                            `;
+
+                        }
+                    )
+                    .join("");
+
+
+            const card =
+                document.createElement(
+                    "div"
+                );
+
+
+            card.className =
+                "card room-card";
+
+
+            card.innerHTML = `
+
+                <div class="room-top">
+
+                    <div>
+
+                        <div class="room-number">
+                            Room ${escapeHtml(
+                                room.room_number
+                            )}
+                        </div>
+
+                        <span class="room-type">
+                            ${escapeHtml(
+                                room.room_type
+                            )}
+                        </span>
+
+                    </div>
+
+
+                    <div class="available-count">
+
+                        ${available}
+
+                        <small>
+                            AVAILABLE
+                        </small>
+
+                    </div>
+
+                </div>
+
+
+                <div class="mini-beds">
+
+                    ${miniBeds}
+
+                </div>
+
+
+                <button
+                    type="button"
+                    class="room-open"
+                >
+
+                    Open Room
+
+                    <i class="fa-solid fa-arrow-right"></i>
+
+                </button>
+
+            `;
+
+
+            card
+                .querySelector(
+                    ".room-open"
+                )
+                .addEventListener(
+                    "click",
+                    function() {
+
+                        showBeds(
+                            room
+                        );
+
+                    }
+                );
+
+
+            container.appendChild(
+                card
+            );
+
+        }
+    );
+
+}
+
+
+/* =========================================================
+   BED NAME
+   ========================================================= */
+
+function getBedName(
+    slotCode
+) {
+
+    if (!slotCode) {
+
+        return "BED";
+
+    }
+
+
+    const parts =
+        slotCode.split("-");
+
+
+    return (
+        parts[parts.length - 1] ||
+        slotCode
+    );
+
+}
+
+
+/* =========================================================
+   RENDER BEDS
+   ========================================================= */
+
+function renderBeds() {
+
+    const room =
+        state.selectedRoom;
+
+
+    if (!room) {
+
+        showRooms(
+            state.selectedFloor
+        );
+
+        return;
+
+    }
+
+
+    const beds =
+        room.beds || [];
+
+
+    const available =
+        beds.filter(
+            b =>
+                b.status ===
+                "available"
+        ).length;
+
+
+    const occupied =
+        beds.filter(
+            b =>
+                b.status ===
+                "occupied"
+        ).length;
+
+
+    document.getElementById(
+        "roomHeader"
+    ).innerHTML = `
+
+        <div>
+
+            <h2>
+                Room ${escapeHtml(
+                    room.room_number
+                )}
+            </h2>
+
+            <p>
+                Floor ${room.floor_number}
+                •
+                ${escapeHtml(
+                    room.room_type
+                )}
+            </p>
+
+        </div>
+
+
+        <div class="room-stats">
+
+            <div class="room-stat">
+
+                <strong class="green">
+                    ${available}
+                </strong>
+
+                <span>
+                    AVAILABLE
+                </span>
+
+            </div>
+
+
+            <div class="room-stat">
+
+                <strong class="red">
+                    ${occupied}
+                </strong>
+
+                <span>
+                    OCCUPIED
+                </span>
+
+            </div>
+
+
+            <div class="room-stat">
+
+                <strong>
+                    ${beds.length}
+                </strong>
+
+                <span>
+                    TOTAL
+                </span>
+
+            </div>
+
+        </div>
+
+    `;
+
+
+    const container =
+        document.getElementById(
+            "bedGrid"
+        );
+
+
+    container.innerHTML =
+        "";
+
+
+    beds
+        .sort(
+            (
+                a,
+                b
+            ) =>
+                a.slot_code
+                    .localeCompare(
+                        b.slot_code
+                    )
+        )
+        .forEach(
+            function(bed) {
+
+                const card =
+                    document.createElement(
+                        "div"
+                    );
+
+
+                card.className =
+                    `bed ${bed.status}`;
+
+
+                const bedName =
+                    getBedName(
+                        bed.slot_code
+                    );
+
+
+                card.innerHTML = `
+
+                    <div>
+
+                        <div class="bed-code">
+                            ${escapeHtml(
+                                bedName
+                            )}
+                        </div>
+
+                        <div class="bed-status">
+                            ${escapeHtml(
+                                bed.status
+                                    .toUpperCase()
+                            )}
+                        </div>
+
+                    </div>
+
+
+                    ${
+                        bed.status ===
+                        "occupied"
+
+                            ? `
+
+                                <div class="bed-patient">
+
+                                    Patient admitted
+
+                                </div>
+
+                            `
+
+                            : bed.status ===
+                              "available"
+
+                                ? `
+
+                                    <div class="bed-patient">
+
+                                        Click to allocate
+
+                                    </div>
+
+                                `
+
+                                : `
+
+                                    <div class="bed-patient">
+
+                                        Under maintenance
+
+                                    </div>
+
+                                `
+
+                    }
+
+                `;
+
+
+                if (
+                    bed.status ===
+                    "available"
+                ) {
+
+                    card.addEventListener(
+                        "click",
+                        function() {
+
+                            openAllocation(
+                                bed
+                            );
+
+                        }
+                    );
+
+                }
+
+
+                container.appendChild(
+                    card
+                );
+
+            }
+        );
+
+}
+
+
+/* =========================================================
+   LOAD EMERGENCY PATIENTS
+   ========================================================= */
+
+async function loadPatients() {
+
+    const select =
+        document.getElementById(
+            "patientSelect"
+        );
+
+
+    select.innerHTML = `
+
+        <option value="">
+            Loading active patients...
+        </option>
+
+    `;
+
+
+    const {
+        data,
+        error
+    } =
+        await state.supabase
+
+            .from(
+                "emergencies"
+            )
+
+            .select(
+                `
+                    id,
+                    patient_id,
+                    emergency_type,
+                    priority,
+                    status,
+                    patients (
+                        id,
+                        name,
+                        age,
+                        gender
+                    )
+                `
+            )
+
+            .eq(
+                "hospital_id",
+                state.hospitalId
+            )
+
+            .not(
+                "status",
+                "in",
+                "(COMPLETED,CANCELLED)"
+            )
+
+            .order(
+                "created_at",
+                {
+                    ascending: false
+                }
+            );
+
+
+    if (error) {
+
+        throw error;
+
+    }
+
+
+    state.patients =
+        data || [];
+
+
+    select.innerHTML = `
+
+        <option value="">
+            Select emergency patient
+        </option>
+
+    `;
+
+
+    state.patients.forEach(
+        function(emergency) {
+
+            if (
+                !emergency.patients
+            ) {
+
+                return;
+
+            }
+
+
+            const option =
+                document.createElement(
+                    "option"
+                );
+
+
+            option.value =
+                emergency.id;
+
+
+            option.textContent =
+                `${emergency.patients.name}` +
+                ` • ${emergency.priority}` +
+                ` • ${emergency.emergency_type}`;
+
+
+            select.appendChild(
+                option
+            );
+
+        }
+    );
+
+
+    if (
+        !state.patients.length
+    ) {
+
+        select.innerHTML = `
+
+            <option value="">
+                No active emergency patients
+            </option>
+
+        `;
+
+    }
+
+}
+
+
+/* =========================================================
+   OPEN ALLOCATION
+   ========================================================= */
+
+async function openAllocation(
+    bed
+) {
+
+    state.selectedBed =
+        bed;
+
+
+    document.getElementById(
+        "selectedBedText"
+    ).textContent =
+        getBedName(
+            bed.slot_code
+        );
+
+
+    document.getElementById(
+        "allocationModal"
+    ).classList.add(
+        "show"
+    );
+
+
+    try {
+
+        await loadPatients();
+
+    }
+    catch (error) {
+
+        console.error(
+            error
+        );
+
+
+        toast(
+            "Unable to load emergency patients.",
+            "error"
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   CLOSE MODAL
+   ========================================================= */
+
+function closeModal() {
+
+    document.getElementById(
+        "allocationModal"
+    ).classList.remove(
+        "show"
+    );
+
+
+    state.selectedBed =
+        null;
+
+}
+
+
+/* =========================================================
+   ALLOCATE BED
+   ========================================================= */
+
+async function allocateBed() {
+
+    if (
+        !state.selectedBed
+    ) {
+
+        return;
+
+    }
+
+
+    const emergencyId =
+        document.getElementById(
+            "patientSelect"
+        ).value;
+
+
+    if (!emergencyId) {
+
+        toast(
+            "Select an emergency patient.",
+            "error"
+        );
+
+        return;
+
+    }
+
+
+    const emergency =
+        state.patients.find(
+            item =>
+                item.id ===
+                emergencyId
+        );
+
+
+    if (!emergency) {
+
+        toast(
+            "Emergency patient was not found.",
+            "error"
+        );
+
+        return;
+
+    }
+
+
+    const button =
+        document.getElementById(
+            "allocateBtn"
+        );
+
+
+    button.disabled =
+        true;
+
+
+    button.innerHTML =
+        `
+            <i class="fa-solid fa-spinner fa-spin"></i>
+            Allocating...
+        `;
+
+
+    try {
+
+        /*
+         * Step 1:
+         * Mark the selected bed occupied.
+         */
+
+        const {
+            error: slotError
+        } =
+            await state.supabase
+
+                .from(
+                    "hospital_resource_slots"
+                )
+
+                .update({
+
+                    status:
+                        "occupied",
+
+                    patient_id:
+                        emergency.patient_id,
+
+                    emergency_id:
+                        emergency.id,
+
+                    notes:
+                        "Allocated from ResQ-Route hospital bed management."
+
+                })
+
+                .eq(
+                    "id",
+                    state.selectedBed.id
+                )
+
+                .eq(
+                    "hospital_id",
+                    state.hospitalId
+                )
+
+                .eq(
+                    "status",
+                    "available"
+                );
+
+
+        if (slotError) {
+
+            throw slotError;
+
+        }
+
+
+        /*
+         * Step 2:
+         * Create allocation history.
+         */
+
+        const {
+            error: allocationError
+        } =
+            await state.supabase
+
+                .from(
+                    "resource_allocations"
+                )
+
+                .insert({
+
+                    hospital_id:
+                        state.hospitalId,
+
+                    resource_slot_id:
+                        state.selectedBed.id,
+
+                    resource_type:
+                        "Bed",
+
+                    patient_id:
+                        emergency.patient_id,
+
+                    emergency_id:
+                        emergency.id,
+
+                    allocated_by:
+                        state.user.id,
+
+                    status:
+                        "active",
+
+                    notes:
+                        `Bed ${getBedName(
+                            state.selectedBed.slot_code
+                        )} allocated.`
+
+                });
+
+
+        if (allocationError) {
+
+            /*
+             * Try to restore the bed if the
+             * allocation-history insert fails.
+             */
+
+            await state.supabase
+
+                .from(
+                    "hospital_resource_slots"
+                )
+
+                .update({
+
+                    status:
+                        "available",
+
+                    patient_id:
+                        null,
+
+                    emergency_id:
+                        null,
+
+                    notes:
+                        null
+
+                })
+
+                .eq(
+                    "id",
+                    state.selectedBed.id
+                );
+
+
+            throw allocationError;
+
+        }
+
+
+        /*
+         * Step 3:
+         * Create emergency timeline event.
+         */
+
+        await state.supabase
+
+            .from(
+                "emergency_events"
+            )
+
+            .insert({
+
+                emergency_id:
+                    emergency.id,
+
+                event_type:
+                    "BED_ALLOCATED",
+
+                description:
+                    `Hospital bed ${getBedName(
+                        state.selectedBed.slot_code
+                    )} allocated.`,
+
+                created_by:
+                    state.user.id
+
+            });
+
+
+        toast(
+            "Bed allocated successfully."
+        );
+
+
+        closeModal();
+
+
+        /*
+         * Refresh everything.
+         */
+
+        await loadLayout();
+
+
+        /*
+         * Return to the same room.
+         */
+
+        const refreshedRoom =
+            state.rooms.find(
+                room =>
+                    room.id ===
+                    state.selectedRoom.id
+            );
+
+
+        if (
+            refreshedRoom
+        ) {
+
+            showBeds(
+                refreshedRoom
+            );
+
+        }
+
+    }
+    catch (error) {
+
+        console.error(
+            "Bed allocation error:",
+            error
+        );
+
+
+        toast(
+            error.message ||
+            "Unable to allocate bed.",
+            "error"
+        );
+
+    }
+    finally {
+
+        button.disabled =
+            false;
+
+
+        button.innerHTML =
+            `
+                <i class="fa-solid fa-bed"></i>
+                Allocate Bed
+            `;
+
+    }
+
+}
+/* =========================================================
+   RESET HOSPITAL LAYOUT
+   DEVELOPMENT ONLY
+   ========================================================= */
+
+async function resetHospitalLayout() {
+
+    const confirmed =
+        window.confirm(
+            "Reset the entire hospital layout?\n\n" +
+            "This will remove all configured floors, rooms and beds " +
+            "for this hospital.\n\n" +
+            "This action cannot be undone."
+        );
+
+
+    if (!confirmed) {
+
+        return;
+
+    }
+
+
+    const button =
+        document.getElementById(
+            "resetLayoutBtn"
+        );
+
+
+    if (button) {
+
+        button.disabled =
+            true;
+
+        button.innerHTML =
+            `
+                <i class="fa-solid fa-spinner fa-spin"></i>
+                Resetting...
+            `;
+
+    }
+
+
+    try {
+
+        /*
+         * Delete allocation history first.
+         *
+         * This prevents old allocation records from
+         * blocking room/bed deletion.
+         */
+
+        const {
+            error: allocationError
+        } =
+            await state.supabase
+
+                .from(
+                    "resource_allocations"
+                )
+
+                .delete()
+
+                .eq(
+                    "hospital_id",
+                    state.hospitalId
+                );
+
+
+        if (allocationError) {
+
+            throw allocationError;
+
+        }
+
+
+        /*
+         * Delete rooms.
+         *
+         * Bed records will be removed automatically
+         * because room_id uses ON DELETE CASCADE.
+         */
+
+        const {
+            error: roomError
+        } =
+            await state.supabase
+
+                .from(
+                    "hospital_rooms"
+                )
+
+                .delete()
+
+                .eq(
+                    "hospital_id",
+                    state.hospitalId
+                );
+
+
+        if (roomError) {
+
+            throw roomError;
+
+        }
+
+
+        /*
+         * Clear local state.
+         */
+
+        state.rooms =
+            [];
+
+        state.floors =
+            [];
+
+        state.selectedFloor =
+            null;
+
+        state.selectedRoom =
+            null;
+
+        state.selectedBed =
+            null;
+
+
+        /*
+         * Reset configuration form.
+         */
+
+        document.getElementById(
+            "floorCount"
+        ).value =
+            1;
+
+
+        document.getElementById(
+            "floorConfigs"
+        ).innerHTML =
+            "";
+
+
+        generateFloors();
+
+
+        /*
+         * Show setup screen.
+         */
+
+        showSetup();
+
+
+        toast(
+            "Hospital layout has been reset."
+        );
+
+    }
+    catch (error) {
+
+        console.error(
+            "Reset layout error:",
+            error
+        );
+
+
+        toast(
+            error.message ||
+            "Unable to reset hospital layout.",
+            "error"
+        );
+
+    }
+    finally {
+
+        if (button) {
+
+            button.disabled =
+                false;
+
+            button.innerHTML =
+                `
+                    <i class="fa-solid fa-rotate-left"></i>
+                    Reset Hospital Layout
+                `;
+
+        }
+
+    }
+
+}
+
+/* =========================================================
+   BUTTON EVENTS
+   ========================================================= */
+
+document
+    .getElementById(
+        "generateBtn"
+    )
+    .addEventListener(
+        "click",
+        generateFloors
+    );
+    
+document
+    .getElementById(
+        "resetLayoutBtn"
+    )
+    .addEventListener(
+        "click",
+        resetHospitalLayout
+    );
+
+document
+    .getElementById(
+        "floorCount"
+    )
+    .addEventListener(
+        "change",
+        generateFloors
+    );
+
+
+document
+    .getElementById(
+        "saveBtn"
+    )
+    .addEventListener(
+        "click",
+        saveLayout
+    );
+
+
+document
+    .getElementById(
+        "backFloorsBtn"
+    )
+    .addEventListener(
+        "click",
+        showFloors
+    );
+
+
+document
+    .getElementById(
+        "backRoomsBtn"
+    )
+    .addEventListener(
+        "click",
+        function() {
+
+            showRooms(
+                state.selectedFloor
+            );
+
+        }
+    );
+
+
+document
+    .getElementById(
+        "closeModalBtn"
+    )
+    .addEventListener(
+        "click",
+        closeModal
+    );
+
+
+document
+    .getElementById(
+        "cancelBtn"
+    )
+    .addEventListener(
+        "click",
+        closeModal
+    );
+
+
+document
+    .getElementById(
+        "allocateBtn"
+    )
+    .addEventListener(
+        "click",
+        allocateBed
+    );
+
+
+document
+    .getElementById(
+        "allocationModal"
+    )
+    .addEventListener(
+        "click",
+        function(event) {
+
+            if (
+                event.target ===
+                this
+            ) {
+
+                closeModal();
+
+            }
+
+        }
+    );
+
+
+/* =========================================================
+   INITIALIZE
+   ========================================================= */
+
+async function initialize() {
+
+    try {
+
+        state.supabase =
+            getSupabase();
+
+
+        if (
+            !state.supabase
+        ) {
+
+            throw new Error(
+                "Supabase client is unavailable."
+            );
+
+        }
+
+
+        state.user =
+            await getUser();
+
+
+        if (
+            !state.user
+        ) {
+
+            return;
+
+        }
+
+
+        state.hospitalId =
+            await getHospitalId();
+
+
+        await loadLayout();
+
+    }
+    catch (error) {
+
+        console.error(
+            "Hospital layout error:",
+            error
+        );
+
+
+        loadingView.innerHTML = `
+
+            <i
+                class="fa-solid fa-triangle-exclamation"
+                style="
+                    color:#dc2626;
+                    font-size:30px;
+                "
+            ></i>
+
+            <strong
+                style="
+                    color:#172033;
+                    font-size:15px;
+                "
+            >
+                Unable to load hospital layout
+            </strong>
+
+            <span>
+                ${escapeHtml(
+                    error.message ||
+                    "Unknown error"
+                )}
+            </span>
+
+            <a
+                href="hospital.html"
+                class="btn btn-light"
+                style="
+                    text-decoration:none;
+                    margin-top:8px;
+                "
+            >
+                Return to Hospital Dashboard
+            </a>
+
+        `;
+
+        return;
+
+    }
+
+
+    loadingView.style.display =
+        "none";
+
+}
+
+
+initialize();
+
+</script>
+
+</body>
+
+</html>

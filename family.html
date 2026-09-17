@@ -1,0 +1,1939 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <!-- Prevent browser from caching the protected dashboard -->
+    <meta
+        http-equiv="Cache-Control"
+        content="no-store, no-cache, must-revalidate, max-age=0"
+    >
+
+    <meta
+        http-equiv="Pragma"
+        content="no-cache"
+    >
+
+    <meta
+        http-equiv="Expires"
+        content="0"
+    >
+
+    <title>Family Dashboard | ResQ-Route</title>
+
+
+    <style>
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background: #f4f7fb;
+            color: #172033;
+        }
+
+
+        /* =========================
+           NAVBAR
+        ========================== */
+
+        nav {
+            height: 70px;
+            background: #ffffff;
+            border-bottom: 1px solid #e5e9ef;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 4%;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            color: #172033;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: #e63946;
+            color: white;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+        }
+
+        .logo-text {
+            font-size: 20px;
+            font-weight: 800;
+        }
+
+        .logo-text span {
+            color: #e63946;
+        }
+
+        .nav-right {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .role-badge {
+            padding: 7px 12px;
+            border-radius: 20px;
+            background: #fff1f2;
+            color: #c72535;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .user-name {
+            font-size: 13px;
+            font-weight: 700;
+            color: #4d596b;
+        }
+
+        .logout-btn {
+            border: 1px solid #dce2ea;
+            background: white;
+            color: #596579;
+            border-radius: 8px;
+            padding: 9px 14px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .logout-btn:hover {
+            border-color: #e63946;
+            color: #e63946;
+        }
+
+
+        /* =========================
+           LAYOUT
+        ========================== */
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: 235px 1fr;
+            min-height: calc(100vh - 70px);
+        }
+
+
+        /* =========================
+           SIDEBAR
+        ========================== */
+
+        .sidebar {
+            background: #172033;
+            color: white;
+            padding: 25px 15px;
+        }
+
+        .sidebar-title {
+            color: #8d98a9;
+            text-transform: uppercase;
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            padding: 0 12px;
+            margin-bottom: 12px;
+        }
+
+        .side-menu {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .side-item {
+            border: none;
+            background: transparent;
+            color: #b7c0ce;
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            text-align: left;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .side-item:hover,
+        .side-item.active {
+            background: #29344a;
+            color: white;
+        }
+
+        .side-item.active {
+            border-left: 3px solid #e63946;
+        }
+
+
+        /* =========================
+           CONTENT
+        ========================== */
+
+        .content {
+            padding: 30px;
+            overflow-x: hidden;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 25px;
+        }
+
+        .page-header h1 {
+            font-size: 27px;
+            margin-bottom: 7px;
+        }
+
+        .page-header p {
+            color: #758092;
+            font-size: 13px;
+        }
+
+        .live-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #16834a;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .live-dot {
+            width: 9px;
+            height: 9px;
+            background: #1fa463;
+            border-radius: 50%;
+            box-shadow: 0 0 0 4px rgba(31,164,99,0.12);
+        }
+
+
+        /* =========================
+           ACTIVE EMERGENCY
+        ========================== */
+
+        .emergency-card {
+            background: white;
+            border-radius: 16px;
+            border: 1px solid #e3e8ef;
+            overflow: hidden;
+            margin-bottom: 25px;
+        }
+
+        .emergency-header {
+            padding: 20px 22px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #edf0f4;
+        }
+
+        .emergency-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .emergency-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 10px;
+            background: #fff0f1;
+            color: #e63946;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 19px;
+            font-weight: 800;
+        }
+
+        .emergency-title h2 {
+            font-size: 17px;
+            margin-bottom: 4px;
+        }
+
+        .emergency-title p {
+            color: #7a8494;
+            font-size: 11px;
+        }
+
+        .status-badge {
+            padding: 7px 12px;
+            border-radius: 20px;
+            background: #fff3df;
+            color: #a56608;
+            font-size: 11px;
+            font-weight: 800;
+        }
+
+        .emergency-body {
+            padding: 22px;
+        }
+
+
+        /* =========================
+           STATS
+        ========================== */
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .stat-card {
+            background: white;
+            border: 1px solid #e3e8ef;
+            border-radius: 13px;
+            padding: 18px;
+        }
+
+        .stat-label {
+            color: #7b8595;
+            font-size: 11px;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 21px;
+            font-weight: 800;
+            color: #172033;
+        }
+
+        .stat-sub {
+            font-size: 10px;
+            color: #7d8796;
+            margin-top: 5px;
+        }
+
+
+        /* =========================
+           MAIN GRID
+        ========================== */
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1.6fr 1fr;
+            gap: 20px;
+        }
+
+        .card {
+            background: white;
+            border: 1px solid #e3e8ef;
+            border-radius: 15px;
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 18px 20px;
+            border-bottom: 1px solid #edf0f4;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .card-header h2 {
+            font-size: 15px;
+        }
+
+        .card-header span {
+            font-size: 11px;
+            color: #7a8494;
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+
+        /* =========================
+           MAP
+        ========================== */
+
+        .map-container {
+            height: 360px;
+            background:
+                linear-gradient(
+                    135deg,
+                    #edf2f6 25%,
+                    #e6ebf0 25%,
+                    #e6ebf0 50%,
+                    #edf2f6 50%,
+                    #edf2f6 75%,
+                    #e6ebf0 75%
+                );
+            background-size: 80px 80px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .road {
+            position: absolute;
+            background: #ffffff;
+            height: 12px;
+            width: 120%;
+            left: -10%;
+            transform: rotate(-18deg);
+            top: 45%;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+
+        .road.two {
+            transform: rotate(30deg);
+            top: 60%;
+        }
+
+        .road.three {
+            transform: rotate(80deg);
+            top: 20%;
+        }
+
+        .route-line {
+            position: absolute;
+            height: 5px;
+            width: 65%;
+            background: #e63946;
+            left: 18%;
+            top: 50%;
+            transform: rotate(-18deg);
+            border-radius: 5px;
+            box-shadow: 0 0 8px rgba(230,57,70,0.35);
+        }
+
+        .map-marker {
+            position: absolute;
+            width: 34px;
+            height: 34px;
+            border-radius: 50% 50% 50% 0;
+            transform: rotate(-45deg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .map-marker span {
+            transform: rotate(45deg);
+            color: white;
+            font-size: 14px;
+            font-weight: 800;
+        }
+
+        .ambulance-marker {
+            background: #e63946;
+            left: 28%;
+            top: 45%;
+        }
+
+        .hospital-marker {
+            background: #172033;
+            right: 16%;
+            top: 20%;
+        }
+
+        .patient-marker {
+            background: #e5a629;
+            left: 13%;
+            bottom: 18%;
+        }
+
+        .map-info {
+            position: absolute;
+            left: 18px;
+            bottom: 18px;
+            background: white;
+            border-radius: 10px;
+            padding: 12px 14px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.12);
+            font-size: 11px;
+        }
+
+        .map-info strong {
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .map-info span {
+            color: #718092;
+        }
+
+
+        /* =========================
+           AMBULANCE INFO
+        ========================== */
+
+        .ambulance-box {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            background: #f8fafc;
+            border-radius: 11px;
+            margin-bottom: 18px;
+        }
+
+        .ambulance-image {
+            width: 55px;
+            height: 55px;
+            border-radius: 11px;
+            background: #fff0f1;
+            color: #e63946;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 25px;
+        }
+
+        .ambulance-info h3 {
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+
+        .ambulance-info p {
+            color: #7b8595;
+            font-size: 11px;
+        }
+
+        .online {
+            margin-left: auto;
+            color: #1b9657;
+            font-size: 10px;
+            font-weight: 800;
+        }
+
+
+        /* =========================
+           VITALS
+        ========================== */
+
+        .vitals-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .vital {
+            border: 1px solid #e4e9ef;
+            border-radius: 10px;
+            padding: 13px;
+        }
+
+        .vital-label {
+            color: #7c8797;
+            font-size: 10px;
+            margin-bottom: 6px;
+        }
+
+        .vital-value {
+            font-size: 18px;
+            font-weight: 800;
+        }
+
+        .vital-unit {
+            font-size: 10px;
+            color: #7d8796;
+        }
+
+        .vital-status {
+            margin-top: 5px;
+            font-size: 10px;
+            color: #1d9456;
+            font-weight: 700;
+        }
+
+
+        /* =========================
+           HOSPITAL
+        ========================== */
+
+        .hospital-details {
+            display: flex;
+            align-items: flex-start;
+            gap: 13px;
+            margin-bottom: 20px;
+        }
+
+        .hospital-icon {
+            width: 44px;
+            height: 44px;
+            background: #eef2f7;
+            color: #172033;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .hospital-details h3 {
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+
+        .hospital-details p {
+            color: #7a8494;
+            font-size: 11px;
+            line-height: 1.5;
+        }
+
+        .resource-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .resource {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #edf0f4;
+        }
+
+        .resource:last-child {
+            border-bottom: none;
+        }
+
+        .resource-name {
+            font-size: 12px;
+            color: #596579;
+        }
+
+        .available {
+            color: #1b9657;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+
+        /* =========================
+           TIMELINE
+        ========================== */
+
+        .timeline {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+
+        .timeline-item {
+            display: flex;
+            gap: 13px;
+            position: relative;
+            padding-bottom: 20px;
+        }
+
+        .timeline-item:last-child {
+            padding-bottom: 0;
+        }
+
+        .timeline-marker {
+            width: 13px;
+            height: 13px;
+            background: #e63946;
+            border-radius: 50%;
+            flex-shrink: 0;
+            margin-top: 2px;
+            z-index: 2;
+        }
+
+        .timeline-item:not(:last-child)::before {
+            content: "";
+            position: absolute;
+            width: 2px;
+            height: calc(100% - 5px);
+            background: #e4e8ee;
+            left: 5px;
+            top: 10px;
+        }
+
+        .timeline-content h4 {
+            font-size: 12px;
+            margin-bottom: 3px;
+        }
+
+        .timeline-content p {
+            font-size: 10px;
+            color: #7a8494;
+        }
+
+
+        /* =========================
+           EMPTY STATE
+        ========================== */
+
+        .empty-state {
+            display: none;
+            background: white;
+            border: 1px solid #e3e8ef;
+            border-radius: 15px;
+            padding: 60px 20px;
+            text-align: center;
+        }
+
+        .empty-icon {
+            width: 65px;
+            height: 65px;
+            border-radius: 50%;
+            background: #fff0f1;
+            color: #e63946;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 18px;
+            font-size: 27px;
+        }
+
+        .empty-state h2 {
+            font-size: 19px;
+            margin-bottom: 8px;
+        }
+
+        .empty-state p {
+            color: #7a8494;
+            font-size: 13px;
+            margin-bottom: 22px;
+        }
+
+        .request-btn {
+            border: none;
+            background: #e63946;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 9px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .request-btn:hover {
+            background: #cf2938;
+        }
+
+
+        /* =========================
+           MOBILE SIDEBAR
+        ========================== */
+
+        @media (max-width: 900px) {
+
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                display: none;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+
+        @media (max-width: 600px) {
+
+            nav {
+                padding: 0 15px;
+            }
+
+            .role-badge,
+            .user-name {
+                display: none;
+            }
+
+            .content {
+                padding: 20px 14px;
+            }
+
+            .page-header {
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .emergency-header {
+                align-items: flex-start;
+                gap: 10px;
+                flex-direction: column;
+            }
+
+            .map-container {
+                height: 290px;
+            }
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+    <!-- =========================
+         NAVBAR
+    ========================== -->
+
+    <nav>
+
+        <a
+            href="family.html"
+            class="logo"
+        >
+
+            <div class="logo-icon">
+                R
+            </div>
+
+            <div class="logo-text">
+                ResQ<span>-Route</span>
+            </div>
+
+        </a>
+
+
+        <div class="nav-right">
+
+            <span class="role-badge">
+                CITIZEN / FAMILY
+            </span>
+
+            <span
+                class="user-name"
+                id="userName"
+            >
+                User
+            </span>
+
+            <button
+                class="logout-btn"
+                id="logoutButton"
+                type="button"
+            >
+                Logout
+            </button>
+
+        </div>
+
+    </nav>
+
+
+
+    <!-- =========================
+         DASHBOARD
+    ========================== -->
+
+    <div class="dashboard">
+
+
+        <!-- SIDEBAR -->
+
+        <aside class="sidebar">
+
+            <div class="sidebar-title">
+                Dashboard
+            </div>
+
+            <div class="side-menu">
+
+                <button
+                    class="side-item active"
+                    data-section="overview"
+                >
+                    🏠 Overview
+                </button>
+
+                <button
+                    class="side-item"
+                    data-section="tracking"
+                >
+                    📍 Live Tracking
+                </button>
+
+                <button
+                    class="side-item"
+                    data-section="patient"
+                >
+                    ❤️ Patient Status
+                </button>
+
+                <button
+                    class="side-item"
+                    data-section="hospital"
+                >
+                    🏥 Hospital
+                </button>
+
+                <button
+                    class="side-item"
+                    data-section="history"
+                >
+                    📋 Emergency History
+                </button>
+
+            </div>
+
+        </aside>
+
+
+
+        <!-- =========================
+             CONTENT
+        ========================== -->
+
+        <main class="content">
+
+
+            <div class="page-header">
+
+                <div>
+
+                    <h1>
+                        Family Dashboard
+                    </h1>
+
+                    <p>
+                        Monitor your active emergency in real time.
+                    </p>
+
+                </div>
+
+
+                <div class="live-indicator">
+
+                    <div class="live-dot"></div>
+
+                    LIVE SYSTEM
+
+                </div>
+
+            </div>
+
+
+
+            <!-- =========================
+                 ACTIVE EMERGENCY
+            ========================== -->
+
+            <section id="overviewSection">
+
+
+                <div
+                    class="emergency-card"
+                    id="activeEmergencyCard"
+                >
+
+                    <div class="emergency-header">
+
+                        <div class="emergency-title">
+
+                            <div class="emergency-icon">
+                                🚑
+                            </div>
+
+                            <div>
+
+                                <h2>
+                                    Active Emergency
+                                </h2>
+
+                                <p id="emergencyId">
+                                    Emergency ID: Loading...
+                                </p>
+
+                            </div>
+
+                        </div>
+
+
+                        <div
+                            class="status-badge"
+                            id="emergencyStatus"
+                        >
+                            DISPATCHING
+                        </div>
+
+                    </div>
+
+
+
+                    <div class="emergency-body">
+
+
+                        <div class="stats-grid">
+
+
+                            <div class="stat-card">
+
+                                <div class="stat-label">
+                                    Ambulance ETA
+                                </div>
+
+                                <div
+                                    class="stat-value"
+                                    id="eta"
+                                >
+                                    08 min
+                                </div>
+
+                                <div class="stat-sub">
+                                    Estimated arrival
+                                </div>
+
+                            </div>
+
+
+
+                            <div class="stat-card">
+
+                                <div class="stat-label">
+                                    Ambulance
+                                </div>
+
+                                <div
+                                    class="stat-value"
+                                    id="ambulanceNumber"
+                                >
+                                    HR-26-4582
+                                </div>
+
+                                <div class="stat-sub">
+                                    Assigned vehicle
+                                </div>
+
+                            </div>
+
+
+
+                            <div class="stat-card">
+
+                                <div class="stat-label">
+                                    Patient Condition
+                                </div>
+
+                                <div
+                                    class="stat-value"
+                                    id="condition"
+                                >
+                                    Stable
+                                </div>
+
+                                <div class="stat-sub">
+                                    Latest update
+                                </div>
+
+                            </div>
+
+
+
+                            <div class="stat-card">
+
+                                <div class="stat-label">
+                                    Destination
+                                </div>
+
+                                <div
+                                    class="stat-value"
+                                    id="destination"
+                                >
+                                    City Hospital
+                                </div>
+
+                                <div class="stat-sub">
+                                    Emergency Department
+                                </div>
+
+                            </div>
+
+                        </div>
+
+
+
+                        <!-- MAIN GRID -->
+
+                        <div class="main-grid">
+
+
+                            <!-- MAP -->
+
+                            <div class="card">
+
+                                <div class="card-header">
+
+                                    <h2>
+                                        Live Ambulance Tracking
+                                    </h2>
+
+                                    <span id="lastUpdate">
+                                        Updated just now
+                                    </span>
+
+                                </div>
+
+
+                                <div class="map-container">
+
+                                    <div class="road"></div>
+                                    <div class="road two"></div>
+                                    <div class="road three"></div>
+
+                                    <div class="route-line"></div>
+
+
+                                    <div class="map-marker ambulance-marker">
+
+                                        <span>
+                                            🚑
+                                        </span>
+
+                                    </div>
+
+
+                                    <div class="map-marker hospital-marker">
+
+                                        <span>
+                                            H
+                                        </span>
+
+                                    </div>
+
+
+                                    <div class="map-marker patient-marker">
+
+                                        <span>
+                                            +
+                                        </span>
+
+                                    </div>
+
+
+                                    <div class="map-info">
+
+                                        <strong>
+                                            Ambulance en route
+                                        </strong>
+
+                                        <span>
+                                            Following fastest available route
+                                        </span>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+
+
+                            <!-- RIGHT COLUMN -->
+
+                            <div>
+
+
+                                <!-- AMBULANCE -->
+
+                                <div class="card">
+
+                                    <div class="card-header">
+
+                                        <h2>
+                                            Assigned Ambulance
+                                        </h2>
+
+                                    </div>
+
+
+                                    <div class="card-body">
+
+                                        <div class="ambulance-box">
+
+                                            <div class="ambulance-image">
+                                                🚑
+                                            </div>
+
+
+                                            <div class="ambulance-info">
+
+                                                <h3 id="vehicleNumber">
+                                                    HR-26-4582
+                                                </h3>
+
+                                                <p id="driverName">
+                                                    Driver: Assigned Driver
+                                                </p>
+
+                                            </div>
+
+
+                                            <span class="online">
+                                                ● LIVE
+                                            </span>
+
+                                        </div>
+
+
+
+                                        <div class="vitals-grid">
+
+
+                                            <div class="vital">
+
+                                                <div class="vital-label">
+                                                    HEART RATE
+                                                </div>
+
+                                                <div class="vital-value">
+
+                                                    <span id="heartRate">
+                                                        82
+                                                    </span>
+
+                                                    <span class="vital-unit">
+                                                        BPM
+                                                    </span>
+
+                                                </div>
+
+                                                <div class="vital-status">
+                                                    ● Normal
+                                                </div>
+
+                                            </div>
+
+
+
+                                            <div class="vital">
+
+                                                <div class="vital-label">
+                                                    SpO₂
+                                                </div>
+
+                                                <div class="vital-value">
+
+                                                    <span id="spo2">
+                                                        98
+                                                    </span>
+
+                                                    <span class="vital-unit">
+                                                        %
+                                                    </span>
+
+                                                </div>
+
+                                                <div class="vital-status">
+                                                    ● Normal
+                                                </div>
+
+                                            </div>
+
+
+
+                                            <div class="vital">
+
+                                                <div class="vital-label">
+                                                    BLOOD PRESSURE
+                                                </div>
+
+                                                <div class="vital-value">
+
+                                                    <span id="bloodPressure">
+                                                        120/80
+                                                    </span>
+
+                                                </div>
+
+                                                <div class="vital-status">
+                                                    ● Normal
+                                                </div>
+
+                                            </div>
+
+
+
+                                            <div class="vital">
+
+                                                <div class="vital-label">
+                                                    TEMPERATURE
+                                                </div>
+
+                                                <div class="vital-value">
+
+                                                    <span id="temperature">
+                                                        36.8
+                                                    </span>
+
+                                                    <span class="vital-unit">
+                                                        °C
+                                                    </span>
+
+                                                </div>
+
+                                                <div class="vital-status">
+                                                    ● Normal
+                                                </div>
+
+                                            </div>
+
+                                        </div>
+
+                                    </div>
+
+                                </div>
+
+
+
+                                <!-- HOSPITAL -->
+
+                                <div
+                                    class="card"
+                                    style="margin-top:20px;"
+                                >
+
+                                    <div class="card-header">
+
+                                        <h2>
+                                            Destination Hospital
+                                        </h2>
+
+                                    </div>
+
+
+                                    <div class="card-body">
+
+                                        <div class="hospital-details">
+
+                                            <div class="hospital-icon">
+                                                🏥
+                                            </div>
+
+
+                                            <div>
+
+                                                <h3 id="hospitalName">
+                                                    City Emergency Hospital
+                                                </h3>
+
+                                                <p id="hospitalAddress">
+                                                    Emergency Department<br>
+                                                    3.2 km from current location
+                                                </p>
+
+                                            </div>
+
+                                        </div>
+
+
+
+                                        <div class="resource-list">
+
+
+                                            <div class="resource">
+
+                                                <span class="resource-name">
+                                                    Emergency Department
+                                                </span>
+
+                                                <span class="available">
+                                                    Available
+                                                </span>
+
+                                            </div>
+
+
+
+                                            <div class="resource">
+
+                                                <span class="resource-name">
+                                                    ICU
+                                                </span>
+
+                                                <span class="available">
+                                                    Available
+                                                </span>
+
+                                            </div>
+
+
+
+                                            <div class="resource">
+
+                                                <span class="resource-name">
+                                                    Trauma Support
+                                                </span>
+
+                                                <span class="available">
+                                                    Available
+                                                </span>
+
+                                            </div>
+
+                                        </div>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+
+
+                        <!-- =========================
+                             EMERGENCY TIMELINE
+                        ========================== -->
+
+                        <div
+                            class="card"
+                            style="margin-top:20px;"
+                        >
+
+                            <div class="card-header">
+
+                                <h2>
+                                    Emergency Progress
+                                </h2>
+
+                                <span>
+                                    Real-time updates
+                                </span>
+
+                            </div>
+
+
+                            <div class="card-body">
+
+                                <div
+                                    class="timeline"
+                                    id="emergencyTimeline"
+                                >
+
+
+                                    <div class="timeline-item">
+
+                                        <div class="timeline-marker"></div>
+
+                                        <div class="timeline-content">
+
+                                            <h4>
+                                                Emergency Request Created
+                                            </h4>
+
+                                            <p>
+                                                Emergency request received
+                                            </p>
+
+                                        </div>
+
+                                    </div>
+
+
+
+                                    <div class="timeline-item">
+
+                                        <div class="timeline-marker"></div>
+
+                                        <div class="timeline-content">
+
+                                            <h4>
+                                                Ambulance Assigned
+                                            </h4>
+
+                                            <p>
+                                                Suitable ambulance dispatched
+                                            </p>
+
+                                        </div>
+
+                                    </div>
+
+
+
+                                    <div class="timeline-item">
+
+                                        <div class="timeline-marker"></div>
+
+                                        <div class="timeline-content">
+
+                                            <h4>
+                                                Ambulance En Route
+                                            </h4>
+
+                                            <p>
+                                                Driver is travelling to patient
+                                            </p>
+
+                                        </div>
+
+                                    </div>
+
+
+
+                                    <div class="timeline-item">
+
+                                        <div
+                                            class="timeline-marker"
+                                            style="background:#d9dee6;"
+                                        ></div>
+
+                                        <div class="timeline-content">
+
+                                            <h4>
+                                                Patient Pickup
+                                            </h4>
+
+                                            <p>
+                                                Waiting for ambulance arrival
+                                            </p>
+
+                                        </div>
+
+                                    </div>
+
+
+
+                                    <div class="timeline-item">
+
+                                        <div
+                                            class="timeline-marker"
+                                            style="background:#d9dee6;"
+                                        ></div>
+
+                                        <div class="timeline-content">
+
+                                            <h4>
+                                                Hospital Arrival
+                                            </h4>
+
+                                            <p>
+                                                Destination hospital
+                                            </p>
+
+                                        </div>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+
+                <!-- EMPTY STATE -->
+
+                <div
+                    class="empty-state"
+                    id="emptyEmergency"
+                >
+
+                    <div class="empty-icon">
+                        +
+                    </div>
+
+                    <h2>
+                        No Active Emergency
+                    </h2>
+
+                    <p>
+                        There is currently no active emergency
+                        associated with your account.
+                    </p>
+
+                    <button
+                        class="request-btn"
+                        type="button"
+                        onclick="window.location.replace('emergency.html')"
+                    >
+                        Request Emergency Assistance
+                    </button>
+
+                </div>
+
+            </section>
+
+        </main>
+
+    </div>
+
+
+
+    <!-- =====================================================
+         SUPABASE + AUTHENTICATION
+    ====================================================== -->
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <script src="js/supabase.js"></script>
+
+    <script src="js/auth.js"></script>
+
+    <script src="js/emergency.js"></script>
+
+    <script src="js/realtime.js"></script>
+
+
+
+    <!-- =====================================================
+         FAMILY DASHBOARD UI
+    ====================================================== -->
+
+    <script>
+
+        /* =========================
+           SIDEBAR NAVIGATION
+        ========================== */
+
+        const sideItems =
+            document.querySelectorAll(".side-item");
+
+
+        sideItems.forEach(function(item) {
+
+            item.addEventListener(
+                "click",
+                function() {
+
+                    sideItems.forEach(
+                        function(button) {
+
+                            button.classList.remove(
+                                "active"
+                            );
+
+                        }
+                    );
+
+
+                    item.classList.add(
+                        "active"
+                    );
+
+
+                    const section =
+                        item.dataset.section;
+
+
+                    if (
+                        section ===
+                        "tracking"
+                    ) {
+
+                        const map =
+                            document.querySelector(
+                                ".map-container"
+                            );
+
+
+                        if (map) {
+
+                            map.scrollIntoView({
+                                behavior: "smooth",
+                                block: "center"
+                            });
+                        }
+                    }
+
+
+                    if (
+                        section ===
+                        "patient"
+                    ) {
+
+                        const vitals =
+                            document.querySelector(
+                                ".vitals-grid"
+                            );
+
+
+                        if (vitals) {
+
+                            vitals.scrollIntoView({
+                                behavior: "smooth",
+                                block: "center"
+                            });
+                        }
+                    }
+
+
+                    if (
+                        section ===
+                        "hospital"
+                    ) {
+
+                        const hospital =
+                            document.querySelector(
+                                ".hospital-details"
+                            );
+
+
+                        if (hospital) {
+
+                            hospital.scrollIntoView({
+                                behavior: "smooth",
+                                block: "center"
+                            });
+                        }
+                    }
+
+
+                    if (
+                        section ===
+                        "history"
+                    ) {
+
+                        const timeline =
+                            document.querySelector(
+                                ".timeline"
+                            );
+
+
+                        if (timeline) {
+
+                            timeline.scrollIntoView({
+                                behavior: "smooth",
+                                block: "center"
+                            });
+                        }
+                    }
+
+                }
+            );
+
+        });
+
+
+
+        /* =========================
+           DEMO LIVE VITALS
+
+           Temporary simulation only.
+           Later replaced by Supabase
+           Realtime.
+        ========================== */
+
+        setInterval(
+            function() {
+
+                const heartRate =
+                    document.getElementById(
+                        "heartRate"
+                    );
+
+
+                const spo2 =
+                    document.getElementById(
+                        "spo2"
+                    );
+
+
+                const temperature =
+                    document.getElementById(
+                        "temperature"
+                    );
+
+
+                if (heartRate) {
+
+                    const current =
+                        parseInt(
+                            heartRate.textContent
+                        );
+
+
+                    const change =
+                        Math.floor(
+                            Math.random() * 5
+                        ) - 2;
+
+
+                    heartRate.textContent =
+                        Math.max(
+                            60,
+                            Math.min(
+                                110,
+                                current + change
+                            )
+                        );
+                }
+
+
+                if (spo2) {
+
+                    const current =
+                        parseInt(
+                            spo2.textContent
+                        );
+
+
+                    const change =
+                        Math.floor(
+                            Math.random() * 3
+                        ) - 1;
+
+
+                    spo2.textContent =
+                        Math.max(
+                            94,
+                            Math.min(
+                                100,
+                                current + change
+                            )
+                        );
+                }
+
+
+                if (temperature) {
+
+                    const current =
+                        parseFloat(
+                            temperature.textContent
+                        );
+
+
+                    const change =
+                        (Math.random() * 0.2) - 0.1;
+
+
+                    temperature.textContent =
+                        (
+                            current + change
+                        ).toFixed(1);
+                }
+
+
+                const lastUpdate =
+                    document.getElementById(
+                        "lastUpdate"
+                    );
+
+
+                if (lastUpdate) {
+
+                    lastUpdate.textContent =
+                        "Updated just now";
+                }
+
+            },
+            5000
+        );
+
+
+
+        /* =================================================
+           IMPORTANT
+
+           NO MANUAL LOGOUT REDIRECT HERE.
+
+           js/auth.js handles:
+
+           1. Supabase signOut()
+           2. Local auth cleanup
+           3. Redirect to signin.html
+           4. Browser Back protection
+
+           This prevents the old temporary logout handler
+           from bypassing the real authentication system.
+        ================================================== */
+
+
+
+        /* =========================
+           DEMO USER NAME
+
+           Later populated from
+           Supabase profile.
+        ========================== */
+
+        const storedName =
+            localStorage.getItem(
+                "resq_user_name"
+            );
+
+
+        if (storedName) {
+
+            const userName =
+                document.getElementById(
+                    "userName"
+                );
+
+
+            if (userName) {
+
+                userName.textContent =
+                    storedName;
+            }
+        }
+
+
+
+        /* =========================
+           DEMO EMERGENCY ID
+        ========================== */
+
+        const emergencyId =
+            localStorage.getItem(
+                "resq_emergency_id"
+            );
+
+
+        if (emergencyId) {
+
+            const emergencyElement =
+                document.getElementById(
+                    "emergencyId"
+                );
+
+
+            if (emergencyElement) {
+
+                emergencyElement.textContent =
+                    "Emergency ID: " +
+                    emergencyId;
+            }
+        }
+
+    </script>
+
+</body>
+
+</html>

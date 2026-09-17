@@ -1,0 +1,2466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Create Account | ResQ-Route</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background: #f4f7fb;
+            color: #172033;
+            min-height: 100vh;
+        }
+
+        /* =========================
+           NAVBAR
+        ========================== */
+
+        nav {
+            height: 72px;
+            background: #ffffff;
+            border-bottom: 1px solid #e6eaf0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 7%;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            color: #172033;
+        }
+
+        .logo-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 10px;
+            background: #e63946;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 21px;
+            font-weight: bold;
+        }
+
+        .logo-text {
+            font-size: 21px;
+            font-weight: 800;
+        }
+
+        .logo-text span {
+            color: #e63946;
+        }
+
+        .back-home {
+            text-decoration: none;
+            color: #596579;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .back-home:hover {
+            color: #e63946;
+        }
+
+        /* =========================
+           PAGE
+        ========================== */
+
+        .page {
+            padding: 45px 20px 60px;
+        }
+
+        .signup-container {
+            width: 100%;
+            max-width: 950px;
+            margin: auto;
+            background: #ffffff;
+            border-radius: 22px;
+            box-shadow: 0 20px 60px rgba(25, 42, 70, 0.10);
+            overflow: hidden;
+        }
+
+        /* =========================
+           HEADER
+        ========================== */
+
+        .signup-header {
+            padding: 38px 50px;
+            border-bottom: 1px solid #edf0f4;
+        }
+
+        .signup-header h1 {
+            font-size: 30px;
+            margin-bottom: 9px;
+        }
+
+        .signup-header p {
+            color: #6c7789;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        /* =========================
+           FORM
+        ========================== */
+
+        .signup-form {
+            padding: 40px 50px 50px;
+        }
+
+        .section-title {
+            font-size: 17px;
+            font-weight: 800;
+            margin-bottom: 22px;
+            color: #172033;
+        }
+
+        .section-title:not(:first-child) {
+            margin-top: 38px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 3px;
+        }
+
+        .form-group.full {
+            grid-column: 1 / -1;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 700;
+            color: #364152;
+            margin-bottom: 8px;
+        }
+
+        .required {
+            color: #e63946;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            border: 1px solid #dce2ea;
+            border-radius: 10px;
+            padding: 13px 14px;
+            font-family: inherit;
+            font-size: 14px;
+            color: #172033;
+            background: #ffffff;
+            outline: none;
+            transition: 0.2s ease;
+        }
+
+        .form-group input,
+        .form-group select {
+            height: 48px;
+        }
+
+        .form-group textarea {
+            min-height: 90px;
+            resize: vertical;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            border-color: #e63946;
+            box-shadow: 0 0 0 3px rgba(230, 57, 70, 0.08);
+        }
+
+        .help-text {
+            margin-top: 6px;
+            font-size: 11px;
+            color: #818b9b;
+            line-height: 1.5;
+        }
+
+        /* =========================
+           ROLE CARDS
+        ========================== */
+
+        .role-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 14px;
+        }
+
+        .role-option {
+            position: relative;
+        }
+
+        .role-option input {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .role-card {
+            display: block;
+            border: 1px solid #dce2ea;
+            border-radius: 12px;
+            padding: 18px;
+            cursor: pointer;
+            transition: 0.2s ease;
+            height: 100%;
+        }
+
+        .role-card:hover {
+            border-color: #e63946;
+        }
+
+        .role-section-top {
+            margin-bottom: 8px;
+        }
+
+        .role-section-top .section-title {
+            margin-top: 0;
+            font-size: 19px;
+        }
+
+        .role-section-top .role-grid {
+            margin-bottom: 6px;
+        }
+
+        .role-section-top .section-subtitle {
+            color: #778294;
+            font-size: 12px;
+            line-height: 1.6;
+            margin: 0 0 16px;
+        }
+
+        .verification-box {
+            margin-top: 22px;
+            padding: 18px;
+            border: 1px solid #e1e6ed;
+            border-radius: 12px;
+            background: #ffffff;
+        }
+
+        .verification-title {
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .verification-note {
+            color: #778294;
+            font-size: 11px;
+            line-height: 1.6;
+            margin-bottom: 16px;
+        }
+
+        .otp-row {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 10px;
+            align-items: end;
+        }
+
+        .otp-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-top: 10px;
+        }
+
+        .secondary-btn {
+            border: 1px solid #dce2ea;
+            background: #fff;
+            color: #24324a;
+            border-radius: 9px;
+            padding: 10px 14px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .secondary-btn:hover {
+            border-color: #e63946;
+            color: #e63946;
+        }
+
+        .verification-status {
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .verification-status.pending {
+            color: #8a6a20;
+        }
+
+        .verification-status.verified {
+            color: #16804a;
+        }
+
+        .verification-status.error {
+            color: #c62828;
+        }
+
+        .document-valid {
+            border-color: #16804a !important;
+            box-shadow: 0 0 0 3px rgba(22, 128, 74, 0.08) !important;
+        }
+
+        .document-invalid {
+            border-color: #c62828 !important;
+            box-shadow: 0 0 0 3px rgba(198, 40, 40, 0.08) !important;
+        }
+
+        .role-section[hidden],
+        #detailsSection[hidden] {
+            display: none;
+        }
+
+        @media (max-width: 720px) {
+            .role-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .otp-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .role-option input:checked + .role-card {
+            border-color: #e63946;
+            background: #fff5f6;
+            box-shadow: 0 0 0 2px rgba(230, 57, 70, 0.08);
+        }
+
+        .role-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: 9px;
+            background: #f2f4f7;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 12px;
+            font-size: 18px;
+        }
+
+        .role-card h3 {
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+
+        .role-card p {
+            font-size: 11px;
+            color: #778294;
+            line-height: 1.5;
+        }
+
+        /* =========================
+           MEDICAL SECTION
+        ========================== */
+
+        .medical-box {
+            background: #f8fafc;
+            border: 1px solid #e5e9ef;
+            border-radius: 14px;
+            padding: 24px;
+        }
+
+        .medical-note {
+            background: #fff8e8;
+            border: 1px solid #f5dfaa;
+            color: #765b1e;
+            border-radius: 9px;
+            padding: 12px 14px;
+            font-size: 12px;
+            line-height: 1.6;
+            margin-bottom: 22px;
+        }
+
+        /* =========================
+           EMERGENCY CONTACTS
+        ========================== */
+
+        .contact-box {
+            border: 1px solid #e1e6ed;
+            border-radius: 14px;
+            padding: 24px;
+            margin-top: 18px;
+        }
+
+        .contact-box h3 {
+            font-size: 14px;
+            margin-bottom: 18px;
+        }
+
+        /* =========================
+           CONSENT
+        ========================== */
+
+        .consent-box {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8fafc;
+            border: 1px solid #e0e5ec;
+            border-radius: 12px;
+        }
+
+        .checkbox-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 11px;
+            margin-bottom: 14px;
+        }
+
+        .checkbox-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .checkbox-row input {
+            width: 17px;
+            height: 17px;
+            margin-top: 2px;
+            accent-color: #e63946;
+            flex-shrink: 0;
+            cursor: pointer;
+        }
+
+        .checkbox-row label {
+            font-size: 12px;
+            color: #5f6b7c;
+            line-height: 1.6;
+            cursor: pointer;
+        }
+
+        .checkbox-row a {
+            color: #e63946;
+            font-weight: 700;
+            text-decoration: none;
+        }
+
+        .checkbox-row a:hover {
+            text-decoration: underline;
+        }
+
+        /* =========================
+           ROLE-SPECIFIC SECTIONS
+        ========================== */
+
+        .role-section[hidden] {
+            display: none;
+        }
+
+        .role-section {
+            animation: fadeIn 0.2s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(4px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* =========================
+           STATUS
+        ========================== */
+
+        .status-message {
+            display: none;
+            margin-bottom: 22px;
+            padding: 13px 15px;
+            border-radius: 9px;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .status-message.error {
+            display: block;
+            background: #fff0f1;
+            color: #b4232f;
+            border: 1px solid #ffd1d5;
+        }
+
+        .status-message.success {
+            display: block;
+            background: #eefbf3;
+            color: #16733a;
+            border: 1px solid #c8efd7;
+        }
+
+        /* =========================
+           BUTTON
+        ========================== */
+
+        .create-btn {
+            width: 100%;
+            height: 52px;
+            border: none;
+            border-radius: 10px;
+            background: #e63946;
+            color: white;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 28px;
+            transition: 0.2s ease;
+        }
+
+        .create-btn:hover {
+            background: #cf2938;
+            transform: translateY(-1px);
+        }
+
+        .create-btn:disabled {
+            opacity: 0.65;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* =========================
+           LOGIN
+        ========================== */
+
+        .login-text {
+            text-align: center;
+            margin-top: 22px;
+            color: #717c8d;
+            font-size: 13px;
+        }
+
+        .login-text a {
+            color: #e63946;
+            font-weight: 700;
+            text-decoration: none;
+        }
+
+        .login-text a:hover {
+            text-decoration: underline;
+        }
+
+        /* =========================
+           LOADING
+        ========================== */
+
+        .spinner {
+            display: none;
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255,255,255,0.4);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            margin: auto;
+        }
+
+        .create-btn.loading .button-text {
+            display: none;
+        }
+
+        .create-btn.loading .spinner {
+            display: block;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* =========================
+           RESPONSIVE
+        ========================== */
+
+        @media (max-width: 750px) {
+
+            nav {
+                padding: 0 5%;
+            }
+
+            .signup-header {
+                padding: 30px;
+            }
+
+            .signup-form {
+                padding: 30px;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .form-group.full {
+                grid-column: auto;
+            }
+
+            .role-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 500px) {
+
+            nav {
+                height: 65px;
+            }
+
+            .logo-text {
+                font-size: 18px;
+            }
+
+            .logo-icon {
+                width: 36px;
+                height: 36px;
+            }
+
+            .back-home {
+                font-size: 12px;
+            }
+
+            .page {
+                padding: 20px 12px 40px;
+            }
+
+            .signup-container {
+                border-radius: 16px;
+            }
+
+            .signup-header,
+            .signup-form {
+                padding: 25px 20px;
+            }
+
+            .signup-header h1 {
+                font-size: 26px;
+            }
+
+            .medical-box,
+            .contact-box {
+                padding: 18px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- =========================
+         NAVBAR
+    ========================== -->
+
+    <nav>
+
+        <a href="index.html" class="logo">
+
+            <div class="logo-icon">
+                R
+            </div>
+
+            <div class="logo-text">
+                ResQ<span>-Route</span>
+            </div>
+
+        </a>
+
+        <a href="index.html" class="back-home">
+            ← Back to Home
+        </a>
+
+    </nav>
+
+
+    <!-- =========================
+         MAIN
+    ========================== -->
+
+    <main class="page">
+
+        <div class="signup-container">
+
+            <!-- HEADER -->
+
+            <div class="signup-header">
+
+                <h1>
+                    Create your ResQ-Route account
+                </h1>
+
+                <p>
+                    Register your account and provide the information
+                    required for coordinated emergency response.
+                </p>
+
+            </div>
+
+
+            <!-- FORM -->
+
+            <form
+                class="signup-form"
+                id="signupForm"
+            >
+
+                <div
+                    id="statusMessage"
+                    class="status-message"
+                ></div>
+
+
+                <!-- =========================
+                     ACCOUNT ROLE
+                ========================== -->
+
+                <div class="role-section-top">
+
+                    <h2 class="section-title">
+                        Choose Your Account Role
+                    </h2>
+
+                    <p class="section-subtitle">
+                        Select your role first. We will show only the information
+                        required for that type of account.
+                    </p>
+
+                <div class="role-grid">
+
+                    <!-- FAMILY -->
+
+                    <div class="role-option">
+
+                        <input
+                            type="radio"
+                            id="roleFamily"
+                            name="role"
+                            value="family"
+                            required
+                        >
+
+                        <label
+                            for="roleFamily"
+                            class="role-card"
+                        >
+
+                            <div class="role-icon">
+                                👤
+                            </div>
+
+                            <h3>
+                                Citizen / Family
+                            </h3>
+
+                            <p>
+                                Request emergency assistance and
+                                monitor an active emergency.
+                            </p>
+
+                        </label>
+
+                    </div>
+
+
+                    <!-- DRIVER -->
+
+                    <div class="role-option">
+
+                        <input
+                            type="radio"
+                            id="roleDriver"
+                            name="role"
+                            value="driver"
+                        >
+
+                        <label
+                            for="roleDriver"
+                            class="role-card"
+                        >
+
+                            <div class="role-icon">
+                                🚑
+                            </div>
+
+                            <h3>
+                                Ambulance / Driver
+                            </h3>
+
+                            <p>
+                                Manage assigned emergencies,
+                                routes and ambulance status.
+                            </p>
+
+                        </label>
+
+                    </div>
+
+
+                    <!-- HOSPITAL -->
+
+                    <div class="role-option">
+
+                        <input
+                            type="radio"
+                            id="roleHospital"
+                            name="role"
+                            value="hospital"
+                        >
+
+                        <label
+                            for="roleHospital"
+                            class="role-card"
+                        >
+
+                            <div class="role-icon">
+                                🏥
+                            </div>
+
+                            <h3>
+                                Hospital / ER
+                            </h3>
+
+                            <p>
+                                Manage incoming emergencies,
+                                patients and hospital readiness.
+                            </p>
+
+                        </label>
+
+                    </div>
+
+                </div>
+
+
+                <div id="detailsSection" hidden>
+
+                <!-- =========================
+                     BASIC INFORMATION
+                ========================== -->
+
+                <h2 class="section-title">
+                    Basic Information
+                </h2>
+
+                <div class="form-grid">
+
+                    <div class="form-group" id="fullNameGroup">
+
+                        <label for="fullName">
+                            Full Name <span class="required">*</span>
+                        </label>
+
+                        <input
+                            type="text"
+                            id="fullName"
+                            name="fullName"
+                            placeholder="Enter your full name"
+                            autocomplete="name"
+                        >
+
+                    </div>
+
+
+                    <div class="form-group" id="phoneGroup">
+
+                        <label for="phone">
+                            Phone Number <span class="required">*</span>
+                        </label>
+
+                        <input
+                            type="tel"
+                            id="phone"
+                            name="phone"
+                            placeholder="Enter your phone number"
+                            autocomplete="tel"
+                        >
+
+                    </div>
+
+
+                    <div class="form-group" id="emailGroup">
+
+                        <label for="email">
+                            Email Address <span class="required">*</span>
+                        </label>
+
+                        <input
+                            type="email"
+                            id="email"
+                            name="email"
+                            placeholder="Enter your email"
+                            autocomplete="email"
+                        >
+
+                    </div>
+
+
+                    <div class="form-group" id="dateOfBirthGroup">
+
+                        <label for="dateOfBirth">
+                            Date of Birth
+                        </label>
+
+                        <input
+                            type="date"
+                            id="dateOfBirth"
+                            name="dateOfBirth"
+                        >
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label for="password">
+                            Password <span class="required">*</span>
+                        </label>
+
+                        <input
+                            type="password"
+                            id="password"
+                            name="password"
+                            placeholder="Create a password"
+                            autocomplete="new-password"
+                            minlength="6"
+                        >
+
+                        <div class="help-text">
+                            Use at least 6 characters.
+                        </div>
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label for="confirmPassword">
+                            Confirm Password <span class="required">*</span>
+                        </label>
+
+                        <input
+                            type="password"
+                            id="confirmPassword"
+                            name="confirmPassword"
+                            placeholder="Confirm your password"
+                            autocomplete="new-password"
+                        >
+
+                    </div>
+
+                </div>
+
+
+                <!-- =========================
+                     ROLE-SPECIFIC INFORMATION
+                ========================== -->
+
+                <!-- FAMILY / CITIZEN -->
+                <div id="familySection" class="role-section">
+
+                    <h2 class="section-title">
+                        Medical Information
+                    </h2>
+
+                    <div class="medical-box">
+
+                        <div class="medical-note">
+                            Medical information is intended to help authorized
+                            emergency personnel provide relevant information
+                            during an emergency. This section is only required
+                            for Citizen / Family accounts.
+                        </div>
+
+                        <div class="form-grid">
+
+                            <div class="form-group">
+                                <label for="bloodGroup">
+                                    Blood Group
+                                </label>
+
+                                <select id="bloodGroup" name="bloodGroup">
+                                    <option value="">Select blood group</option>
+                                    <option value="A+">A+</option>
+                                    <option value="A-">A-</option>
+                                    <option value="B+">B+</option>
+                                    <option value="B-">B-</option>
+                                    <option value="AB+">AB+</option>
+                                    <option value="AB-">AB-</option>
+                                    <option value="O+">O+</option>
+                                    <option value="O-">O-</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="gender">
+                                    Gender
+                                </label>
+
+                                <select id="gender" name="gender">
+                                    <option value="">Select gender</option>
+                                    <option value="male">Male</option>
+                                    <option value="female">Female</option>
+                                    <option value="other">Other</option>
+                                    <option value="prefer_not_to_say">Prefer not to say</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group full">
+                                <label for="allergies">
+                                    Allergies
+                                </label>
+
+                                <textarea
+                                    id="allergies"
+                                    name="allergies"
+                                    placeholder="List known allergies, or write 'None'"
+                                ></textarea>
+                            </div>
+
+                            <div class="form-group full">
+                                <label for="medicalConditions">
+                                    Existing Medical Conditions
+                                </label>
+
+                                <textarea
+                                    id="medicalConditions"
+                                    name="medicalConditions"
+                                    placeholder="List important medical conditions, or write 'None'"
+                                ></textarea>
+                            </div>
+
+                        </div>
+                    </div>
+
+
+                    <h2 class="section-title">
+                        Emergency Contact
+                    </h2>
+
+                    <div class="contact-box">
+
+                        <h3>Primary Emergency Contact</h3>
+
+                        <div class="form-grid">
+
+                            <div class="form-group">
+                                <label for="contactName">
+                                    Contact Name <span class="required">*</span>
+                                </label>
+
+                                <input
+                                    type="text"
+                                    id="contactName"
+                                    name="contactName"
+                                    placeholder="Emergency contact name"
+                                >
+                            </div>
+
+                            <div class="form-group">
+                                <label for="contactRelationship">
+                                    Relationship <span class="required">*</span>
+                                </label>
+
+                                <input
+                                    type="text"
+                                    id="contactRelationship"
+                                    name="contactRelationship"
+                                    placeholder="e.g. Father, Mother, Spouse"
+                                >
+                            </div>
+
+                            <div class="form-group">
+                                <label for="contactPhone">
+                                    Contact Phone <span class="required">*</span>
+                                </label>
+
+                                <input
+                                    type="tel"
+                                    id="contactPhone"
+                                    name="contactPhone"
+                                    placeholder="Emergency contact phone"
+                                >
+                            </div>
+
+                            <div class="form-group">
+                                <label for="contactEmail">
+                                    Contact Email
+                                </label>
+
+                                <input
+                                    type="email"
+                                    id="contactEmail"
+                                    name="contactEmail"
+                                    placeholder="Emergency contact email"
+                                >
+                            </div>
+
+                        </div>
+                    </div>
+
+                </div>
+
+
+                <!-- =========================
+                     DRIVER INFORMATION
+                ========================== -->
+
+                <div id="driverSection" class="role-section" hidden>
+
+                    <h2 class="section-title">
+                        Ambulance Information
+                    </h2>
+
+                    <div class="medical-box">
+
+                        <div class="medical-note">
+                            Driver accounts are used to manage assigned
+                            ambulances, emergency routes and response status.
+                            No patient medical information is collected here.
+                        </div>
+
+                        <div class="form-grid">
+
+                            <div class="form-group">
+                                <label for="vehicleNumber">
+                                    Vehicle Number <span class="required">*</span>
+                                </label>
+
+                                <input
+                                    type="text"
+                                    id="vehicleNumber"
+                                    name="vehicleNumber"
+                                    placeholder="e.g. PB10AB1234 / 22BH1234AA"
+                                    maxlength="15"
+                                    minlength="5"
+                                    inputmode="text"
+                                    autocomplete="off"
+                                    spellcheck="false"
+                                    pattern="[A-Z0-9 -]{5,15}"
+                                    aria-describedby="vehicleNumberHelp"
+                                >
+
+                                
+                            </div>
+
+                            <div class="form-group">
+                                <label for="ambulanceType">
+                                    Ambulance Type <span class="required">*</span>
+                                </label>
+
+                                <select id="ambulanceType" name="ambulanceType">
+                                    <option value="">Select ambulance type</option>
+                                    <option value="Basic Life Support">Basic Life Support</option>
+                                    <option value="Advanced Life Support">Advanced Life Support</option>
+                                    <option value="Patient Transport">Patient Transport</option>
+                                </select>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="verification-box">
+
+                        <div class="verification-title">
+                            Identity Verification
+                        </div>
+
+                        <div class="verification-note">
+                            Driver identity must be verified before receiving
+                            operational assignments. Select one government-issued
+                            identity document and verify the registered phone
+                            number with OTP. Full identity-document numbers should
+                            not be displayed publicly.
+                        </div>
+
+                        <div class="form-grid">
+
+                            <div class="form-group">
+                                <label for="identityDocumentType">
+                                    Identity Document <span class="required">*</span>
+                                </label>
+
+                                <select
+                                    id="identityDocumentType"
+                                    name="identityDocumentType"
+                                >
+                                    <option value="">Select document</option>
+                                    <option value="driving_license">Driving Licence</option>
+                                    <option value="pan">PAN Card</option>
+                                    <option value="aadhaar">Aadhaar Card</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="identityDocumentNumber">
+                                    Document Number <span class="required">*</span>
+                                </label>
+
+                                <input
+                                    type="text"
+                                    id="identityDocumentNumber"
+                                    name="identityDocumentNumber"
+                                    placeholder="Select an identity document first"
+                                    autocomplete="off"
+                                    inputmode="text"
+                                    maxlength="10"
+                                    disabled
+                                >
+
+                                <div
+                                    id="identityDocumentHelp"
+                                    class="help-text"
+                                >
+                                    Select Driving Licence, PAN Card or Aadhaar Card.
+                                </div>
+                            </div>
+
+                        </div>
+
+
+                        <div class="verification-box" style="margin-top: 16px;">
+
+                            <div class="verification-title">
+                                Phone OTP Verification
+                            </div>
+
+                            <div class="verification-note">
+                                OTP verification will use the driver's registered
+                                phone number. The secure verification service will
+                                be connected in the authentication layer.
+                            </div>
+
+                            <div class="otp-row">
+
+                                <div class="form-group">
+                                    <label for="driverOtp">
+                                        OTP
+                                    </label>
+
+                                    <input
+                                        type="text"
+                                        id="driverOtp"
+                                        name="driverOtp"
+                                        inputmode="numeric"
+                                        maxlength="6"
+                                        placeholder="Enter 6-digit OTP"
+                                        autocomplete="one-time-code"
+                                    >
+                                </div>
+
+                                <button
+                                    type="button"
+                                    class="secondary-btn"
+                                    id="sendDriverOtpButton"
+                                >
+                                    Send OTP
+                                </button>
+
+                            </div>
+
+                            <div class="otp-actions">
+
+                                <button
+                                    type="button"
+                                    class="secondary-btn"
+                                    id="verifyDriverOtpButton"
+                                >
+                                    Verify OTP
+                                </button>
+
+                                <span
+                                    id="driverOtpStatus"
+                                    class="verification-status pending"
+                                >
+                                    Not verified
+                                </span>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- =========================
+                     HOSPITAL INFORMATION
+                ========================== -->
+
+                <div id="hospitalSection" class="role-section" hidden>
+
+                    <h2 class="section-title">
+                        Hospital / ER Information
+                    </h2>
+
+                    <div class="medical-box">
+
+                        <div class="medical-note">
+                            Hospital accounts are for authorized hospital or ER
+                            staff. Date of birth and personal medical details
+                            are not collected for this role.
+                        </div>
+
+                        <div class="form-grid">
+
+                            <div class="form-group">
+                                <label for="hospitalId">
+                                    Hospital <span class="required">*</span>
+                                </label>
+
+                                <select id="hospitalId" name="hospitalId">
+                                    <option value="">Select hospital</option>
+                                </select>
+
+                                <div class="help-text">
+                                    Hospitals will be loaded from the ResQ-Route database.
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="designation">
+                                    Designation <span class="required">*</span>
+                                </label>
+
+                                <input
+                                    type="text"
+                                    id="designation"
+                                    name="designation"
+                                    placeholder="e.g. ER Nurse, Doctor, Administrator"
+                                >
+                            </div>
+
+                            <div class="form-group">
+                                <label for="hospitalStaffId">
+                                    Hospital Staff ID <span class="required">*</span>
+                                </label>
+
+                                <input
+                                    type="text"
+                                    id="hospitalStaffId"
+                                    name="hospitalStaffId"
+                                    placeholder="Hospital-issued staff ID"
+                                >
+                            </div>
+
+                            <div class="form-group">
+                                <label for="hospitalDepartment">
+                                    Department <span class="required">*</span>
+                                </label>
+
+                                <input
+                                    type="text"
+                                    id="hospitalDepartment"
+                                    name="hospitalDepartment"
+                                    placeholder="e.g. Emergency / ER"
+                                >
+                            </div>
+
+                            <div class="form-group">
+                                <label for="receptionName">
+                                    Reception / ER Contact Name <span class="required">*</span>
+                                </label>
+
+                                <input
+                                    type="text"
+                                    id="receptionName"
+                                    name="receptionName"
+                                    placeholder="Receptionist or ER desk name"
+                                >
+                            </div>
+
+                            <div class="form-group">
+                                <label for="receptionPhone">
+                                    Reception / ER Contact Number <span class="required">*</span>
+                                </label>
+
+                                <input
+                                    type="tel"
+                                    id="receptionPhone"
+                                    name="receptionPhone"
+                                    placeholder="Hospital reception / ER number"
+                                >
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- =========================
+                     CONSENT / TERMS
+                ========================== -->
+
+                <div class="consent-box">
+
+                    <!-- FAMILY CONSENT -->
+                    <div id="familyConsentSection">
+
+                        <div class="checkbox-row">
+
+                            <input
+                                type="checkbox"
+                                id="medicalConsent"
+                                name="medicalConsent"
+                            >
+
+                            <label for="medicalConsent">
+                                I consent to ResQ-Route sharing my relevant
+                                emergency and medical information with
+                                authorized emergency personnel, the assigned
+                                ambulance team and the destination hospital
+                                when required for an active emergency.
+
+                                <span class="required">*</span>
+                            </label>
+
+                        </div>
+
+
+                        <div class="checkbox-row">
+
+                            <input
+                                type="checkbox"
+                                id="emergencyContactConsent"
+                                name="emergencyContactConsent"
+                            >
+
+                            <label for="emergencyContactConsent">
+                                I authorize my registered emergency contact
+                                to receive emergency notifications and
+                                controlled access to relevant emergency
+                                information during an active emergency.
+
+                                <span class="required">*</span>
+                            </label>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- ALL USERS -->
+                    <div class="checkbox-row">
+
+                        <input
+                            type="checkbox"
+                            id="termsConsent"
+                            name="termsConsent"
+                            required
+                        >
+
+                        <label for="termsConsent">
+
+                            I agree to the
+                            <a href="terms.html?role=family" id="termsLink">
+                                Terms & Conditions
+                            </a>
+                            and acknowledge that ResQ-Route is an
+                            emergency coordination prototype and does
+                            not replace professional medical services.
+
+                            <span class="required">*</span>
+
+                        </label>
+
+                    </div>
+
+                </div>
+
+                </div>
+
+
+                <!-- =========================
+                     CREATE ACCOUNT
+                ========================== -->
+
+                <button
+                    type="submit"
+                    class="create-btn"
+                    id="createAccountButton"
+                >
+
+                    <span class="button-text">
+                        Create Account
+                    </span>
+
+                    <span class="spinner"></span>
+
+                </button>
+
+
+                <div class="login-text">
+
+                    Already have an account?
+
+                    <a href="signin.html">
+                        Sign In
+                    </a>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </main>
+
+
+    <!-- =========================
+         SCRIPT
+         Supabase authentication will
+         be connected through js/auth.js
+    ========================== -->
+
+    <script>
+
+        const signupForm =
+            document.getElementById("signupForm");
+
+        const detailsSection =
+            document.getElementById("detailsSection");
+
+        const statusMessage =
+            document.getElementById("statusMessage");
+
+        const createAccountButton =
+            document.getElementById("createAccountButton");
+
+        const password =
+            document.getElementById("password");
+
+        const confirmPassword =
+            document.getElementById("confirmPassword");
+
+        const dateOfBirthGroup =
+            document.getElementById("dateOfBirthGroup");
+
+        const dateOfBirth =
+            document.getElementById("dateOfBirth");
+
+        const familySection =
+            document.getElementById("familySection");
+
+        const driverSection =
+            document.getElementById("driverSection");
+
+        const hospitalSection =
+            document.getElementById("hospitalSection");
+
+        const familyConsentSection =
+            document.getElementById("familyConsentSection");
+
+        const consentBox =
+            document.querySelector(".consent-box");
+
+        const medicalConsent =
+            document.getElementById("medicalConsent");
+
+        const emergencyContactConsent =
+            document.getElementById("emergencyContactConsent");
+
+        const termsConsent =
+            document.getElementById("termsConsent");
+
+        const contactName =
+            document.getElementById("contactName");
+
+        const contactRelationship =
+            document.getElementById("contactRelationship");
+
+        const contactPhone =
+            document.getElementById("contactPhone");
+
+        const vehicleNumber =
+            document.getElementById("vehicleNumber");
+
+        const ambulanceType =
+            document.getElementById("ambulanceType");
+
+        const identityDocumentType =
+            document.getElementById("identityDocumentType");
+
+        const identityDocumentNumber =
+            document.getElementById("identityDocumentNumber");
+
+        const identityDocumentHelp =
+            document.getElementById("identityDocumentHelp");
+
+        const driverOtp =
+            document.getElementById("driverOtp");
+
+        const sendDriverOtpButton =
+            document.getElementById("sendDriverOtpButton");
+
+        const verifyDriverOtpButton =
+            document.getElementById("verifyDriverOtpButton");
+
+        const driverOtpStatus =
+            document.getElementById("driverOtpStatus");
+
+        const hospitalId =
+            document.getElementById("hospitalId");
+
+        const designation =
+            document.getElementById("designation");
+
+        const hospitalStaffId =
+            document.getElementById("hospitalStaffId");
+
+        const hospitalDepartment =
+            document.getElementById("hospitalDepartment");
+
+        const receptionName =
+            document.getElementById("receptionName");
+
+        const receptionPhone =
+            document.getElementById("receptionPhone");
+
+
+        let driverOtpVerified = false;
+
+
+        /* =========================
+           STATUS MESSAGE
+        ========================== */
+
+        function showMessage(message, type) {
+
+            statusMessage.textContent = message;
+
+            statusMessage.className =
+                "status-message " + type;
+
+            window.scrollTo({
+                top: 0,
+                behavior: "smooth"
+            });
+
+        }
+
+
+        /* =========================
+           ROLE
+        ========================== */
+
+        function getSelectedRole() {
+
+            const selected =
+                document.querySelector(
+                    'input[name="role"]:checked'
+                );
+
+            return selected
+                ? selected.value
+                : null;
+
+        }
+
+
+        function setRequired(element, required) {
+
+            if (element) {
+                element.required = required;
+            }
+
+        }
+
+
+        function setDisabled(element, disabled) {
+
+            if (element) {
+                element.disabled = disabled;
+            }
+
+        }
+
+
+        function resetDriverVerification() {
+
+            driverOtpVerified = false;
+
+            if (driverOtp) {
+                driverOtp.value = "";
+            }
+
+            if (driverOtpStatus) {
+                driverOtpStatus.textContent = "Not verified";
+                driverOtpStatus.className =
+                    "verification-status pending";
+            }
+
+        }
+
+
+        function updateRoleForm() {
+
+            const role = getSelectedRole();
+
+            const roleSelected =
+                role !== null;
+
+            detailsSection.hidden =
+                !roleSelected;
+
+            familySection.hidden =
+                role !== "family";
+
+            driverSection.hidden =
+                role !== "driver";
+
+            hospitalSection.hidden =
+                role !== "hospital";
+
+            familyConsentSection.hidden =
+                role !== "family";
+
+            consentBox.hidden =
+                !roleSelected;
+
+
+            /* =========================
+               BASIC INFORMATION
+            ========================== */
+
+            setRequired(
+                document.getElementById("fullName"),
+                roleSelected
+            );
+
+            setRequired(
+                document.getElementById("phone"),
+                roleSelected
+            );
+
+            setRequired(
+                document.getElementById("email"),
+                roleSelected
+            );
+
+            setRequired(
+                password,
+                roleSelected
+            );
+
+            setRequired(
+                confirmPassword,
+                roleSelected
+            );
+
+
+            /* Date of birth is family-only */
+            dateOfBirthGroup.hidden =
+                role !== "family";
+
+            setDisabled(
+                dateOfBirth,
+                role !== "family"
+            );
+
+
+            /* =========================
+               FAMILY
+            ========================== */
+
+            setRequired(
+                contactName,
+                role === "family"
+            );
+
+            setRequired(
+                contactRelationship,
+                role === "family"
+            );
+
+            setRequired(
+                contactPhone,
+                role === "family"
+            );
+
+            setRequired(
+                medicalConsent,
+                role === "family"
+            );
+
+            setRequired(
+                emergencyContactConsent,
+                role === "family"
+            );
+
+
+            /* =========================
+               DRIVER
+            ========================== */
+
+            setRequired(
+                vehicleNumber,
+                role === "driver"
+            );
+
+            setRequired(
+                ambulanceType,
+                role === "driver"
+            );
+
+            setRequired(
+                identityDocumentType,
+                role === "driver"
+            );
+
+            setRequired(
+                identityDocumentNumber,
+                role === "driver"
+            );
+
+            if (role !== "driver") {
+                identityDocumentNumber.value = "";
+                identityDocumentNumber.disabled = true;
+                identityDocumentNumber.removeAttribute("pattern");
+                identityDocumentNumber.setCustomValidity("");
+                identityDocumentNumber.classList.remove(
+                    "document-valid",
+                    "document-invalid"
+                );
+            } else {
+                identityDocumentNumber.disabled = false;
+                updateIdentityDocumentRules();
+            }
+
+
+            /* =========================
+               HOSPITAL
+            ========================== */
+
+            setRequired(
+                hospitalId,
+                role === "hospital"
+            );
+
+            setRequired(
+                designation,
+                role === "hospital"
+            );
+
+            setRequired(
+                hospitalStaffId,
+                role === "hospital"
+            );
+
+            setRequired(
+                hospitalDepartment,
+                role === "hospital"
+            );
+
+            setRequired(
+                receptionName,
+                role === "hospital"
+            );
+
+            setRequired(
+                receptionPhone,
+                role === "hospital"
+            );
+
+        }
+
+
+        /* =========================
+           ROLE SELECTION
+        ========================== */
+
+        document
+            .querySelectorAll('input[name="role"]')
+            .forEach(function(radio) {
+
+                radio.addEventListener(
+                    "change",
+                    function() {
+
+                        resetDriverVerification();
+
+                        updateRoleForm();
+
+                        const roleNames = {
+                            family: "Citizen / Family",
+                            driver: "Ambulance / Driver",
+                            hospital: "Hospital / ER"
+                        };
+
+                        showMessage(
+                            roleNames[this.value] +
+                            " registration selected.",
+                            "success"
+                        );
+
+                    }
+                );
+
+            });
+
+
+        /* =========================
+           PASSWORD VALIDATION
+        ========================== */
+
+        function validatePasswords() {
+
+            if (
+                confirmPassword.value &&
+                password.value !== confirmPassword.value
+            ) {
+
+                confirmPassword.setCustomValidity(
+                    "Passwords do not match."
+                );
+
+            } else {
+
+                confirmPassword.setCustomValidity("");
+
+            }
+
+        }
+
+
+        password.addEventListener(
+            "input",
+            validatePasswords
+        );
+
+        confirmPassword.addEventListener(
+            "input",
+            validatePasswords
+        );
+
+
+        /* =========================
+           IDENTITY DOCUMENT VALIDATION
+        ========================== */
+
+        function updateIdentityDocumentRules() {
+
+            const type =
+                identityDocumentType.value;
+
+            identityDocumentNumber.value = "";
+            identityDocumentNumber.classList.remove(
+                "document-valid",
+                "document-invalid"
+            );
+
+            identityDocumentNumber.setCustomValidity("");
+
+            if (type === "aadhaar") {
+
+                identityDocumentNumber.disabled = false;
+                identityDocumentNumber.maxLength = 12;
+                identityDocumentNumber.inputMode = "numeric";
+                identityDocumentNumber.pattern = "[0-9]{12}";
+                identityDocumentNumber.placeholder =
+                    "Enter 12-digit Aadhaar number";
+
+                identityDocumentHelp.textContent =
+                    "Aadhaar number must contain exactly 12 digits.";
+
+            } else if (type === "pan") {
+
+                identityDocumentNumber.disabled = false;
+                identityDocumentNumber.maxLength = 10;
+                identityDocumentNumber.inputMode = "text";
+                identityDocumentNumber.pattern =
+                    "[A-Z]{5}[0-9]{4}[A-Z]{1}";
+                identityDocumentNumber.placeholder =
+                    "Enter PAN e.g. ABCDE1234F";
+
+                identityDocumentHelp.textContent =
+                    "PAN must contain 10 characters: 5 letters, 4 digits and 1 letter.";
+
+            } else if (type === "driving_license") {
+
+                identityDocumentNumber.disabled = false;
+                identityDocumentNumber.maxLength = 20;
+                identityDocumentNumber.inputMode = "text";
+                identityDocumentNumber.removeAttribute("pattern");
+                identityDocumentNumber.placeholder =
+                    "Enter driving licence number";
+
+                identityDocumentHelp.textContent =
+                    "Enter the driving licence number exactly as issued.";
+
+            } else {
+
+                identityDocumentNumber.disabled = true;
+                identityDocumentNumber.maxLength = 10;
+                identityDocumentNumber.inputMode = "text";
+                identityDocumentNumber.removeAttribute("pattern");
+                identityDocumentNumber.placeholder =
+                    "Select an identity document first";
+
+                identityDocumentHelp.textContent =
+                    "Select Driving Licence, PAN Card or Aadhaar Card.";
+            }
+        }
+
+
+        /* =========================
+           VEHICLE NUMBER RULES
+           =========================
+
+           Do NOT use one rigid Indian vehicle-number regex here.
+           Registration marks can differ by state/UT, series,
+           older registration systems and special series such as BH.
+           We therefore enforce safe input constraints without
+           rejecting legitimate formats unnecessarily.
+        ========================== */
+
+        function normalizeVehicleNumber() {
+
+            if (!vehicleNumber) {
+                return "";
+            }
+
+            let value =
+                vehicleNumber.value
+                    .toUpperCase()
+                    .replace(/[^A-Z0-9 -]/g, "");
+
+            /* Keep spaces/hyphens usable while typing. */
+            value =
+                value
+                    .replace(/\s+/g, " ")
+                    .trimStart();
+
+            if (value.length > 15) {
+                value = value.substring(0, 15);
+            }
+
+            vehicleNumber.value = value;
+
+            return value;
+        }
+
+
+        function validateVehicleNumber() {
+
+            if (!vehicleNumber) {
+                return true;
+            }
+
+            const rawValue =
+                normalizeVehicleNumber();
+
+            /* For validation, ignore presentation separators. */
+            const normalized =
+                rawValue.replace(/[ -]/g, "");
+
+            if (!normalized) {
+
+                vehicleNumber.setCustomValidity(
+                    "Enter the ambulance vehicle registration number."
+                );
+
+                vehicleNumber.classList.remove("document-valid");
+                vehicleNumber.classList.add("document-invalid");
+
+                return false;
+            }
+
+            /*
+               Broad 5-15 character alphanumeric range intentionally
+               supports old and newer Indian registration formats.
+               We only reject characters that cannot be part of the
+               registration number field and clearly impossible lengths.
+            */
+            if (!/^[A-Z0-9]{5,15}$/.test(normalized)) {
+
+                vehicleNumber.setCustomValidity(
+                    "Enter a valid Indian vehicle registration number using letters and numbers."
+                );
+
+                vehicleNumber.classList.remove("document-valid");
+                vehicleNumber.classList.add("document-invalid");
+
+                return false;
+            }
+
+            vehicleNumber.setCustomValidity("");
+
+            vehicleNumber.classList.remove("document-invalid");
+            vehicleNumber.classList.add("document-valid");
+
+            return true;
+        }
+
+
+        if (vehicleNumber) {
+
+            vehicleNumber.addEventListener(
+                "input",
+                function() {
+                    normalizeVehicleNumber();
+                    validateVehicleNumber();
+                }
+            );
+
+            vehicleNumber.addEventListener(
+                "blur",
+                function() {
+                    validateVehicleNumber();
+                }
+            );
+        }
+
+
+        function validateIdentityDocument() {
+
+            const type =
+                identityDocumentType.value;
+
+            let value =
+                identityDocumentNumber.value.trim();
+
+            if (type === "aadhaar") {
+
+                value =
+                    value.replace(/\D/g, "");
+
+                identityDocumentNumber.value =
+                    value;
+
+                if (!/^\d{12}$/.test(value)) {
+
+                    identityDocumentNumber.classList.remove(
+                        "document-valid"
+                    );
+
+                    identityDocumentNumber.classList.add(
+                        "document-invalid"
+                    );
+
+                    identityDocumentNumber.setCustomValidity(
+                        "Aadhaar number must contain exactly 12 digits."
+                    );
+
+                    return false;
+                }
+
+            } else if (type === "pan") {
+
+                value =
+                    value
+                        .toUpperCase()
+                        .replace(/[^A-Z0-9]/g, "");
+
+                identityDocumentNumber.value =
+                    value;
+
+                if (!/^[A-Z]{5}\d{4}[A-Z]$/.test(value)) {
+
+                    identityDocumentNumber.classList.remove(
+                        "document-valid"
+                    );
+
+                    identityDocumentNumber.classList.add(
+                        "document-invalid"
+                    );
+
+                    identityDocumentNumber.setCustomValidity(
+                        "PAN must contain 5 letters, 4 digits and 1 final letter."
+                    );
+
+                    return false;
+                }
+
+            } else if (type === "driving_license") {
+
+                if (!value) {
+
+                    identityDocumentNumber.classList.remove(
+                        "document-valid"
+                    );
+
+                    identityDocumentNumber.classList.add(
+                        "document-invalid"
+                    );
+
+                    identityDocumentNumber.setCustomValidity(
+                        "Enter your driving licence number."
+                    );
+
+                    return false;
+                }
+
+                identityDocumentNumber.value =
+                    value.toUpperCase();
+
+            } else {
+
+                identityDocumentNumber.setCustomValidity(
+                    "Select an identity document first."
+                );
+
+                return false;
+            }
+
+            identityDocumentNumber.setCustomValidity("");
+
+            identityDocumentNumber.classList.remove(
+                "document-invalid"
+            );
+
+            identityDocumentNumber.classList.add(
+                "document-valid"
+            );
+
+            return true;
+        }
+
+
+        identityDocumentType.addEventListener(
+            "change",
+            updateIdentityDocumentRules
+        );
+
+
+        identityDocumentNumber.addEventListener(
+            "input",
+            function() {
+
+                const type =
+                    identityDocumentType.value;
+
+                let value =
+                    identityDocumentNumber.value;
+
+                if (type === "aadhaar") {
+
+                    value =
+                        value.replace(/\D/g, "");
+
+                    if (value.length > 12) {
+                        value = value.substring(0, 12);
+                    }
+
+                    identityDocumentNumber.value =
+                        value;
+
+                } else if (type === "pan") {
+
+                    value =
+                        value
+                            .toUpperCase()
+                            .replace(/[^A-Z0-9]/g, "");
+
+                    if (value.length > 10) {
+                        value = value.substring(0, 10);
+                    }
+
+                    identityDocumentNumber.value =
+                        value;
+
+                } else if (type === "driving_license") {
+
+                    identityDocumentNumber.value =
+                        value
+                            .toUpperCase()
+                            .replace(/[^A-Z0-9 -]/g, "");
+                }
+
+                validateIdentityDocument();
+
+            }
+        );
+
+
+        /* =========================
+           DRIVER OTP UI
+        ========================== */
+
+        sendDriverOtpButton.addEventListener(
+            "click",
+            function() {
+
+                const phone =
+                    document.getElementById("phone").value.trim();
+
+                if (!phone) {
+
+                    showMessage(
+                        "Enter the driver's phone number before requesting OTP.",
+                        "error"
+                    );
+
+                    return;
+                }
+
+                /*
+                    Security note:
+                    OTP generation and verification must be performed
+                    by Supabase Auth or a secure backend service.
+                    Never generate a real verification OTP in frontend JS.
+                */
+
+                driverOtpVerified = false;
+
+                driverOtpStatus.textContent =
+                    "OTP request ready. Secure OTP service will be connected in auth.js.";
+
+                driverOtpStatus.className =
+                    "verification-status pending";
+
+                showMessage(
+                    "OTP verification UI is ready. The secure OTP service will be connected in the authentication layer.",
+                    "success"
+                );
+
+            }
+        );
+
+
+        verifyDriverOtpButton.addEventListener(
+            "click",
+            function() {
+
+                const otp =
+                    driverOtp.value.trim();
+
+                if (!/^\d{6}$/.test(otp)) {
+
+                    showMessage(
+                        "Enter the 6-digit OTP.",
+                        "error"
+                    );
+
+                    return;
+                }
+
+                /*
+                    Do NOT mark this verified on the client.
+                    auth.js will perform the real server-side OTP
+                    verification and then update this state.
+                */
+
+                driverOtpStatus.textContent =
+                    "OTP entered. Server verification is required.";
+
+                driverOtpStatus.className =
+                    "verification-status pending";
+
+                showMessage(
+                    "OTP entered. Actual verification will be performed securely by the authentication layer.",
+                    "success"
+                );
+
+            }
+        );
+
+
+        /* =========================
+           DRIVER DOCUMENT SUBMIT CHECK
+        ========================== */
+
+        signupForm.addEventListener(
+            "submit",
+            function(event) {
+
+                const role =
+                    getSelectedRole();
+
+                if (role === "driver") {
+
+                    if (!validateVehicleNumber()) {
+
+                        event.preventDefault();
+                        event.stopImmediatePropagation();
+
+                        vehicleNumber.reportValidity();
+
+                        showMessage(
+                            "Please enter a valid ambulance vehicle registration number.",
+                            "error"
+                        );
+
+                        return false;
+                    }
+
+                    if (!validateIdentityDocument()) {
+
+                        event.preventDefault();
+                        event.stopImmediatePropagation();
+
+                        identityDocumentNumber.reportValidity();
+
+                        showMessage(
+                            "Please enter a valid identity document number before creating the driver account.",
+                            "error"
+                        );
+
+                        return false;
+                    }
+                }
+
+            },
+            true
+        );
+
+
+        /* =========================
+           INITIAL STATE
+        ========================== */
+
+        consentBox.hidden = true;
+
+        updateRoleForm();
+
+    </script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/emergency.js"></script>
+<script src="js/realtime.js"></script>
+
+<script>
+(function () {
+    const termsLink = document.getElementById("termsLink");
+    if (!termsLink) return;
+
+    function updateTermsLink() {
+        const selected = document.querySelector('input[name="role"]:checked');
+        const role = selected ? selected.value : "family";
+        termsLink.href = "terms.html?role=" + encodeURIComponent(role);
+    }
+
+    document.querySelectorAll('input[name="role"]').forEach(function (radio) {
+        radio.addEventListener("change", updateTermsLink);
+    });
+
+    updateTermsLink();
+})();
+</script>
+
+</body>
+</html>
