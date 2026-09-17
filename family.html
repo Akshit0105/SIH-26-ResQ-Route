@@ -29,6 +29,16 @@
     <title>Family Dashboard | ResQ-Route</title>
 
 
+    <!-- =====================================================
+         LEAFLET CSS
+    ====================================================== -->
+
+    <link
+        rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    >
+
+
     <style>
 
         * {
@@ -37,6 +47,7 @@
             box-sizing: border-box;
         }
 
+
         body {
             font-family: Arial, Helvetica, sans-serif;
             background: #f4f7fb;
@@ -44,51 +55,65 @@
         }
 
 
-        /* =========================
+        /* =====================================================
            NAVBAR
-        ========================== */
+        ====================================================== */
 
         nav {
             height: 70px;
             background: #ffffff;
             border-bottom: 1px solid #e5e9ef;
+
             display: flex;
             align-items: center;
             justify-content: space-between;
+
             padding: 0 4%;
+
             position: sticky;
             top: 0;
-            z-index: 100;
+
+            z-index: 1000;
         }
+
 
         .logo {
             display: flex;
             align-items: center;
             gap: 10px;
+
             text-decoration: none;
             color: #172033;
         }
 
+
         .logo-icon {
             width: 40px;
             height: 40px;
+
             background: #e63946;
             color: white;
+
             border-radius: 10px;
+
             display: flex;
             align-items: center;
             justify-content: center;
+
             font-weight: 800;
         }
+
 
         .logo-text {
             font-size: 20px;
             font-weight: 800;
         }
 
+
         .logo-text span {
             color: #e63946;
         }
+
 
         .nav-right {
             display: flex;
@@ -96,31 +121,44 @@
             gap: 20px;
         }
 
+
         .role-badge {
             padding: 7px 12px;
+
             border-radius: 20px;
+
             background: #fff1f2;
             color: #c72535;
+
             font-size: 12px;
             font-weight: 700;
         }
+
 
         .user-name {
             font-size: 13px;
             font-weight: 700;
+
             color: #4d596b;
         }
 
+
         .logout-btn {
             border: 1px solid #dce2ea;
+
             background: white;
             color: #596579;
+
             border-radius: 8px;
+
             padding: 9px 14px;
+
             cursor: pointer;
+
             font-size: 12px;
             font-weight: 700;
         }
+
 
         .logout-btn:hover {
             border-color: #e63946;
@@ -128,55 +166,76 @@
         }
 
 
-        /* =========================
-           LAYOUT
-        ========================== */
+        /* =====================================================
+           MAIN LAYOUT
+        ====================================================== */
 
         .dashboard {
             display: grid;
+
             grid-template-columns: 235px 1fr;
+
             min-height: calc(100vh - 70px);
         }
 
 
-        /* =========================
+        /* =====================================================
            SIDEBAR
-        ========================== */
+        ====================================================== */
 
         .sidebar {
             background: #172033;
             color: white;
+
             padding: 25px 15px;
         }
 
+
         .sidebar-title {
             color: #8d98a9;
+
             text-transform: uppercase;
+
             font-size: 10px;
             font-weight: 800;
+
             letter-spacing: 1px;
+
             padding: 0 12px;
+
             margin-bottom: 12px;
         }
+
 
         .side-menu {
             display: flex;
             flex-direction: column;
+
             gap: 5px;
         }
 
+
         .side-item {
             border: none;
+
             background: transparent;
+
             color: #b7c0ce;
+
             width: 100%;
+
             padding: 12px;
+
             border-radius: 8px;
+
             text-align: left;
+
             cursor: pointer;
+
             font-size: 13px;
             font-weight: 600;
         }
+
 
         .side-item:hover,
         .side-item.active {
@@ -184,561 +243,943 @@
             color: white;
         }
 
+
         .side-item.active {
             border-left: 3px solid #e63946;
         }
 
 
-        /* =========================
+        /* =====================================================
            CONTENT
-        ========================== */
+        ====================================================== */
 
         .content {
             padding: 30px;
+
             overflow-x: hidden;
         }
 
+
         .page-header {
             display: flex;
+
             justify-content: space-between;
+
             align-items: flex-start;
+
             margin-bottom: 25px;
         }
 
+
         .page-header h1 {
             font-size: 27px;
+
             margin-bottom: 7px;
         }
 
+
         .page-header p {
             color: #758092;
+
             font-size: 13px;
         }
 
+
         .live-indicator {
             display: flex;
+
             align-items: center;
+
             gap: 8px;
+
             color: #16834a;
+
             font-size: 12px;
+
             font-weight: 700;
         }
+
 
         .live-dot {
             width: 9px;
             height: 9px;
+
             background: #1fa463;
+
             border-radius: 50%;
-            box-shadow: 0 0 0 4px rgba(31,164,99,0.12);
+
+            box-shadow:
+                0 0 0 4px rgba(31,164,99,0.12);
         }
 
 
-        /* =========================
+        /* =====================================================
            ACTIVE EMERGENCY
-        ========================== */
+        ====================================================== */
 
         .emergency-card {
             background: white;
+
             border-radius: 16px;
+
             border: 1px solid #e3e8ef;
+
             overflow: hidden;
+
             margin-bottom: 25px;
         }
 
+
         .emergency-header {
             padding: 20px 22px;
+
             display: flex;
+
             justify-content: space-between;
+
             align-items: center;
+
             border-bottom: 1px solid #edf0f4;
         }
 
+
         .emergency-title {
             display: flex;
+
             align-items: center;
+
             gap: 12px;
         }
+
 
         .emergency-icon {
             width: 42px;
             height: 42px;
+
             border-radius: 10px;
+
             background: #fff0f1;
+
             color: #e63946;
+
             display: flex;
+
             align-items: center;
+
             justify-content: center;
+
             font-size: 19px;
+
             font-weight: 800;
         }
+
 
         .emergency-title h2 {
             font-size: 17px;
+
             margin-bottom: 4px;
         }
 
+
         .emergency-title p {
             color: #7a8494;
+
             font-size: 11px;
         }
 
+
         .status-badge {
             padding: 7px 12px;
+
             border-radius: 20px;
+
             background: #fff3df;
+
             color: #a56608;
+
             font-size: 11px;
+
             font-weight: 800;
         }
+
 
         .emergency-body {
             padding: 22px;
         }
 
 
-        /* =========================
-           STATS
-        ========================== */
+        /* =====================================================
+           STAT CARDS
+        ====================================================== */
 
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+
+            grid-template-columns:
+                repeat(4, 1fr);
+
             gap: 15px;
+
             margin-bottom: 25px;
         }
 
+
         .stat-card {
             background: white;
+
             border: 1px solid #e3e8ef;
+
             border-radius: 13px;
+
             padding: 18px;
         }
 
+
         .stat-label {
             color: #7b8595;
+
             font-size: 11px;
+
             margin-bottom: 8px;
         }
 
+
         .stat-value {
             font-size: 21px;
+
             font-weight: 800;
+
             color: #172033;
         }
 
+
         .stat-sub {
             font-size: 10px;
+
             color: #7d8796;
+
             margin-top: 5px;
         }
 
 
-        /* =========================
+        /* =====================================================
            MAIN GRID
-        ========================== */
+        ====================================================== */
 
         .main-grid {
             display: grid;
-            grid-template-columns: 1.6fr 1fr;
+
+            grid-template-columns:
+                1.6fr 1fr;
+
             gap: 20px;
         }
 
+
         .card {
             background: white;
+
             border: 1px solid #e3e8ef;
+
             border-radius: 15px;
+
             overflow: hidden;
         }
 
+
         .card-header {
             padding: 18px 20px;
-            border-bottom: 1px solid #edf0f4;
+
+            border-bottom:
+                1px solid #edf0f4;
+
             display: flex;
+
             align-items: center;
+
             justify-content: space-between;
         }
+
 
         .card-header h2 {
             font-size: 15px;
         }
 
+
         .card-header span {
             font-size: 11px;
+
             color: #7a8494;
         }
+
 
         .card-body {
             padding: 20px;
         }
 
 
-        /* =========================
-           MAP
-        ========================== */
+        /* =====================================================
+           LEAFLET MAP
+        ====================================================== */
 
         .map-container {
-            height: 360px;
-            background:
-                linear-gradient(
-                    135deg,
-                    #edf2f6 25%,
-                    #e6ebf0 25%,
-                    #e6ebf0 50%,
-                    #edf2f6 50%,
-                    #edf2f6 75%,
-                    #e6ebf0 75%
-                );
-            background-size: 80px 80px;
             position: relative;
+
+            background: #e9eef3;
+
             overflow: hidden;
         }
 
-        .road {
+
+        #familyMap {
+            width: 100%;
+
+            height: 420px;
+
+            min-height: 300px;
+        }
+
+
+        .map-overlay {
             position: absolute;
-            background: #ffffff;
-            height: 12px;
-            width: 120%;
-            left: -10%;
-            transform: rotate(-18deg);
-            top: 45%;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-        }
 
-        .road.two {
-            transform: rotate(30deg);
-            top: 60%;
-        }
+            left: 16px;
+            bottom: 16px;
 
-        .road.three {
-            transform: rotate(80deg);
-            top: 20%;
-        }
+            z-index: 500;
 
-        .route-line {
-            position: absolute;
-            height: 5px;
-            width: 65%;
-            background: #e63946;
-            left: 18%;
-            top: 50%;
-            transform: rotate(-18deg);
-            border-radius: 5px;
-            box-shadow: 0 0 8px rgba(230,57,70,0.35);
-        }
-
-        .map-marker {
-            position: absolute;
-            width: 34px;
-            height: 34px;
-            border-radius: 50% 50% 50% 0;
-            transform: rotate(-45deg);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .map-marker span {
-            transform: rotate(45deg);
-            color: white;
-            font-size: 14px;
-            font-weight: 800;
-        }
-
-        .ambulance-marker {
-            background: #e63946;
-            left: 28%;
-            top: 45%;
-        }
-
-        .hospital-marker {
-            background: #172033;
-            right: 16%;
-            top: 20%;
-        }
-
-        .patient-marker {
-            background: #e5a629;
-            left: 13%;
-            bottom: 18%;
-        }
-
-        .map-info {
-            position: absolute;
-            left: 18px;
-            bottom: 18px;
             background: white;
+
             border-radius: 10px;
+
             padding: 12px 14px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.12);
+
+            box-shadow:
+                0 5px 20px rgba(0,0,0,0.14);
+
             font-size: 11px;
+
+            max-width: 300px;
         }
 
-        .map-info strong {
+
+        .map-overlay strong {
             display: block;
+
             margin-bottom: 4px;
         }
 
-        .map-info span {
+
+        .map-overlay span {
             color: #718092;
         }
 
 
-        /* =========================
-           AMBULANCE INFO
-        ========================== */
+        .map-legend {
+            position: absolute;
 
-        .ambulance-box {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            padding: 15px;
-            background: #f8fafc;
-            border-radius: 11px;
-            margin-bottom: 18px;
+            right: 16px;
+            top: 16px;
+
+            z-index: 500;
+
+            background: white;
+
+            border-radius: 10px;
+
+            padding: 10px 12px;
+
+            box-shadow:
+                0 4px 15px rgba(0,0,0,0.12);
+
+            font-size: 10px;
+
+            line-height: 1.8;
         }
 
-        .ambulance-image {
-            width: 55px;
-            height: 55px;
-            border-radius: 11px;
-            background: #fff0f1;
-            color: #e63946;
+
+        .legend-item {
             display: flex;
+
             align-items: center;
+
+            gap: 7px;
+        }
+
+
+        .legend-dot {
+            width: 9px;
+            height: 9px;
+
+            border-radius: 50%;
+        }
+
+
+        .legend-ambulance {
+            background: #e63946;
+        }
+
+
+        .legend-patient {
+            background: #e5a629;
+        }
+
+
+        .legend-hospital {
+            background: #172033;
+        }
+
+
+        /* =====================================================
+           CUSTOM LEAFLET MARKERS
+        ====================================================== */
+
+        .custom-marker {
+            width: 34px;
+            height: 34px;
+
+            border-radius:
+                50% 50% 50% 0;
+
+            transform:
+                rotate(-45deg);
+
+            display: flex;
+
+            align-items: center;
+
             justify-content: center;
-            font-size: 25px;
+
+            box-shadow:
+                0 4px 12px rgba(0,0,0,.2);
         }
 
-        .ambulance-info h3 {
-            font-size: 14px;
+
+        .custom-marker span {
+            transform: rotate(45deg);
+
+            font-size: 15px;
+        }
+
+
+        .ambulance-marker-icon {
+            background: #e63946;
+        }
+
+
+        .patient-marker-icon {
+            background: #e5a629;
+        }
+
+
+        .hospital-marker-icon {
+            background: #172033;
+
+            color: #fff;
+        }
+
+
+        .leaflet-popup-content {
+            font-family:
+                Arial,
+                Helvetica,
+                sans-serif;
+
+            font-size: 12px;
+        }
+
+
+        .leaflet-popup-content strong {
+            display: block;
+
             margin-bottom: 4px;
         }
 
-        .ambulance-info p {
-            color: #7b8595;
-            font-size: 11px;
-        }
 
-        .online {
-            margin-left: auto;
-            color: #1b9657;
-            font-size: 10px;
-            font-weight: 800;
+        .leaflet-control-attribution {
+            font-size: 9px;
         }
 
 
-        /* =========================
-           VITALS
-        ========================== */
+        /* =====================================================
+           INFORMATION GRID
+        ====================================================== */
 
-        .vitals-grid {
+        .info-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+
+            grid-template-columns:
+                1fr 1fr;
+
             gap: 12px;
         }
 
-        .vital {
-            border: 1px solid #e4e9ef;
+
+        .info-box {
+            border:
+                1px solid #e4e9ef;
+
             border-radius: 10px;
-            padding: 13px;
+
+            padding: 14px;
         }
 
-        .vital-label {
+
+        .info-label {
+            font-size: 10px;
+
             color: #7c8797;
-            font-size: 10px;
-            margin-bottom: 6px;
+
+            text-transform: uppercase;
+
+            letter-spacing: .3px;
+
+            margin-bottom: 7px;
         }
 
-        .vital-value {
-            font-size: 18px;
+
+        .info-value {
+            font-size: 14px;
+
             font-weight: 800;
+
+            color: #172033;
         }
 
-        .vital-unit {
+
+        .info-sub {
             font-size: 10px;
+
             color: #7d8796;
-        }
 
-        .vital-status {
             margin-top: 5px;
-            font-size: 10px;
-            color: #1d9456;
-            font-weight: 700;
+
+            line-height: 1.45;
         }
 
 
-        /* =========================
+        .readonly-note {
+            margin-top: 14px;
+
+            padding: 10px 12px;
+
+            border-radius: 9px;
+
+            background: #f5f7fa;
+
+            color: #697586;
+
+            font-size: 10px;
+        }
+
+
+        /* =====================================================
            HOSPITAL
-        ========================== */
+        ====================================================== */
 
         .hospital-details {
             display: flex;
+
             align-items: flex-start;
+
             gap: 13px;
-            margin-bottom: 20px;
+
+            margin-bottom: 18px;
         }
+
 
         .hospital-icon {
             width: 44px;
             height: 44px;
+
             background: #eef2f7;
+
             color: #172033;
+
             border-radius: 10px;
+
             display: flex;
+
             align-items: center;
+
             justify-content: center;
+
             font-size: 20px;
+
+            flex-shrink: 0;
         }
+
 
         .hospital-details h3 {
             font-size: 14px;
+
             margin-bottom: 5px;
         }
 
+
         .hospital-details p {
             color: #7a8494;
+
             font-size: 11px;
+
             line-height: 1.5;
         }
 
+
         .resource-list {
             display: flex;
+
             flex-direction: column;
+
             gap: 10px;
         }
 
+
         .resource {
             display: flex;
+
             justify-content: space-between;
+
             align-items: center;
+
             padding: 10px 0;
-            border-bottom: 1px solid #edf0f4;
+
+            border-bottom:
+                1px solid #edf0f4;
         }
+
 
         .resource:last-child {
             border-bottom: none;
         }
 
+
         .resource-name {
             font-size: 12px;
+
             color: #596579;
         }
 
+
         .available {
             color: #1b9657;
+
             font-size: 11px;
+
             font-weight: 700;
         }
 
 
-        /* =========================
+        .pending-resource {
+            color: #a56608;
+
+            font-size: 11px;
+
+            font-weight: 700;
+        }
+
+
+        /* =====================================================
+           STAFF
+        ====================================================== */
+
+        .staff-list {
+            display: flex;
+
+            flex-direction: column;
+
+            gap: 10px;
+        }
+
+
+        .staff-row {
+            display: flex;
+
+            align-items: center;
+
+            gap: 11px;
+
+            padding: 11px;
+
+            border:
+                1px solid #e5e9ef;
+
+            border-radius: 10px;
+        }
+
+
+        .staff-avatar {
+            width: 34px;
+            height: 34px;
+
+            border-radius: 50%;
+
+            background: #eef2f7;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            font-size: 15px;
+        }
+
+
+        .staff-name {
+            font-size: 12px;
+
+            font-weight: 800;
+        }
+
+
+        .staff-role {
+            font-size: 10px;
+
+            color: #7a8494;
+
+            margin-top: 3px;
+        }
+
+
+        .staff-status {
+            margin-left: auto;
+
+            font-size: 9px;
+
+            font-weight: 800;
+
+            color: #1b9657;
+        }
+
+
+        /* =====================================================
            TIMELINE
-        ========================== */
+        ====================================================== */
 
         .timeline {
             display: flex;
+
             flex-direction: column;
-            gap: 0;
         }
+
 
         .timeline-item {
             display: flex;
+
             gap: 13px;
+
             position: relative;
+
             padding-bottom: 20px;
         }
+
 
         .timeline-item:last-child {
             padding-bottom: 0;
         }
 
+
         .timeline-marker {
             width: 13px;
             height: 13px;
+
             background: #e63946;
+
             border-radius: 50%;
+
             flex-shrink: 0;
+
             margin-top: 2px;
+
             z-index: 2;
         }
 
+
+        .timeline-item.pending
+        .timeline-marker {
+            background: #d9dee6;
+        }
+
+
         .timeline-item:not(:last-child)::before {
             content: "";
+
             position: absolute;
+
             width: 2px;
-            height: calc(100% - 5px);
+
+            height:
+                calc(100% - 5px);
+
             background: #e4e8ee;
+
             left: 5px;
+
             top: 10px;
         }
 
+
         .timeline-content h4 {
             font-size: 12px;
+
             margin-bottom: 3px;
         }
 
+
         .timeline-content p {
             font-size: 10px;
+
+            color: #7a8494;
+
+            line-height: 1.5;
+        }
+
+
+        .timeline-time {
+            display: inline-block;
+
+            margin-top: 5px;
+
+            font-size: 9px;
+
+            color: #9aa3af;
+
+            font-weight: 700;
+        }
+
+
+        /* =====================================================
+           TRANSFER
+        ====================================================== */
+
+        .transfer-box {
+            padding: 14px;
+
+            border:
+                1px solid #e4e9ef;
+
+            border-radius: 10px;
+
+            background: #fafbfd;
+        }
+
+
+        .transfer-title {
+            font-size: 12px;
+
+            font-weight: 800;
+
+            margin-bottom: 5px;
+        }
+
+
+        .transfer-status {
+            font-size: 11px;
+
+            color: #596579;
+        }
+
+
+        .timestamp {
+            font-size: 10px;
+
             color: #7a8494;
         }
 
 
-        /* =========================
+        .updated {
+            font-size: 10px;
+
+            color: #7a8494;
+        }
+
+
+        /* =====================================================
            EMPTY STATE
-        ========================== */
+        ====================================================== */
 
         .empty-state {
             display: none;
+
             background: white;
-            border: 1px solid #e3e8ef;
+
+            border:
+                1px solid #e3e8ef;
+
             border-radius: 15px;
+
             padding: 60px 20px;
+
             text-align: center;
         }
+
 
         .empty-icon {
             width: 65px;
             height: 65px;
+
             border-radius: 50%;
+
             background: #fff0f1;
+
             color: #e63946;
+
             display: flex;
+
             align-items: center;
+
             justify-content: center;
+
             margin: 0 auto 18px;
+
             font-size: 27px;
         }
 
+
         .empty-state h2 {
             font-size: 19px;
+
             margin-bottom: 8px;
         }
 
+
         .empty-state p {
             color: #7a8494;
+
             font-size: 13px;
+
             margin-bottom: 22px;
         }
 
+
         .request-btn {
             border: none;
+
             background: #e63946;
+
             color: white;
+
             padding: 12px 20px;
+
             border-radius: 9px;
+
             font-size: 12px;
+
             font-weight: 700;
+
             cursor: pointer;
         }
+
 
         .request-btn:hover {
             background: #cf2938;
         }
 
 
-        /* =========================
-           MOBILE SIDEBAR
-        ========================== */
+        /* =====================================================
+           RESPONSIVE
+        ====================================================== */
 
         @media (max-width: 900px) {
 
@@ -746,17 +1187,22 @@
                 grid-template-columns: 1fr;
             }
 
+
             .sidebar {
                 display: none;
             }
 
+
             .stats-grid {
-                grid-template-columns: 1fr 1fr;
+                grid-template-columns:
+                    1fr 1fr;
             }
+
 
             .main-grid {
                 grid-template-columns: 1fr;
             }
+
         }
 
 
@@ -766,33 +1212,49 @@
                 padding: 0 15px;
             }
 
+
             .role-badge,
             .user-name {
                 display: none;
             }
 
+
             .content {
                 padding: 20px 14px;
             }
 
+
             .page-header {
                 flex-direction: column;
+
                 gap: 12px;
             }
 
+
             .stats-grid {
-                grid-template-columns: 1fr 1fr;
+                grid-template-columns:
+                    1fr 1fr;
             }
+
 
             .emergency-header {
                 align-items: flex-start;
+
                 gap: 10px;
+
                 flex-direction: column;
             }
 
-            .map-container {
+
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+
+
+            #familyMap {
                 height: 290px;
             }
+
         }
 
     </style>
@@ -803,9 +1265,9 @@
 <body>
 
 
-    <!-- =========================
+    <!-- =====================================================
          NAVBAR
-    ========================== -->
+    ====================================================== -->
 
     <nav>
 
@@ -817,6 +1279,7 @@
             <div class="logo-icon">
                 R
             </div>
+
 
             <div class="logo-text">
                 ResQ<span>-Route</span>
@@ -831,12 +1294,14 @@
                 CITIZEN / FAMILY
             </span>
 
+
             <span
                 class="user-name"
                 id="userName"
             >
                 User
             </span>
+
 
             <button
                 class="logout-btn"
@@ -852,56 +1317,68 @@
 
 
 
-    <!-- =========================
+    <!-- =====================================================
          DASHBOARD
-    ========================== -->
+    ====================================================== -->
 
     <div class="dashboard">
 
 
-        <!-- SIDEBAR -->
+        <!-- =================================================
+             SIDEBAR
+        ================================================== -->
 
         <aside class="sidebar">
 
             <div class="sidebar-title">
-                Dashboard
+                Family Portal
             </div>
+
 
             <div class="side-menu">
 
                 <button
                     class="side-item active"
+                    type="button"
                     data-section="overview"
                 >
-                    🏠 Overview
+                    Overview
                 </button>
+
 
                 <button
                     class="side-item"
+                    type="button"
                     data-section="tracking"
                 >
-                    📍 Live Tracking
+                    Live Tracking
                 </button>
+
 
                 <button
                     class="side-item"
+                    type="button"
                     data-section="patient"
                 >
-                    ❤️ Patient Status
+                    Patient Status
                 </button>
+
 
                 <button
                     class="side-item"
+                    type="button"
                     data-section="hospital"
                 >
-                    🏥 Hospital
+                    Hospital
                 </button>
+
 
                 <button
                     class="side-item"
+                    type="button"
                     data-section="history"
                 >
-                    📋 Emergency History
+                    Emergency History
                 </button>
 
             </div>
@@ -910,12 +1387,14 @@
 
 
 
-        <!-- =========================
+        <!-- =================================================
              CONTENT
-        ========================== -->
+        ================================================== -->
 
         <main class="content">
 
+
+            <!-- PAGE HEADER -->
 
             <div class="page-header">
 
@@ -925,8 +1404,10 @@
                         Family Dashboard
                     </h1>
 
+
                     <p>
-                        Monitor your active emergency in real time.
+                        Monitor the active emergency
+                        and patient journey in real time.
                     </p>
 
                 </div>
@@ -936,7 +1417,9 @@
 
                     <div class="live-dot"></div>
 
-                    LIVE SYSTEM
+                    <span id="connectionStatus">
+                        LIVE SYSTEM
+                    </span>
 
                 </div>
 
@@ -944,25 +1427,31 @@
 
 
 
-            <!-- =========================
-                 ACTIVE EMERGENCY
-            ========================== -->
+            <!-- =================================================
+                 OVERVIEW
+            ================================================== -->
 
             <section id="overviewSection">
 
+
+                <!-- ACTIVE EMERGENCY -->
 
                 <div
                     class="emergency-card"
                     id="activeEmergencyCard"
                 >
 
+
                     <div class="emergency-header">
 
+
                         <div class="emergency-title">
+
 
                             <div class="emergency-icon">
                                 🚑
                             </div>
+
 
                             <div>
 
@@ -970,8 +1459,10 @@
                                     Active Emergency
                                 </h2>
 
+
                                 <p id="emergencyId">
-                                    Emergency ID: Loading...
+                                    Emergency ID:
+                                    Loading...
                                 </p>
 
                             </div>
@@ -979,12 +1470,12 @@
                         </div>
 
 
-                        <div
+                        <span
                             class="status-badge"
                             id="emergencyStatus"
                         >
                             DISPATCHING
-                        </div>
+                        </span>
 
                     </div>
 
@@ -993,56 +1484,49 @@
                     <div class="emergency-body">
 
 
+                        <!-- =================================================
+                             FOUR MAIN STATS
+                        ================================================== -->
+
                         <div class="stats-grid">
 
+
+                            <!-- ETA -->
 
                             <div class="stat-card">
 
                                 <div class="stat-label">
-                                    Ambulance ETA
+                                    AMBULANCE ETA
                                 </div>
+
 
                                 <div
                                     class="stat-value"
                                     id="eta"
                                 >
-                                    08 min
+                                    -- min
                                 </div>
 
-                                <div class="stat-sub">
-                                    Estimated arrival
-                                </div>
-
-                            </div>
-
-
-
-                            <div class="stat-card">
-
-                                <div class="stat-label">
-                                    Ambulance
-                                </div>
 
                                 <div
-                                    class="stat-value"
-                                    id="ambulanceNumber"
+                                    class="stat-sub"
+                                    id="etaSub"
                                 >
-                                    HR-26-4582
-                                </div>
-
-                                <div class="stat-sub">
-                                    Assigned vehicle
+                                    Waiting for live route
                                 </div>
 
                             </div>
 
 
 
+                            <!-- CONDITION -->
+
                             <div class="stat-card">
 
                                 <div class="stat-label">
-                                    Patient Condition
+                                    PATIENT CONDITION
                                 </div>
+
 
                                 <div
                                     class="stat-value"
@@ -1051,29 +1535,65 @@
                                     Stable
                                 </div>
 
+
                                 <div class="stat-sub">
-                                    Latest update
+                                    View only • latest clinical update
                                 </div>
 
                             </div>
 
 
 
+                            <!-- BED -->
+
                             <div class="stat-card">
 
                                 <div class="stat-label">
-                                    Destination
+                                    ALLOTTED BED
                                 </div>
+
 
                                 <div
                                     class="stat-value"
-                                    id="destination"
+                                    id="allottedBed"
                                 >
-                                    City Hospital
+                                    --
                                 </div>
 
-                                <div class="stat-sub">
-                                    Emergency Department
+
+                                <div
+                                    class="stat-sub"
+                                    id="bedSub"
+                                >
+                                    Awaiting hospital allocation
+                                </div>
+
+                            </div>
+
+
+
+                            <!-- TIMESTAMP -->
+
+                            <div class="stat-card">
+
+                                <div class="stat-label">
+                                    LAST UPDATED
+                                </div>
+
+
+                                <div
+                                    class="stat-value"
+                                    id="statusTimestamp"
+                                >
+                                    --:--
+                                </div>
+
+
+                                <div
+                                    class="stat-sub"
+                                    id="lastUpdate"
+                                >
+                                    Waiting for live update
                                 </div>
 
                             </div>
@@ -1082,23 +1602,30 @@
 
 
 
-                        <!-- MAIN GRID -->
+                        <!-- =================================================
+                             MAP + PATIENT STATUS
+                        ================================================== -->
 
                         <div class="main-grid">
 
 
                             <!-- MAP -->
 
-                            <div class="card">
+                            <div
+                                class="card"
+                                id="mapSection"
+                            >
+
 
                                 <div class="card-header">
 
                                     <h2>
-                                        Live Ambulance Tracking
+                                        Live Emergency Map
                                     </h2>
 
-                                    <span id="lastUpdate">
-                                        Updated just now
+
+                                    <span id="mapUpdate">
+                                        Waiting for GPS
                                     </span>
 
                                 </div>
@@ -1106,49 +1633,67 @@
 
                                 <div class="map-container">
 
-                                    <div class="road"></div>
-                                    <div class="road two"></div>
-                                    <div class="road three"></div>
 
-                                    <div class="route-line"></div>
+                                    <!-- LEAFLET MAP -->
 
-
-                                    <div class="map-marker ambulance-marker">
-
-                                        <span>
-                                            🚑
-                                        </span>
-
-                                    </div>
+                                    <div id="familyMap"></div>
 
 
-                                    <div class="map-marker hospital-marker">
+                                    <!-- MAP OVERLAY -->
 
-                                        <span>
-                                            H
-                                        </span>
+                                    <div class="map-overlay">
 
-                                    </div>
-
-
-                                    <div class="map-marker patient-marker">
-
-                                        <span>
-                                            +
-                                        </span>
-
-                                    </div>
-
-
-                                    <div class="map-info">
-
-                                        <strong>
-                                            Ambulance en route
+                                        <strong id="mapRouteTitle">
+                                            Ambulance → Patient
                                         </strong>
 
-                                        <span>
-                                            Following fastest available route
+
+                                        <span id="mapRouteStatus">
+                                            Waiting for ambulance
+                                            location...
                                         </span>
+
+                                    </div>
+
+
+                                    <!-- MAP LEGEND -->
+
+                                    <div class="map-legend">
+
+                                        <div class="legend-item">
+
+                                            <span
+                                                class="legend-dot
+                                                legend-ambulance"
+                                            ></span>
+
+                                            Ambulance
+
+                                        </div>
+
+
+                                        <div class="legend-item">
+
+                                            <span
+                                                class="legend-dot
+                                                legend-patient"
+                                            ></span>
+
+                                            Patient
+
+                                        </div>
+
+
+                                        <div class="legend-item">
+
+                                            <span
+                                                class="legend-dot
+                                                legend-hospital"
+                                            ></span>
+
+                                            Hospital
+
+                                        </div>
 
                                     </div>
 
@@ -1158,154 +1703,104 @@
 
 
 
-                            <!-- RIGHT COLUMN -->
+                            <!-- PATIENT STATUS + STAFF -->
 
                             <div>
 
 
-                                <!-- AMBULANCE -->
+                                <!-- PATIENT STATUS -->
 
-                                <div class="card">
+                                <div
+                                    class="card"
+                                    id="patientSection"
+                                >
+
 
                                     <div class="card-header">
 
                                         <h2>
-                                            Assigned Ambulance
+                                            Patient Status
                                         </h2>
+
+
+                                        <span
+                                            class="timestamp"
+                                            id="conditionTimestamp"
+                                        >
+                                            --:--
+                                        </span>
 
                                     </div>
 
 
                                     <div class="card-body">
 
-                                        <div class="ambulance-box">
 
-                                            <div class="ambulance-image">
-                                                🚑
+                                        <div class="info-grid">
+
+
+                                            <div class="info-box">
+
+                                                <div class="info-label">
+                                                    Current Condition
+                                                </div>
+
+
+                                                <div
+                                                    class="info-value"
+                                                    id="conditionDetail"
+                                                >
+                                                    Stable
+                                                </div>
+
+
+                                                <div
+                                                    class="info-sub"
+                                                    id="conditionSub"
+                                                >
+                                                    Patient condition is
+                                                    currently stable.
+                                                </div>
+
                                             </div>
 
 
-                                            <div class="ambulance-info">
 
-                                                <h3 id="vehicleNumber">
-                                                    HR-26-4582
-                                                </h3>
+                                            <div class="info-box">
 
-                                                <p id="driverName">
-                                                    Driver: Assigned Driver
-                                                </p>
+                                                <div class="info-label">
+                                                    Emergency Status
+                                                </div>
+
+
+                                                <div
+                                                    class="info-value"
+                                                    id="statusDetail"
+                                                >
+                                                    Dispatching
+                                                </div>
+
+
+                                                <div class="info-sub">
+                                                    Updated by authorized
+                                                    emergency personnel.
+                                                </div>
 
                                             </div>
-
-
-                                            <span class="online">
-                                                ● LIVE
-                                            </span>
 
                                         </div>
 
 
 
-                                        <div class="vitals-grid">
+                                        <div class="readonly-note">
 
+                                            Clinical status is
+                                            view-only for family
+                                            members.
 
-                                            <div class="vital">
-
-                                                <div class="vital-label">
-                                                    HEART RATE
-                                                </div>
-
-                                                <div class="vital-value">
-
-                                                    <span id="heartRate">
-                                                        82
-                                                    </span>
-
-                                                    <span class="vital-unit">
-                                                        BPM
-                                                    </span>
-
-                                                </div>
-
-                                                <div class="vital-status">
-                                                    ● Normal
-                                                </div>
-
-                                            </div>
-
-
-
-                                            <div class="vital">
-
-                                                <div class="vital-label">
-                                                    SpO₂
-                                                </div>
-
-                                                <div class="vital-value">
-
-                                                    <span id="spo2">
-                                                        98
-                                                    </span>
-
-                                                    <span class="vital-unit">
-                                                        %
-                                                    </span>
-
-                                                </div>
-
-                                                <div class="vital-status">
-                                                    ● Normal
-                                                </div>
-
-                                            </div>
-
-
-
-                                            <div class="vital">
-
-                                                <div class="vital-label">
-                                                    BLOOD PRESSURE
-                                                </div>
-
-                                                <div class="vital-value">
-
-                                                    <span id="bloodPressure">
-                                                        120/80
-                                                    </span>
-
-                                                </div>
-
-                                                <div class="vital-status">
-                                                    ● Normal
-                                                </div>
-
-                                            </div>
-
-
-
-                                            <div class="vital">
-
-                                                <div class="vital-label">
-                                                    TEMPERATURE
-                                                </div>
-
-                                                <div class="vital-value">
-
-                                                    <span id="temperature">
-                                                        36.8
-                                                    </span>
-
-                                                    <span class="vital-unit">
-                                                        °C
-                                                    </span>
-
-                                                </div>
-
-                                                <div class="vital-status">
-                                                    ● Normal
-                                                </div>
-
-                                            </div>
+                                            It is updated by
+                                            authorized ambulance
+                                            or hospital staff.
 
                                         </div>
 
@@ -1315,87 +1810,66 @@
 
 
 
-                                <!-- HOSPITAL -->
+                                <!-- STAFF -->
 
                                 <div
                                     class="card"
                                     style="margin-top:20px;"
+                                    id="staffSection"
                                 >
+
 
                                     <div class="card-header">
 
                                         <h2>
-                                            Destination Hospital
+                                            Staff Allocated
                                         </h2>
+
+
+                                        <span id="staffTimestamp">
+                                            --:--
+                                        </span>
 
                                     </div>
 
 
                                     <div class="card-body">
 
-                                        <div class="hospital-details">
 
-                                            <div class="hospital-icon">
-                                                🏥
-                                            </div>
-
-
-                                            <div>
-
-                                                <h3 id="hospitalName">
-                                                    City Emergency Hospital
-                                                </h3>
-
-                                                <p id="hospitalAddress">
-                                                    Emergency Department<br>
-                                                    3.2 km from current location
-                                                </p>
-
-                                            </div>
-
-                                        </div>
+                                        <div
+                                            class="staff-list"
+                                            id="staffList"
+                                        >
 
 
-
-                                        <div class="resource-list">
-
-
-                                            <div class="resource">
-
-                                                <span class="resource-name">
-                                                    Emergency Department
-                                                </span>
-
-                                                <span class="available">
-                                                    Available
-                                                </span>
-
-                                            </div>
+                                            <div class="staff-row">
 
 
-
-                                            <div class="resource">
-
-                                                <span class="resource-name">
-                                                    ICU
-                                                </span>
-
-                                                <span class="available">
-                                                    Available
-                                                </span>
-
-                                            </div>
+                                                <div
+                                                    class="staff-avatar"
+                                                >
+                                                    👨‍⚕️
+                                                </div>
 
 
+                                                <div>
 
-                                            <div class="resource">
+                                                    <div class="staff-name">
+                                                        Awaiting assignment
+                                                    </div>
 
-                                                <span class="resource-name">
-                                                    Trauma Support
-                                                </span>
 
-                                                <span class="available">
-                                                    Available
+                                                    <div class="staff-role">
+                                                        Hospital care team
+                                                    </div>
+
+                                                </div>
+
+
+                                                <span
+                                                    class="staff-status"
+                                                >
+                                                    PENDING
                                                 </span>
 
                                             </div>
@@ -1412,23 +1886,236 @@
 
 
 
-                        <!-- =========================
-                             EMERGENCY TIMELINE
-                        ========================== -->
+                        <!-- =================================================
+                             HOSPITAL + TRANSFER
+                        ================================================== -->
 
                         <div
-                            class="card"
+                            class="main-grid"
                             style="margin-top:20px;"
                         >
+
+
+                            <!-- HOSPITAL -->
+
+                            <div
+                                class="card"
+                                id="hospitalSection"
+                            >
+
+
+                                <div class="card-header">
+
+                                    <h2>
+                                        Destination Hospital
+                                    </h2>
+
+
+                                    <span id="hospitalTimestamp">
+                                        --:--
+                                    </span>
+
+                                </div>
+
+
+                                <div class="card-body">
+
+
+                                    <div class="hospital-details">
+
+
+                                        <div class="hospital-icon">
+                                            🏥
+                                        </div>
+
+
+                                        <div>
+
+                                            <h3 id="hospitalName">
+                                                Awaiting hospital
+                                                assignment
+                                            </h3>
+
+
+                                            <p id="hospitalAddress">
+                                                Hospital address will
+                                                appear here when the
+                                                emergency is assigned.
+                                            </p>
+
+                                        </div>
+
+                                    </div>
+
+
+
+                                    <!-- FACILITIES -->
+
+                                    <div
+                                        class="resource-list"
+                                        id="facilityList"
+                                    >
+
+
+                                        <div class="resource">
+
+                                            <span class="resource-name">
+                                                Emergency Department
+                                            </span>
+
+
+                                            <span
+                                                class="pending-resource"
+                                            >
+                                                Pending
+                                            </span>
+
+                                        </div>
+
+
+                                        <div class="resource">
+
+                                            <span class="resource-name">
+                                                ICU
+                                            </span>
+
+
+                                            <span
+                                                class="pending-resource"
+                                            >
+                                                Pending
+                                            </span>
+
+                                        </div>
+
+
+                                        <div class="resource">
+
+                                            <span class="resource-name">
+                                                Trauma Support
+                                            </span>
+
+
+                                            <span
+                                                class="pending-resource"
+                                            >
+                                                Pending
+                                            </span>
+
+                                        </div>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+
+
+                            <!-- REFERRAL / TRANSFER -->
+
+                            <div class="card">
+
+
+                                <div class="card-header">
+
+                                    <h2>
+                                        Referral / Transfer
+                                    </h2>
+
+
+                                    <span id="transferTimestamp">
+                                        --:--
+                                    </span>
+
+                                </div>
+
+
+                                <div class="card-body">
+
+
+                                    <div class="transfer-box">
+
+
+                                        <div
+                                            class="transfer-title"
+                                            id="transferStatus"
+                                        >
+                                            No referral or
+                                            transfer initiated
+                                        </div>
+
+
+                                        <div
+                                            class="transfer-status"
+                                            id="transferDetail"
+                                        >
+                                            This information is
+                                            controlled and updated
+                                            by authorized hospital
+                                            staff.
+                                        </div>
+
+                                    </div>
+
+
+
+                                    <div
+                                        class="info-box"
+                                        style="margin-top:12px;"
+                                    >
+
+
+                                        <div class="info-label">
+                                            Assigned Hospital
+                                        </div>
+
+
+                                        <div
+                                            class="info-value"
+                                            id="transferHospital"
+                                        >
+                                            --
+                                        </div>
+
+
+                                        <div class="info-sub">
+                                            Family can view the
+                                            status but cannot
+                                            change the referral
+                                            or transfer.
+                                        </div>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+
+
+                        <!-- =================================================
+                             TIMELINE
+                        ================================================== -->
+
+                        <section
+                            class="card"
+                            style="margin-top:20px;"
+                            id="historySection"
+                        >
+
 
                             <div class="card-header">
 
                                 <h2>
-                                    Emergency Progress
+                                    Emergency Timeline
                                 </h2>
 
+
                                 <span>
-                                    Real-time updates
+                                    Timestamped journey
                                 </span>
 
                             </div>
@@ -1436,25 +2123,46 @@
 
                             <div class="card-body">
 
+
                                 <div
                                     class="timeline"
-                                    id="emergencyTimeline"
+                                    id="timeline"
                                 >
 
 
-                                    <div class="timeline-item">
+                                    <!-- REPORTED -->
 
-                                        <div class="timeline-marker"></div>
+                                    <div
+                                        class="timeline-item"
+                                    >
 
-                                        <div class="timeline-content">
+                                        <div
+                                            class="timeline-marker"
+                                        ></div>
+
+
+                                        <div
+                                            class="timeline-content"
+                                        >
 
                                             <h4>
-                                                Emergency Request Created
+                                                Emergency Reported
                                             </h4>
 
+
                                             <p>
-                                                Emergency request received
+                                                Emergency request
+                                                registered in
+                                                ResQ-Route.
                                             </p>
+
+
+                                            <span
+                                                class="timeline-time"
+                                                data-event="REPORTED"
+                                            >
+                                                --:--
+                                            </span>
 
                                         </div>
 
@@ -1462,19 +2170,39 @@
 
 
 
-                                    <div class="timeline-item">
+                                    <!-- ASSIGNED -->
 
-                                        <div class="timeline-marker"></div>
+                                    <div
+                                        class="timeline-item"
+                                    >
 
-                                        <div class="timeline-content">
+                                        <div
+                                            class="timeline-marker"
+                                        ></div>
+
+
+                                        <div
+                                            class="timeline-content"
+                                        >
 
                                             <h4>
                                                 Ambulance Assigned
                                             </h4>
 
+
                                             <p>
-                                                Suitable ambulance dispatched
+                                                Suitable ambulance
+                                                assigned to the
+                                                emergency.
                                             </p>
+
+
+                                            <span
+                                                class="timeline-time"
+                                                data-event="ASSIGNED"
+                                            >
+                                                --:--
+                                            </span>
 
                                         </div>
 
@@ -1482,19 +2210,38 @@
 
 
 
-                                    <div class="timeline-item">
+                                    <!-- EN ROUTE -->
 
-                                        <div class="timeline-marker"></div>
+                                    <div
+                                        class="timeline-item"
+                                    >
 
-                                        <div class="timeline-content">
+                                        <div
+                                            class="timeline-marker"
+                                        ></div>
+
+
+                                        <div
+                                            class="timeline-content"
+                                        >
 
                                             <h4>
                                                 Ambulance En Route
                                             </h4>
 
+
                                             <p>
-                                                Driver is travelling to patient
+                                                Driver is travelling
+                                                toward the patient.
                                             </p>
+
+
+                                            <span
+                                                class="timeline-time"
+                                                data-event="EN_ROUTE_TO_PATIENT"
+                                            >
+                                                --:--
+                                            </span>
 
                                         </div>
 
@@ -1502,22 +2249,39 @@
 
 
 
-                                    <div class="timeline-item">
+                                    <!-- PATIENT PICKUP -->
+
+                                    <div
+                                        class="timeline-item pending"
+                                    >
 
                                         <div
                                             class="timeline-marker"
-                                            style="background:#d9dee6;"
                                         ></div>
 
-                                        <div class="timeline-content">
+
+                                        <div
+                                            class="timeline-content"
+                                        >
 
                                             <h4>
                                                 Patient Pickup
                                             </h4>
 
+
                                             <p>
-                                                Waiting for ambulance arrival
+                                                Waiting for ambulance
+                                                arrival and patient
+                                                pickup.
                                             </p>
+
+
+                                            <span
+                                                class="timeline-time"
+                                                data-event="PATIENT_ONBOARD"
+                                            >
+                                                --:--
+                                            </span>
 
                                         </div>
 
@@ -1525,22 +2289,80 @@
 
 
 
-                                    <div class="timeline-item">
+                                    <!-- HOSPITAL ARRIVAL -->
+
+                                    <div
+                                        class="timeline-item pending"
+                                    >
 
                                         <div
                                             class="timeline-marker"
-                                            style="background:#d9dee6;"
                                         ></div>
 
-                                        <div class="timeline-content">
+
+                                        <div
+                                            class="timeline-content"
+                                        >
 
                                             <h4>
                                                 Hospital Arrival
                                             </h4>
 
+
                                             <p>
                                                 Destination hospital
+                                                arrival will be
+                                                recorded here.
                                             </p>
+
+
+                                            <span
+                                                class="timeline-time"
+                                                data-event="ARRIVED_AT_HOSPITAL"
+                                            >
+                                                --:--
+                                            </span>
+
+                                        </div>
+
+                                    </div>
+
+
+
+                                    <!-- TREATMENT / TRANSFER -->
+
+                                    <div
+                                        class="timeline-item pending"
+                                    >
+
+                                        <div
+                                            class="timeline-marker"
+                                        ></div>
+
+
+                                        <div
+                                            class="timeline-content"
+                                        >
+
+                                            <h4>
+                                                Treatment / Transfer
+                                            </h4>
+
+
+                                            <p>
+                                                Hospital staff will
+                                                update treatment,
+                                                admission, referral
+                                                or transfer status.
+                                            </p>
+
+
+                                            <span
+                                                class="timeline-time"
+                                                data-event="TRANSFER"
+                                            >
+                                                --:--
+                                            </span>
 
                                         </div>
 
@@ -1550,340 +2372,2500 @@
 
                             </div>
 
-                        </div>
+                        </section>
 
                     </div>
 
                 </div>
 
+            </div>
 
 
-                <!-- EMPTY STATE -->
 
-                <div
-                    class="empty-state"
-                    id="emptyEmergency"
+            <!-- =================================================
+                 EMPTY STATE
+            ================================================== -->
+
+            <div
+                class="empty-state"
+                id="emptyEmergency"
+            >
+
+
+                <div class="empty-icon">
+                    +
+                </div>
+
+
+                <h2>
+                    No Active Emergency
+                </h2>
+
+
+                <p>
+                    There is currently no active emergency
+                    associated with your account.
+                </p>
+
+
+                <button
+                    class="request-btn"
+                    type="button"
+                    onclick="window.location.replace('emergency.html')"
                 >
+                    Request Emergency Assistance
+                </button>
 
-                    <div class="empty-icon">
-                        +
-                    </div>
+            </div>
 
-                    <h2>
-                        No Active Emergency
-                    </h2>
+        </section>
 
-                    <p>
-                        There is currently no active emergency
-                        associated with your account.
-                    </p>
+    </main>
 
-                    <button
-                        class="request-btn"
-                        type="button"
-                        onclick="window.location.replace('emergency.html')"
-                    >
-                        Request Emergency Assistance
-                    </button>
-
-                </div>
-
-            </section>
-
-        </main>
-
-    </div>
+</div>
 
 
 
-    <!-- =====================================================
-         SUPABASE + AUTHENTICATION
-    ====================================================== -->
+<!-- =========================================================
+     LEAFLET
+========================================================== -->
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-    <script src="js/supabase.js"></script>
-
-    <script src="js/auth.js"></script>
-
-    <script src="js/emergency.js"></script>
-
-    <script src="js/realtime.js"></script>
+<script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+></script>
 
 
 
-    <!-- =====================================================
-         FAMILY DASHBOARD UI
-    ====================================================== -->
+<!-- =========================================================
+     SUPABASE
+========================================================== -->
 
-    <script>
-
-        /* =========================
-           SIDEBAR NAVIGATION
-        ========================== */
-
-        const sideItems =
-            document.querySelectorAll(".side-item");
+<script
+    src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
+></script>
 
 
-        sideItems.forEach(function(item) {
+<script src="js/supabase.js"></script>
 
-            item.addEventListener(
-                "click",
-                function() {
+<script src="js/auth.js"></script>
 
-                    sideItems.forEach(
-                        function(button) {
+<script src="js/emergency.js"></script>
 
-                            button.classList.remove(
-                                "active"
-                            );
-
-                        }
-                    );
+<script src="js/realtime.js"></script>
 
 
-                    item.classList.add(
-                        "active"
-                    );
+
+<!-- =========================================================
+     FAMILY DASHBOARD LOGIC
+========================================================== -->
+
+<script>
+
+(function () {
+
+    "use strict";
 
 
-                    const section =
-                        item.dataset.section;
+    /* =====================================================
+       DEFAULT TEST LOCATIONS
+
+       These are only fallbacks.
+
+       Supabase emergency / ambulance /
+       hospital coordinates will replace them.
+    ====================================================== */
+
+    const DEFAULTS = {
+
+        patient: {
+            lat: 30.9010,
+            lng: 75.8573,
+            name: "Patient Location"
+        },
+
+        ambulance: {
+            lat: 30.9100,
+            lng: 75.8400,
+            name: "Ambulance"
+        },
+
+        hospital: {
+            lat: 30.9200,
+            lng: 75.8500,
+            name: "Destination Hospital"
+        }
+
+    };
 
 
-                    if (
-                        section ===
-                        "tracking"
-                    ) {
+    /* =====================================================
+       MAP STATE
+    ====================================================== */
 
-                        const map =
-                            document.querySelector(
-                                ".map-container"
-                            );
+    let map = null;
 
+    let patientMarker = null;
 
-                        if (map) {
+    let ambulanceMarker = null;
 
-                            map.scrollIntoView({
-                                behavior: "smooth",
-                                block: "center"
-                            });
-                        }
-                    }
+    let hospitalMarker = null;
 
+    let routeLine = null;
 
-                    if (
-                        section ===
-                        "patient"
-                    ) {
+    let routeRequestId = 0;
 
-                        const vitals =
-                            document.querySelector(
-                                ".vitals-grid"
-                            );
+    let patientPosition = null;
+
+    let ambulancePosition = null;
+
+    let hospitalPosition = null;
+
+    let currentEmergency = null;
 
 
-                        if (vitals) {
+    const $ = function (id) {
 
-                            vitals.scrollIntoView({
-                                behavior: "smooth",
-                                block: "center"
-                            });
-                        }
-                    }
+        return document.getElementById(id);
+
+    };
 
 
-                    if (
-                        section ===
-                        "hospital"
-                    ) {
+    /* =====================================================
+       HTML ESCAPE
+    ====================================================== */
 
-                        const hospital =
-                            document.querySelector(
-                                ".hospital-details"
-                            );
+    function escapeHtml(value) {
 
+        return String(value ?? "")
+            .replace(
+                /[&<>'"]/g,
+                function (character) {
 
-                        if (hospital) {
+                    return {
 
-                            hospital.scrollIntoView({
-                                behavior: "smooth",
-                                block: "center"
-                            });
-                        }
-                    }
+                        "&": "&amp;",
+                        "<": "&lt;",
+                        ">": "&gt;",
+                        "'": "&#39;",
+                        '"': "&quot;"
 
-
-                    if (
-                        section ===
-                        "history"
-                    ) {
-
-                        const timeline =
-                            document.querySelector(
-                                ".timeline"
-                            );
-
-
-                        if (timeline) {
-
-                            timeline.scrollIntoView({
-                                behavior: "smooth",
-                                block: "center"
-                            });
-                        }
-                    }
+                    }[character];
 
                 }
             );
 
+    }
+
+
+    /* =====================================================
+       FORMAT TIME
+    ====================================================== */
+
+    function formatTime(value) {
+
+        if (!value) {
+            return "--:--";
+        }
+
+
+        const date =
+            new Date(value);
+
+
+        if (
+            Number.isNaN(
+                date.getTime()
+            )
+        ) {
+
+            return String(value);
+
+        }
+
+
+        return date.toLocaleTimeString(
+            [],
+            {
+                hour: "2-digit",
+                minute: "2-digit"
+            }
+        );
+
+    }
+
+
+    /* =====================================================
+       FORMAT DATE + TIME
+    ====================================================== */
+
+    function formatDateTime(value) {
+
+        if (!value) {
+            return "--";
+        }
+
+
+        const date =
+            new Date(value);
+
+
+        if (
+            Number.isNaN(
+                date.getTime()
+            )
+        ) {
+
+            return String(value);
+
+        }
+
+
+        return date.toLocaleString(
+            [],
+            {
+                dateStyle: "medium",
+                timeStyle: "short"
+            }
+        );
+
+    }
+
+
+    /* =====================================================
+       VALIDATE COORDINATES
+    ====================================================== */
+
+    function validPosition(lat, lng) {
+
+        return (
+
+            Number.isFinite(
+                Number(lat)
+            )
+
+            &&
+
+            Number.isFinite(
+                Number(lng)
+            )
+
+            &&
+
+            Math.abs(
+                Number(lat)
+            ) <= 90
+
+            &&
+
+            Math.abs(
+                Number(lng)
+            ) <= 180
+
+        );
+
+    }
+
+
+    /* =====================================================
+       CUSTOM MAP ICON
+    ====================================================== */
+
+    function makeIcon(type) {
+
+        const config = {
+
+            ambulance: {
+                className:
+                    "ambulance-marker-icon",
+                text: "🚑"
+            },
+
+            patient: {
+                className:
+                    "patient-marker-icon",
+                text: "+"
+            },
+
+            hospital: {
+                className:
+                    "hospital-marker-icon",
+                text: "H"
+            }
+
+        }[type];
+
+
+        return L.divIcon({
+
+            className: "",
+
+            html:
+
+                `<div
+                    class="custom-marker ${config.className}"
+                >
+                    <span>
+                        ${config.text}
+                    </span>
+                </div>`,
+
+            iconSize: [
+                34,
+                34
+            ],
+
+            iconAnchor: [
+                17,
+                34
+            ],
+
+            popupAnchor: [
+                0,
+                -32
+            ]
+
         });
 
+    }
 
 
-        /* =========================
-           DEMO LIVE VITALS
+    /* =====================================================
+       INITIALIZE LEAFLET
+    ====================================================== */
 
-           Temporary simulation only.
-           Later replaced by Supabase
-           Realtime.
-        ========================== */
+    function initMap() {
 
-        setInterval(
-            function() {
+        if (
+            map
 
-                const heartRate =
-                    document.getElementById(
-                        "heartRate"
-                    );
+            ||
 
+            !$("familyMap")
 
-                const spo2 =
-                    document.getElementById(
-                        "spo2"
-                    );
+            ||
 
+            typeof L === "undefined"
+        ) {
 
-                const temperature =
-                    document.getElementById(
-                        "temperature"
-                    );
+            return;
+
+        }
 
 
-                if (heartRate) {
-
-                    const current =
-                        parseInt(
-                            heartRate.textContent
-                        );
-
-
-                    const change =
-                        Math.floor(
-                            Math.random() * 5
-                        ) - 2;
-
-
-                    heartRate.textContent =
-                        Math.max(
-                            60,
-                            Math.min(
-                                110,
-                                current + change
-                            )
-                        );
-                }
-
-
-                if (spo2) {
-
-                    const current =
-                        parseInt(
-                            spo2.textContent
-                        );
-
-
-                    const change =
-                        Math.floor(
-                            Math.random() * 3
-                        ) - 1;
-
-
-                    spo2.textContent =
-                        Math.max(
-                            94,
-                            Math.min(
-                                100,
-                                current + change
-                            )
-                        );
-                }
-
-
-                if (temperature) {
-
-                    const current =
-                        parseFloat(
-                            temperature.textContent
-                        );
-
-
-                    const change =
-                        (Math.random() * 0.2) - 0.1;
-
-
-                    temperature.textContent =
-                        (
-                            current + change
-                        ).toFixed(1);
-                }
-
-
-                const lastUpdate =
-                    document.getElementById(
-                        "lastUpdate"
-                    );
-
-
-                if (lastUpdate) {
-
-                    lastUpdate.textContent =
-                        "Updated just now";
-                }
-
-            },
-            5000
+        map = L.map(
+            "familyMap",
+            {
+                zoomControl: true
+            }
+        )
+        .setView(
+            [
+                DEFAULTS.patient.lat,
+                DEFAULTS.patient.lng
+            ],
+            13
         );
 
 
-
         /* =================================================
-           IMPORTANT
-
-           NO MANUAL LOGOUT REDIRECT HERE.
-
-           js/auth.js handles:
-
-           1. Supabase signOut()
-           2. Local auth cleanup
-           3. Redirect to signin.html
-           4. Browser Back protection
-
-           This prevents the old temporary logout handler
-           from bypassing the real authentication system.
+           OPENSTREETMAP
         ================================================== */
 
+        L.tileLayer(
+            "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+            {
+
+                maxZoom: 19,
+
+                attribution:
+                    "&copy; OpenStreetMap contributors"
+
+            }
+        )
+        .addTo(map);
 
 
-        /* =========================
-           DEMO USER NAME
+        /* =================================================
+           DEFAULT POSITIONS
+        ================================================== */
 
-           Later populated from
-           Supabase profile.
-        ========================== */
+        patientPosition = {
+            ...DEFAULTS.patient
+        };
+
+
+        ambulancePosition = {
+            ...DEFAULTS.ambulance
+        };
+
+
+        hospitalPosition = {
+            ...DEFAULTS.hospital
+        };
+
+
+        /* =================================================
+           PATIENT MARKER
+        ================================================== */
+
+        patientMarker = L.marker(
+
+            [
+                patientPosition.lat,
+                patientPosition.lng
+            ],
+
+            {
+                icon:
+                    makeIcon("patient")
+            }
+
+        )
+        .addTo(map)
+
+        .bindPopup(
+            "<strong>Patient</strong>" +
+            "Current emergency location"
+        );
+
+
+        /* =================================================
+           AMBULANCE MARKER
+        ================================================== */
+
+        ambulanceMarker = L.marker(
+
+            [
+                ambulancePosition.lat,
+                ambulancePosition.lng
+            ],
+
+            {
+                icon:
+                    makeIcon("ambulance")
+            }
+
+        )
+        .addTo(map)
+
+        .bindPopup(
+            "<strong>Ambulance</strong>" +
+            "Assigned emergency vehicle"
+        );
+
+
+        /* =================================================
+           HOSPITAL MARKER
+        ================================================== */
+
+        hospitalMarker = L.marker(
+
+            [
+                hospitalPosition.lat,
+                hospitalPosition.lng
+            ],
+
+            {
+                icon:
+                    makeIcon("hospital")
+            }
+
+        )
+        .addTo(map)
+
+        .bindPopup(
+            "<strong>Hospital</strong>" +
+            "Destination emergency department"
+        );
+
+
+        /* =================================================
+           INITIAL ROUTE
+        ================================================== */
+
+        drawCurrentRoute();
+
+
+        setTimeout(
+            function () {
+
+                map.invalidateSize();
+
+            },
+            200
+        );
+
+    }
+
+
+    /* =====================================================
+       DRAW OSRM ROUTE
+    ====================================================== */
+
+    async function drawCurrentRoute() {
+
+        if (
+            !map
+            ||
+            !ambulancePosition
+        ) {
+
+            return;
+
+        }
+
+
+        /*
+         * Before patient pickup:
+         *
+         * Ambulance → Patient
+         *
+         * After patient pickup:
+         *
+         * Ambulance → Hospital
+         */
+
+        const destination =
+
+            currentEmergency
+
+            &&
+
+            String(
+                currentEmergency.status || ""
+            ).toUpperCase()
+
+            ===
+
+            "PATIENT_ONBOARD"
+
+                ?
+
+            hospitalPosition
+
+                :
+
+            patientPosition;
+
+
+        if (
+            !destination
+
+            ||
+
+            !validPosition(
+                ambulancePosition.lat,
+                ambulancePosition.lng
+            )
+
+            ||
+
+            !validPosition(
+                destination.lat,
+                destination.lng
+            )
+        ) {
+
+            return;
+
+        }
+
+
+        const requestId =
+            ++routeRequestId;
+
+
+        if ($("mapRouteTitle")) {
+
+            $("mapRouteTitle").textContent =
+
+                String(
+                    currentEmergency?.status || ""
+                ).toUpperCase()
+
+                ===
+
+                "PATIENT_ONBOARD"
+
+                    ?
+
+                "Ambulance → Hospital"
+
+                    :
+
+                "Ambulance → Patient";
+
+        }
+
+
+        if ($("mapRouteStatus")) {
+
+            $("mapRouteStatus").textContent =
+                "Calculating road route...";
+
+        }
+
+
+        /* =================================================
+           OSRM ROUTING REQUEST
+        ================================================== */
+
+        const url =
+
+            `https://router.project-osrm.org/route/v1/driving/`
+
+            +
+
+            `${ambulancePosition.lng},` +
+            `${ambulancePosition.lat};`
+
+            +
+
+            `${destination.lng},` +
+            `${destination.lat}`
+
+            +
+
+            `?overview=full` +
+            `&geometries=geojson` +
+            `&steps=false`;
+
+
+        try {
+
+            const response =
+                await fetch(
+                    url,
+                    {
+                        headers: {
+                            Accept:
+                                "application/json"
+                        }
+                    }
+                );
+
+
+            if (!response.ok) {
+
+                throw new Error(
+                    `Routing HTTP ${response.status}`
+                );
+
+            }
+
+
+            const data =
+                await response.json();
+
+
+            if (
+                requestId !==
+                routeRequestId
+            ) {
+
+                return;
+
+            }
+
+
+            if (
+                data.code !== "Ok"
+
+                ||
+
+                !data.routes?.length
+            ) {
+
+                throw new Error(
+                    "No route found"
+                );
+
+            }
+
+
+            const route =
+                data.routes[0];
+
+
+            /* =================================================
+               CONVERT OSRM LNG/LAT → LEAFLET LAT/LNG
+            ================================================== */
+
+            const coordinates =
+
+                route.geometry.coordinates.map(
+
+                    function (
+                        coordinate
+                    ) {
+
+                        return [
+
+                            coordinate[1],
+
+                            coordinate[0]
+
+                        ];
+
+                    }
+
+                );
+
+
+            /* =================================================
+               REMOVE OLD ROUTE
+            ================================================== */
+
+            if (routeLine) {
+
+                map.removeLayer(
+                    routeLine
+                );
+
+            }
+
+
+            /* =================================================
+               DRAW NEW ROUTE
+            ================================================== */
+
+            routeLine = L.polyline(
+
+                coordinates,
+
+                {
+
+                    weight: 6,
+
+                    opacity: 0.85
+
+                }
+
+            )
+            .addTo(map);
+
+
+            /* =================================================
+               ETA
+            ================================================== */
+
+            const etaMinutes =
+                Math.max(
+                    1,
+                    Math.ceil(
+                        route.duration / 60
+                    )
+                );
+
+
+            /* =================================================
+               DISTANCE
+            ================================================== */
+
+            const distanceKm =
+                route.distance / 1000;
+
+
+            if ($("eta")) {
+
+                $("eta").textContent =
+                    `${etaMinutes} min`;
+
+            }
+
+
+            if ($("etaSub")) {
+
+                $("etaSub").textContent =
+
+                    `${distanceKm.toFixed(1)} km by road`;
+
+            }
+
+
+            if ($("mapRouteStatus")) {
+
+                $("mapRouteStatus").textContent =
+
+                    `Fastest available road route • ` +
+
+                    `${distanceKm.toFixed(1)} km • ` +
+
+                    `ETA ${etaMinutes} min`;
+
+            }
+
+
+            if ($("mapUpdate")) {
+
+                $("mapUpdate").textContent =
+
+                    `Route updated ${formatTime(new Date())}`;
+
+            }
+
+        }
+
+
+        catch (error) {
+
+            console.warn(
+                "OSRM route unavailable:",
+                error
+            );
+
+
+            if ($("mapRouteStatus")) {
+
+                $("mapRouteStatus").textContent =
+
+                    "Live route unavailable. " +
+                    "Showing current map positions.";
+
+            }
+
+
+            if ($("mapUpdate")) {
+
+                $("mapUpdate").textContent =
+                    "GPS position available";
+
+            }
+
+
+            if ($("etaSub")) {
+
+                $("etaSub").textContent =
+                    "Route service unavailable";
+
+            }
+
+        }
+
+    }
+
+
+    /* =====================================================
+       UPDATE MARKER POSITION
+    ====================================================== */
+
+    function updateMarkerPosition(
+        type,
+        lat,
+        lng
+    ) {
+
+        if (
+            !validPosition(
+                lat,
+                lng
+            )
+
+            ||
+
+            !map
+        ) {
+
+            return;
+
+        }
+
+
+        const position = {
+
+            lat:
+                Number(lat),
+
+            lng:
+                Number(lng)
+
+        };
+
+
+        /* =================================================
+           AMBULANCE
+        ================================================== */
+
+        if (
+            type === "ambulance"
+        ) {
+
+            ambulancePosition =
+                position;
+
+
+            if (
+                ambulanceMarker
+            ) {
+
+                ambulanceMarker.setLatLng(
+
+                    [
+                        position.lat,
+                        position.lng
+                    ]
+
+                );
+
+            }
+
+
+            if ($("mapUpdate")) {
+
+                $("mapUpdate").textContent =
+
+                    `GPS updated ${formatTime(new Date())}`;
+
+            }
+
+
+            drawCurrentRoute();
+
+        }
+
+
+        /* =================================================
+           PATIENT
+        ================================================== */
+
+        else if (
+            type === "patient"
+        ) {
+
+            patientPosition =
+                position;
+
+
+            if (
+                patientMarker
+            ) {
+
+                patientMarker.setLatLng(
+
+                    [
+                        position.lat,
+                        position.lng
+                    ]
+
+                );
+
+            }
+
+
+            drawCurrentRoute();
+
+        }
+
+
+        /* =================================================
+           HOSPITAL
+        ================================================== */
+
+        else if (
+            type === "hospital"
+        ) {
+
+            hospitalPosition =
+                position;
+
+
+            if (
+                hospitalMarker
+            ) {
+
+                hospitalMarker.setLatLng(
+
+                    [
+                        position.lat,
+                        position.lng
+                    ]
+
+                );
+
+            }
+
+
+            if (
+                hospitalMarker
+            ) {
+
+                hospitalMarker.setPopupContent(
+
+                    `<strong>
+                        ${escapeHtml(
+                            currentEmergency
+                                ?.hospital
+                                ?.name
+                            ||
+
+                            "Hospital"
+                        )}
+                    </strong>
+
+                    ${escapeHtml(
+                        currentEmergency
+                            ?.hospital
+                            ?.address
+
+                        ||
+
+                        "Destination hospital"
+                    )}`
+
+                );
+
+            }
+
+
+            drawCurrentRoute();
+
+        }
+
+
+        /* =================================================
+           FIT MAP TO ALL MARKERS
+        ================================================== */
+
+        const points = [
+
+            patientPosition,
+
+            ambulancePosition,
+
+            hospitalPosition
+
+        ]
+
+        .filter(Boolean)
+
+        .filter(
+
+            function (point) {
+
+                return validPosition(
+                    point.lat,
+                    point.lng
+                );
+
+            }
+
+        );
+
+
+        if (points.length) {
+
+            map.fitBounds(
+
+                points.map(
+
+                    function (point) {
+
+                        return [
+                            point.lat,
+                            point.lng
+                        ];
+
+                    }
+
+                ),
+
+                {
+                    padding: [
+                        45,
+                        45
+                    ],
+
+                    maxZoom: 15
+                }
+
+            );
+
+        }
+
+    }
+
+
+    /* =====================================================
+       SET TEXT
+    ====================================================== */
+
+    function setText(
+        id,
+        value,
+        fallback = "--"
+    ) {
+
+        const element =
+            $(id);
+
+
+        if (!element) {
+            return;
+        }
+
+
+        element.textContent =
+
+            value === undefined
+
+            ||
+
+            value === null
+
+            ||
+
+            value === ""
+
+                ?
+
+            fallback
+
+                :
+
+            String(value);
+
+    }
+
+
+    /* =====================================================
+       NORMALIZE CONDITION
+    ====================================================== */
+
+    function normalizeCondition(
+        value
+    ) {
+
+        const raw =
+
+            String(
+                value || "Stable"
+            )
+
+            .toLowerCase()
+
+            .replace(
+                /[_-]/g,
+                " "
+            );
+
+
+        if (
+            raw.includes(
+                "critical"
+            )
+        ) {
+
+            return "Critical";
+
+        }
+
+
+        if (
+            raw.includes(
+                "monitor"
+            )
+        ) {
+
+            return "Being Monitored";
+
+        }
+
+
+        return "Stable";
+
+    }
+
+
+    /* =====================================================
+       APPLY CONDITION
+
+       IMPORTANT:
+       Family can ONLY VIEW this.
+    ====================================================== */
+
+    function applyCondition(
+        value,
+        timestamp
+    ) {
+
+        const condition =
+            normalizeCondition(value);
+
+
+        setText(
+            "condition",
+            condition
+        );
+
+
+        setText(
+            "conditionDetail",
+            condition
+        );
+
+
+        setText(
+            "conditionTimestamp",
+            formatTime(
+                timestamp ||
+                new Date()
+            )
+        );
+
+
+        setText(
+            "statusTimestamp",
+            formatTime(
+                timestamp ||
+                new Date()
+            )
+        );
+
+
+        if ($("conditionSub")) {
+
+            if (
+                condition ===
+                "Critical"
+            ) {
+
+                $("conditionSub").textContent =
+
+                    "Priority monitoring during emergency transfer.";
+
+            }
+
+            else if (
+                condition ===
+                "Being Monitored"
+            ) {
+
+                $("conditionSub").textContent =
+
+                    "Patient is being continuously monitored during transfer.";
+
+            }
+
+            else {
+
+                $("conditionSub").textContent =
+
+                    "Patient condition is currently stable.";
+
+            }
+
+        }
+
+    }
+
+
+    /* =====================================================
+       RENDER STAFF
+    ====================================================== */
+
+    function renderStaff(
+        staff
+    ) {
+
+        const list =
+            $("staffList");
+
+
+        if (!list) {
+            return;
+        }
+
+
+        if (
+            !Array.isArray(staff)
+
+            ||
+
+            !staff.length
+        ) {
+
+            list.innerHTML =
+
+                `
+                <div class="staff-row">
+
+                    <div class="staff-avatar">
+                        👨‍⚕️
+                    </div>
+
+                    <div>
+
+                        <div class="staff-name">
+                            Awaiting assignment
+                        </div>
+
+                        <div class="staff-role">
+                            Hospital care team
+                        </div>
+
+                    </div>
+
+                    <span class="staff-status">
+                        PENDING
+                    </span>
+
+                </div>
+                `;
+
+            return;
+
+        }
+
+
+        list.innerHTML =
+
+            staff.map(
+
+                function (person) {
+
+                    const name =
+
+                        person.name
+
+                        ||
+
+                        person.full_name
+
+                        ||
+
+                        person.staff_name
+
+                        ||
+
+                        "Hospital Staff";
+
+
+                    const role =
+
+                        person.role
+
+                        ||
+
+                        person.designation
+
+                        ||
+
+                        person.department
+
+                        ||
+
+                        "Emergency Care Team";
+
+
+                    const status =
+
+                        person.status
+
+                        ||
+
+                        "ASSIGNED";
+
+
+                    return `
+
+                        <div class="staff-row">
+
+                            <div class="staff-avatar">
+                                👨‍⚕️
+                            </div>
+
+                            <div>
+
+                                <div class="staff-name">
+                                    ${escapeHtml(name)}
+                                </div>
+
+                                <div class="staff-role">
+                                    ${escapeHtml(role)}
+                                </div>
+
+                            </div>
+
+                            <span class="staff-status">
+                                ${escapeHtml(status)}
+                            </span>
+
+                        </div>
+
+                    `;
+
+                }
+
+            )
+            .join("");
+
+
+        setText(
+            "staffTimestamp",
+            formatTime(
+                new Date()
+            )
+        );
+
+    }
+
+
+    /* =====================================================
+       RENDER FACILITIES
+    ====================================================== */
+
+    function renderFacilities(
+        facilities,
+        hospital
+    ) {
+
+        const list =
+            $("facilityList");
+
+
+        if (!list) {
+            return;
+        }
+
+
+        const values =
+
+            Array.isArray(
+                facilities
+            )
+
+                ?
+
+            facilities
+
+                :
+
+            [
+
+                {
+                    name:
+                        "Emergency Department",
+
+                    available:
+                        hospital
+                            ?.emergency_available
+                        ??
+                        true
+                },
+
+                {
+                    name:
+                        "ICU",
+
+                    available:
+                        hospital
+                            ?.icu_available
+                        ??
+                        false
+                },
+
+                {
+                    name:
+                        "Trauma Support",
+
+                    available:
+                        hospital
+                            ?.trauma_available
+                        ??
+                        false
+                },
+
+                {
+                    name:
+                        "Cardiology",
+
+                    available:
+                        hospital
+                            ?.cardiology_available
+                        ??
+                        false
+                }
+
+            ];
+
+
+        list.innerHTML =
+
+            values.map(
+
+                function (item) {
+
+                    const available =
+
+                        item.available === true
+
+                        ||
+
+                        String(
+                            item.status || ""
+                        )
+                        .toLowerCase()
+                        ===
+                        "available";
+
+
+                    return `
+
+                        <div class="resource">
+
+                            <span class="resource-name">
+
+                                ${escapeHtml(
+                                    item.name
+                                    ||
+                                    item.resource_type
+                                    ||
+                                    "Facility"
+                                )}
+
+                            </span>
+
+                            <span
+                                class="${
+                                    available
+                                    ?
+                                    "available"
+                                    :
+                                    "pending-resource"
+                                }"
+                            >
+
+                                ${
+                                    available
+                                    ?
+                                    "Available"
+                                    :
+                                    "Unavailable"
+                                }
+
+                            </span>
+
+                        </div>
+
+                    `;
+
+                }
+
+            )
+            .join("");
+
+    }
+
+
+    /* =====================================================
+       RENDER TIMELINE EVENTS
+    ====================================================== */
+
+    function renderTimeline(
+        events
+    ) {
+
+        if (
+            !Array.isArray(events)
+
+            ||
+
+            !events.length
+        ) {
+
+            return;
+
+        }
+
+
+        const mapEvents = {};
+
+
+        events.forEach(
+
+            function (event) {
+
+                const type =
+
+                    String(
+                        event.event_type
+                        ||
+                        event.type
+                        ||
+                        ""
+                    )
+                    .toUpperCase();
+
+
+                mapEvents[type] =
+
+                    event.created_at
+
+                    ||
+
+                    event.timestamp
+
+                    ||
+
+                    event.time;
+
+            }
+
+        );
+
+
+        document
+            .querySelectorAll(
+                "[data-event]"
+            )
+            .forEach(
+
+                function (element) {
+
+                    const key =
+                        element.dataset.event;
+
+
+                    if (
+                        mapEvents[key]
+                    ) {
+
+                        element.textContent =
+
+                            formatDateTime(
+                                mapEvents[key]
+                            );
+
+                    }
+
+                }
+
+            );
+
+    }
+
+
+    /* =====================================================
+       UPDATE TIMELINE BASED ON STATUS
+    ====================================================== */
+
+    function updateTimelineFromStatus(
+        status,
+        timestamp
+    ) {
+
+        const order = {
+
+            REPORTED: 0,
+
+            DISPATCHING: 0,
+
+            ASSIGNED: 1,
+
+            DRIVER_ACCEPTED: 1,
+
+            EN_ROUTE_TO_PATIENT: 2,
+
+            ARRIVED_AT_PATIENT: 3,
+
+            PATIENT_ONBOARD: 3,
+
+            EN_ROUTE_TO_HOSPITAL: 4,
+
+            ARRIVED_AT_HOSPITAL: 4,
+
+            COMPLETED: 5
+
+        };
+
+
+        const current =
+
+            order[
+                String(
+                    status || ""
+                ).toUpperCase()
+            ]
+
+            ??
+
+            0;
+
+
+        const items =
+
+            document.querySelectorAll(
+                "#timeline .timeline-item"
+            );
+
+
+        items.forEach(
+
+            function (
+                item,
+                index
+            ) {
+
+                if (
+                    index <= current
+                ) {
+
+                    item.classList.remove(
+                        "pending"
+                    );
+
+
+                    const marker =
+                        item.querySelector(
+                            ".timeline-marker"
+                        );
+
+
+                    if (marker) {
+
+                        marker.style.background =
+                            "#e63946";
+
+                    }
+
+                }
+
+            }
+
+        );
+
+
+        const ts =
+            formatDateTime(
+                timestamp ||
+                new Date()
+            );
+
+
+        const statusIndex =
+
+            order[
+                String(
+                    status || ""
+                ).toUpperCase()
+            ];
+
+
+        if (
+            statusIndex !== undefined
+        ) {
+
+            const timeElement =
+
+                items[
+                    Math.min(
+                        statusIndex,
+                        items.length - 1
+                    )
+                ]
+
+                ?.querySelector(
+                    ".timeline-time"
+                );
+
+
+            if (timeElement) {
+
+                timeElement.textContent =
+                    ts;
+
+            }
+
+        }
+
+    }
+
+
+    /* =====================================================
+       APPLY EMERGENCY DATA
+    ====================================================== */
+
+    function applyEmergency(
+        data
+    ) {
+
+        if (!data) {
+            return;
+        }
+
+
+        currentEmergency =
+            data;
+
+
+        const status =
+
+            String(
+                data.status
+                ||
+                "DISPATCHING"
+            )
+            .toUpperCase();
+
+
+        const statusLabel =
+
+            status.replaceAll(
+                "_",
+                " "
+            );
+
+
+        setText(
+            "emergencyStatus",
+            statusLabel
+        );
+
+
+        setText(
+            "statusDetail",
+            statusLabel
+        );
+
+
+        setText(
+
+            "emergencyId",
+
+            `Emergency ID: ${
+                data.id
+
+                ||
+
+                data.emergency_id
+
+                ||
+
+                localStorage.getItem(
+                    "resq_emergency_id"
+                )
+
+                ||
+
+                "--"
+            }`
+
+        );
+
+
+        /* =================================================
+           CONDITION
+        ================================================== */
+
+        applyCondition(
+
+            data.condition
+
+            ||
+
+            data.patient_condition
+
+            ||
+
+            data.patient
+                ?.condition,
+
+            data.updated_at
+
+            ||
+
+            data.condition_updated_at
+
+            ||
+
+            new Date()
+
+        );
+
+
+        /* =================================================
+           PATIENT LOCATION
+        ================================================== */
+
+        if (
+            validPosition(
+                data.latitude,
+                data.longitude
+            )
+        ) {
+
+            updateMarkerPosition(
+                "patient",
+                data.latitude,
+                data.longitude
+            );
+
+        }
+
+
+        if (
+            validPosition(
+                data.patient_latitude,
+                data.patient_longitude
+            )
+        ) {
+
+            updateMarkerPosition(
+                "patient",
+                data.patient_latitude,
+                data.patient_longitude
+            );
+
+        }
+
+
+        /* =================================================
+           AMBULANCE LOCATION
+        ================================================== */
+
+        if (
+            validPosition(
+                data.ambulance_latitude,
+                data.ambulance_longitude
+            )
+        ) {
+
+            updateMarkerPosition(
+                "ambulance",
+                data.ambulance_latitude,
+                data.ambulance_longitude
+            );
+
+        }
+
+
+        /* =================================================
+           HOSPITAL LOCATION
+        ================================================== */
+
+        if (
+            validPosition(
+                data.hospital_latitude,
+                data.hospital_longitude
+            )
+        ) {
+
+            updateMarkerPosition(
+                "hospital",
+                data.hospital_latitude,
+                data.hospital_longitude
+            );
+
+        }
+
+
+        /* =================================================
+           HOSPITAL DATA
+        ================================================== */
+
+        const hospital =
+            data.hospital
+            ||
+            {};
+
+
+        if (
+            data.hospital_name
+
+            ||
+
+            hospital.name
+        ) {
+
+            setText(
+                "hospitalName",
+
+                data.hospital_name
+                ||
+                hospital.name
+            );
+
+        }
+
+
+        if (
+            data.hospital_address
+
+            ||
+
+            hospital.address
+        ) {
+
+            setText(
+                "hospitalAddress",
+
+                data.hospital_address
+                ||
+                hospital.address
+            );
+
+        }
+
+
+        if (
+            data.hospital_latitude
+
+            ||
+
+            hospital.latitude
+        ) {
+
+            updateMarkerPosition(
+
+                "hospital",
+
+                data.hospital_latitude
+                ??
+                hospital.latitude,
+
+                data.hospital_longitude
+                ??
+                hospital.longitude
+
+            );
+
+        }
+
+
+        setText(
+
+            "transferHospital",
+
+            data.hospital_name
+            ||
+            hospital.name
+            ||
+            "--"
+
+        );
+
+
+        /* =================================================
+           BED
+        ================================================== */
+
+        const bed =
+
+            data.allotted_bed
+
+            ||
+
+            data.bed_number
+
+            ||
+
+            data.bed?.number
+
+            ||
+
+            data.bed?.bed_number;
+
+
+        if (bed) {
+
+            setText(
+                "allottedBed",
+                bed
+            );
+
+        }
+
+        else {
+
+            setText(
+                "allottedBed",
+                "--"
+            );
+
+        }
+
+
+        setText(
+
+            "bedSub",
+
+            data.bed_room
+
+                ?
+
+            `Room ${data.bed_room}`
+
+                :
+
+            bed
+
+                ?
+
+            "Reserved for this emergency"
+
+                :
+
+            "Awaiting hospital allocation"
+
+        );
+
+
+        /* =================================================
+           FACILITIES
+        ================================================== */
+
+        renderFacilities(
+
+            data.facilities
+            ||
+            data.resources,
+
+            hospital
+
+        );
+
+
+        /* =================================================
+           STAFF
+        ================================================== */
+
+        renderStaff(
+
+            data.staff
+
+            ||
+
+            data.allocated_staff
+
+            ||
+
+            data.hospital_staff
+
+        );
+
+
+        /* =================================================
+           TIMELINE
+        ================================================== */
+
+        renderTimeline(
+
+            data.events
+
+            ||
+
+            data.timeline_events
+
+        );
+
+
+        updateTimelineFromStatus(
+
+            status,
+
+            data.updated_at
+            ||
+            data.created_at
+
+        );
+
+
+        /* =================================================
+           REFERRAL / TRANSFER
+        ================================================== */
+
+        const transfer =
+
+            data.transfer
+
+            ||
+
+            data.referral;
+
+
+        if (transfer) {
+
+            setText(
+
+                "transferStatus",
+
+                transfer.status
+
+                ||
+
+                "Referral / transfer updated"
+
+            );
+
+
+            setText(
+
+                "transferDetail",
+
+                transfer.detail
+
+                ||
+
+                transfer.destination
+
+                ||
+
+                "Hospital staff updated the referral or transfer status."
+
+            );
+
+
+            setText(
+
+                "transferTimestamp",
+
+                formatTime(
+                    transfer.updated_at
+                    ||
+                    new Date()
+                )
+
+            );
+
+        }
+
+
+        /* =================================================
+           TIMESTAMPS
+        ================================================== */
+
+        setText(
+
+            "hospitalTimestamp",
+
+            formatTime(
+                data.hospital_updated_at
+                ||
+                data.updated_at
+                ||
+                new Date()
+            )
+
+        );
+
+
+        setText(
+
+            "statusTimestamp",
+
+            formatTime(
+                data.updated_at
+                ||
+                new Date()
+            )
+
+        );
+
+
+        setText(
+
+            "lastUpdate",
+
+            `Updated ${
+                formatTime(
+                    data.updated_at
+                    ||
+                    new Date()
+                )
+            }`
+
+        );
+
+    }
+
+
+    /* =====================================================
+       GLOBAL FUNCTIONS
+
+       realtime.js can call these.
+    ====================================================== */
+
+    window.updateFamilyDashboard =
+        applyEmergency;
+
+
+    window.updateFamilyMap =
+
+        function (
+            latitude,
+            longitude
+        ) {
+
+            updateMarkerPosition(
+                "ambulance",
+                latitude,
+                longitude
+            );
+
+        };
+
+
+    window.updateFamilyAmbulanceLocation =
+
+        window.updateFamilyMap;
+
+
+    window.updateFamilyPatientLocation =
+
+        function (
+            latitude,
+            longitude
+        ) {
+
+            updateMarkerPosition(
+                "patient",
+                latitude,
+                longitude
+            );
+
+        };
+
+
+    window.updateFamilyHospitalLocation =
+
+        function (
+            latitude,
+            longitude
+        ) {
+
+            updateMarkerPosition(
+                "hospital",
+                latitude,
+                longitude
+            );
+
+        };
+
+
+    /* =====================================================
+       SIDEBAR NAVIGATION
+    ====================================================== */
+
+    function setupNavigation() {
+
+        document
+            .querySelectorAll(
+                ".side-item"
+            )
+            .forEach(
+
+                function (item) {
+
+                    item.addEventListener(
+                        "click",
+                        function () {
+
+                            document
+                                .querySelectorAll(
+                                    ".side-item"
+                                )
+                                .forEach(
+
+                                    function (
+                                        button
+                                    ) {
+
+                                        button.classList.remove(
+                                            "active"
+                                        );
+
+                                    }
+
+                                );
+
+
+                            item.classList.add(
+                                "active"
+                            );
+
+
+                            const targetMap = {
+
+                                overview:
+                                    "overviewSection",
+
+                                tracking:
+                                    "mapSection",
+
+                                patient:
+                                    "patientSection",
+
+                                hospital:
+                                    "hospitalSection",
+
+                                history:
+                                    "historySection"
+
+                            };
+
+
+                            const target =
+
+                                $(
+                                    targetMap[
+                                        item.dataset.section
+                                    ]
+                                );
+
+
+                            if (target) {
+
+                                target.scrollIntoView({
+
+                                    behavior:
+                                        "smooth",
+
+                                    block:
+                                        "center"
+
+                                });
+
+                            }
+
+                        }
+
+                    );
+
+                }
+
+            );
+
+    }
+
+
+    /* =====================================================
+       LOAD STORED USER DATA
+    ====================================================== */
+
+    function loadDemoOrStoredData() {
+
+        const storedId =
+
+            localStorage.getItem(
+                "resq_emergency_id"
+            );
+
+
+        if (storedId) {
+
+            setText(
+
+                "emergencyId",
+
+                `Emergency ID: ${storedId}`
+
+            );
+
+        }
+
 
         const storedName =
+
             localStorage.getItem(
                 "resq_user_name"
             );
@@ -1891,48 +4873,68 @@
 
         if (storedName) {
 
-            const userName =
-                document.getElementById(
-                    "userName"
-                );
-
-
-            if (userName) {
-
-                userName.textContent =
-                    storedName;
-            }
-        }
-
-
-
-        /* =========================
-           DEMO EMERGENCY ID
-        ========================== */
-
-        const emergencyId =
-            localStorage.getItem(
-                "resq_emergency_id"
+            setText(
+                "userName",
+                storedName
             );
 
-
-        if (emergencyId) {
-
-            const emergencyElement =
-                document.getElementById(
-                    "emergencyId"
-                );
-
-
-            if (emergencyElement) {
-
-                emergencyElement.textContent =
-                    "Emergency ID: " +
-                    emergencyId;
-            }
         }
 
-    </script>
+    }
+
+
+    /* =====================================================
+       CLOCK
+    ====================================================== */
+
+    function updateClock() {
+
+        const now =
+            new Date();
+
+
+        if (!currentEmergency) {
+
+            setText(
+                "statusTimestamp",
+                formatTime(now)
+            );
+
+        }
+
+    }
+
+
+    /* =====================================================
+       INITIALIZE
+    ====================================================== */
+
+    document.addEventListener(
+        "DOMContentLoaded",
+        function () {
+
+            setupNavigation();
+
+            loadDemoOrStoredData();
+
+            initMap();
+
+            updateClock();
+
+
+            setInterval(
+                updateClock,
+                30000
+            );
+
+        }
+    );
+
+
+})();
+
+</script>
+
 
 </body>
 
