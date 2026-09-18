@@ -1,3 +1,4 @@
+
 <!doctype html>
 <html lang="en">
   <head>
@@ -531,6 +532,51 @@
         cursor: not-allowed;
         transform: none;
       }
+
+      /* =========================
+           RESTORE FORM DATA FROM URL
+           ========================== */
+
+      function prefillEmergencyFormFromUrl() {
+        const params = new URLSearchParams(window.location.search);
+
+        const values = {
+          patientName: params.get("patientName"),
+          patientPhone: params.get("patientPhone"),
+          patientAge: params.get("patientAge"),
+          patientSex: params.get("patientSex") || params.get("patientGender"),
+          emergencyType: params.get("emergencyType"),
+          patientCondition: params.get("patientCondition"),
+          description: params.get("description") || params.get("details"),
+        };
+
+        Object.entries(values).forEach(([id, value]) => {
+          if (value === null || value === "") return;
+
+          const element = document.getElementById(id);
+          if (element) {
+            element.value = value;
+            element.dispatchEvent(new Event("input", { bubbles: true }));
+            element.dispatchEvent(new Event("change", { bubbles: true }));
+          }
+        });
+
+        const priority = params.get("priority");
+        if (priority) {
+          const priorityInput = document.querySelector(
+            'input[name="priority"][value="' + CSS.escape(priority) + '"]'
+          );
+          if (priorityInput) {
+            priorityInput.checked = true;
+            priorityInput.dispatchEvent(new Event("change", { bubbles: true }));
+          }
+        }
+      }
+
+      // The page is sometimes opened with patient details in the query string.
+      // Restore those values immediately so a browser refresh does not make
+      // the form appear empty while the URL still contains the data.
+      prefillEmergencyFormFromUrl();
 
       /* =========================
            STATUS MESSAGE
@@ -1196,88 +1242,10 @@
           behavior: "smooth",
         });
       }
-
-      /* =========================
-           CURRENT LOCATION
-        ========================== */
-
-      detectLocation.addEventListener("click", function () {
-        if (!navigator.geolocation) {
-          showMessage("Geolocation is not supported by this browser.", "error");
-
-          return;
-        }
-
-        locationStatus.textContent = "Detecting your location...";
-
-        locationDot.classList.remove("active");
-
-        detectLocation.disabled = true;
-
-        navigator.geolocation.getCurrentPosition(
-          function (position) {
-            const latitude = position.coords.latitude;
-
-            const longitude = position.coords.longitude;
-
-            latitudeInput.value = latitude;
-
-            longitudeInput.value = longitude;
-
-            manualLocationPanel.classList.remove("active");
-
-            locationStatus.textContent = "Location detected successfully";
-
-            locationDot.classList.add("active");
-
-            coordinates.textContent =
-              "Latitude: " +
-              latitude.toFixed(6) +
-              " | Longitude: " +
-              longitude.toFixed(6);
-
-            coordinates.classList.add("active");
-
-            detectLocation.disabled = false;
-          },
-
-          function (error) {
-            detectLocation.disabled = false;
-
-            locationDot.classList.remove("active");
-
-            locationStatus.textContent = "Unable to detect location";
-
-            let message = "Unable to detect your location.";
-
-            if (error.code === 1) {
-              message =
-                "Location permission was denied. Please allow location access or enter the location manually.";
-            }
-
-            if (error.code === 2) {
-              message =
-                "Your location could not be determined. Please try again or enter it manually.";
-            }
-
-            if (error.code === 3) {
-              message = "Location detection timed out. Please try again.";
-            }
-
-            showMessage(message, "error");
-          },
-
-          {
-            enableHighAccuracy: true,
-            timeout: 10000,
-            maximumAge: 0,
-          },
-        );
-      });
-
       /* =========================
            MANUAL LOCATION
-        ========================== */
+         ========================== */
+
 
       manualLocation.addEventListener("click", function () {
         manualLocationPanel.classList.add("active");
@@ -1294,15 +1262,11 @@
         manualLocationPanel.classList.remove("active");
       });
 
-      saveManualLocation.addEventListener("click", function () {
+      saveManualLocation.addEventListener("click", async function () {
         const address = manualAddress.value.trim();
-
         const city = manualCity.value.trim();
-
         const state = manualState.value.trim();
-
         const pincode = manualPincode.value.trim();
-
         const landmark = manualLandmark.value.trim();
 
         if (!address || !city || !state || !/^[0-9]{6}$/.test(pincode)) {
@@ -1331,25 +1295,114 @@
           locationText += " | Landmark: " + landmark;
         }
 
-        coordinates.textContent = "Manual location: " + locationText;
+        const originalText = saveManualLocation.textContent;
+        saveManualLocation.disabled = true;
+        saveManualLocation.textContent = "Finding location...";
 
-        coordinates.classList.add("active");
+        try {
+          /*
+           * The emergency backend requires real latitude/longitude.
+           * Convert the manually entered address into coordinates before
+           * saving it into emergency.js's shared location state.
+           */
+          const query = encodeURIComponent(locationText);
 
-        locationStatus.textContent = "Manual location entered successfully";
+          const response = await fetch(
+            "https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=in&q=" +
+              query,
+            {
+              headers: {
+                Accept: "application/json",
+              },
+            },
+          );
 
-        locationDot.classList.add("active");
+          if (!response.ok) {
+            throw new Error("Unable to find the entered location.");
+          }
 
-        // Clear automatically detected coordinates because
-        // the user has explicitly selected a manual location.
-        latitudeInput.value = "";
-        longitudeInput.value = "";
+          const results = await response.json();
 
-        manualLocationPanel.classList.remove("active");
+          if (!Array.isArray(results) || results.length === 0) {
+            throw new Error(
+              "The entered address could not be located. Please provide a more complete address.",
+            );
+          }
+
+          const latitude = Number(results[0].lat);
+          const longitude = Number(results[0].lon);
+
+          if (
+            !Number.isFinite(latitude) ||
+            !Number.isFinite(longitude) ||
+            latitude < -90 ||
+            latitude > 90 ||
+            longitude < -180 ||
+            longitude > 180
+          ) {
+            throw new Error("The location service returned invalid coordinates.");
+          }
+
+          latitudeInput.value = latitude;
+          longitudeInput.value = longitude;
+
+          /*
+           * Keep emergency.js as the single source of truth for the
+           * emergency location used by createEmergency().
+           */
+          if (
+            window.resqEmergency &&
+            typeof window.resqEmergency.setLocation === "function"
+          ) {
+            window.resqEmergency.setLocation(
+              latitude,
+              longitude,
+              locationText,
+            );
+          }
+
+          coordinates.textContent =
+            "Manual location: " +
+            locationText +
+            " | Coordinates: " +
+            latitude.toFixed(6) +
+            ", " +
+            longitude.toFixed(6);
+
+          coordinates.classList.add("active");
+          locationStatus.textContent =
+            "Manual location saved successfully";
+          locationDot.classList.add("active");
+          manualLocationPanel.classList.remove("active");
+
+          showMessage(
+            "Emergency location saved successfully.",
+            "success",
+          );
+        } catch (error) {
+          console.error("Manual location error:", error);
+
+          /*
+           * Do not allow the user to submit a manual address that has no
+           * coordinates, because createEmergency() requires valid coordinates.
+           */
+          latitudeInput.value = "";
+          longitudeInput.value = "";
+
+          showMessage(
+            error.message ||
+              "Unable to locate the entered address. Please try again.",
+            "error",
+          );
+        } finally {
+          saveManualLocation.disabled = false;
+          saveManualLocation.textContent = originalText;
+        }
       });
 
       // Allow digits only in the pincode field.
       manualPincode.addEventListener("input", function () {
-        this.value = this.value.replace(/\\D/g, "").slice(0, 6);
+        this.value = this.value.replace(/\D/g, "").slice(0, 6);
       });
 
       /* =========================
@@ -1360,7 +1413,7 @@
 
       // Allow digits only and limit input to 10 digits.
       patientPhoneInput.addEventListener("input", function () {
-        this.value = this.value.replace(/\\D/g, "").slice(0, 10);
+        this.value = this.value.replace(/\D/g, "").slice(0, 10);
       });
 
       // Prevent non-numeric keys while typing.
@@ -1384,121 +1437,17 @@
         }
       });
 
-      /* =========================
-           FORM SUBMISSION
-        ========================== */
-
-      emergencyForm.addEventListener("submit", function (event) {
-        event.preventDefault();
-
-        const patientName = document.getElementById("patientName").value.trim();
-
-        const patientPhone = document
-          .getElementById("patientPhone")
-          .value.trim();
-
-        const patientAge = document.getElementById("patientAge").value.trim();
-
-        const patientSex = document.getElementById("patientSex").value;
-
-        // Mobile number must be exactly 10 digits and start with 6-9.
-        const mobilePattern = /^[6-9][0-9]{9}$/;
-
-        if (!mobilePattern.test(patientPhone)) {
-          showMessage(
-            "Please enter a valid 10-digit mobile number starting with 6, 7, 8, or 9.",
-            "error",
-          );
-
-          document.getElementById("patientPhone").focus();
-
-          return;
-        }
-
-        // Age must be a whole number between 0 and 120.
-        const ageNumber = Number(patientAge);
-
-        if (
-          !patientAge ||
-          !Number.isInteger(ageNumber) ||
-          ageNumber < 1 ||
-          ageNumber > 120
-        ) {
-          showMessage(
-            "Please enter a valid approximate age between 1 and 120 years.",
-            "error",
-          );
-
-          document.getElementById("patientAge").focus();
-
-          return;
-        }
-
-        if (!patientSex) {
-          showMessage("Please select the patient's sex.", "error");
-
-          document.getElementById("patientSex").focus();
-
-          return;
-        }
-
-        const emergencyType = document.getElementById("emergencyType").value;
-
-        const priority = document.querySelector(
-          'input[name="priority"]:checked',
-        );
-
-        /* Basic validation */
-
-        if (!patientName || !patientPhone || !emergencyType || !priority) {
-          showMessage(
-            "Please complete all required emergency information.",
-            "error",
-          );
-
-          return;
-        }
-
-        /* Location validation */
-
-        const hasCoordinates = latitudeInput.value && longitudeInput.value;
-
-        const hasManualLocation = coordinates.classList.contains("active");
-
-        if (!hasCoordinates && !hasManualLocation) {
-          showMessage(
-            "Please provide the emergency location before submitting the request.",
-            "error",
-          );
-
-          return;
-        }
-
-        /*
-         * Temporary submission state.
-         *
-         * The actual emergency creation,
-         * ambulance dispatch,
-         * hospital selection,
-         * database insertion,
-         * notifications and realtime
-         * synchronization will be implemented
-         * in js/emergency.js.
-         */
-
-        requestButton.classList.add("loading");
-        requestButton.disabled = true;
-
-        setTimeout(function () {
-          requestButton.classList.remove("loading");
-          requestButton.disabled = false;
-
-          showMessage(
-            "Emergency request validated. Backend dispatch will be connected through js/emergency.js.",
-            "success",
-          );
-        }, 1000);
-      });
+      /*
+       * FORM SUBMISSION
+       *
+       * The real emergency submission is intentionally handled by
+       * js/emergency.js. That module creates the patient/emergency records,
+       * assigns an ambulance/hospital, writes the emergency to Supabase,
+       * and redirects to the family dashboard after success.
+       *
+       * Keeping a second submit listener here would cause duplicate handling
+       * and could display a false "validated" message without inserting data.
+       */
     </script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/supabase.js"></script>
