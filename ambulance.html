@@ -2174,6 +2174,9 @@
         let patientReached = false;
         let hospitalRouteActive = false;
         let routeRequestInProgress = false;
+        // After a completed trip, keep the map empty until a new request is accepted.
+        let mapResetToEmpty = false;
+        let routeGeneration = 0;
 
         const PATIENT_ARRIVAL_RADIUS_METERS = 50;
         const DEFAULT_DRIVER_LOCATION = [30.7333, 76.7794];
@@ -2276,6 +2279,8 @@
         async function drawInitialHospitalRoute() {
             if (!ambulanceMap || !driverPosition) return;
 
+            const requestGeneration = ++routeGeneration;
+
             const startLat = driverPosition.lat;
             const startLng = driverPosition.lng;
             const endLat = HOSPITAL_LOCATION[0];
@@ -2292,6 +2297,7 @@
                 if (!response.ok) throw new Error("Routing service unavailable");
 
                 const data = await response.json();
+                if (requestGeneration !== routeGeneration || acceptedRequestId) return;
                 if (!data.routes || !data.routes.length) throw new Error("No route found");
 
                 const route = data.routes[0];
@@ -2374,7 +2380,10 @@
                         } else if (hospitalRouteActive) {
                             drawRouteToHospital();
                         }
-                    } else {
+                    } else if (!mapResetToEmpty) {
+                        // Initial dashboard can show the default hospital route.
+                        // After a completed trip, deliberately keep the map empty
+                        // until the driver accepts a new request.
                         drawInitialHospitalRoute();
                     }
                 },
@@ -2456,7 +2465,9 @@
         }
 
         async function drawRouteToAcceptedPatient() {
-            if (!ambulanceMap || !driverPosition || !acceptedRequestId) return;
+            if (!ambulanceMap || !driverPosition || !acceptedRequestId || patientReached || hospitalRouteActive) return;
+
+            const requestGeneration = ++routeGeneration;
 
             const request = emergencyRequests[acceptedRequestId];
             if (!request) return;
@@ -2492,6 +2503,7 @@
                 if (!response.ok) throw new Error("Routing service unavailable");
 
                 const data = await response.json();
+                if (requestGeneration !== routeGeneration || patientReached || hospitalRouteActive || !acceptedRequestId) return;
                 if (!data.routes || !data.routes.length) throw new Error("No route found");
 
                 const route = data.routes[0];
@@ -2608,11 +2620,22 @@
             if (!ambulanceMap || !driverPosition || !hospitalRouteActive) return;
             if (routeRequestInProgress) return;
 
+            const requestGeneration = routeGeneration;
             routeRequestInProgress = true;
 
             const startLat = driverPosition.lat;
             const startLng = driverPosition.lng;
             const endLat = HOSPITAL_LOCATION[0];
+
+            if (!hospitalMarker) {
+                hospitalMarker = L.marker(HOSPITAL_LOCATION, {
+                    icon: hospitalIcon,
+                    title: "City Emergency Hospital"
+                }).addTo(ambulanceMap);
+                hospitalMarker.bindPopup(
+                    "<strong>City Emergency Hospital</strong><br>Emergency Department"
+                );
+            }
             const endLng = HOSPITAL_LOCATION[1];
 
             const routeUrl =
@@ -2626,6 +2649,7 @@
                 if (!response.ok) throw new Error("Routing service unavailable");
 
                 const data = await response.json();
+                if (requestGeneration !== routeGeneration || !hospitalRouteActive || !acceptedRequestId) return;
                 if (!data.routes || !data.routes.length) throw new Error("No hospital route found");
 
                 const route = data.routes[0];
@@ -2689,6 +2713,57 @@
             }
         }
 
+        function refreshMapAfterTripCompletion() {
+            if (!ambulanceMap) return;
+
+            // Invalidate every outstanding route request so no old OSRM
+            // response can draw a route back after the trip is complete.
+            routeGeneration++;
+            routeRequestInProgress = false;
+            hospitalRouteActive = false;
+            patientReached = false;
+            acceptedRequestId = null;
+            mapResetToEmpty = true;
+
+            // Remove every trip overlay. The completed-trip map must return
+            // to a clean/empty state, with no patient route, hospital route,
+            // patient marker, or hospital marker.
+            clearMapRoute();
+
+            if (patientMarker) {
+                ambulanceMap.removeLayer(patientMarker);
+                patientMarker = null;
+            }
+
+            if (hospitalMarker) {
+                ambulanceMap.removeLayer(hospitalMarker);
+                hospitalMarker = null;
+            }
+
+            if (ambulanceMarker) {
+                ambulanceMap.removeLayer(ambulanceMarker);
+                ambulanceMarker = null;
+            }
+
+            // Repaint the Leaflet container and leave only the base map.
+            ambulanceMap.invalidateSize(true);
+            ambulanceMap.setView(DEFAULT_DRIVER_LOCATION, 13, {
+                animate: false
+            });
+
+            updateMapStatus(
+                "Map Ready",
+                "Waiting for a new emergency request."
+            );
+
+            const mapUpdate = document.getElementById("mapUpdate");
+            if (mapUpdate) mapUpdate.textContent = "Map cleared";
+
+            setTimeout(function() {
+                if (ambulanceMap) ambulanceMap.invalidateSize(true);
+            }, 250);
+        }
+
         function hidePatientMedicalData() {
             const patientSection = document.getElementById("patientSection");
             if (!patientSection) return;
@@ -2721,6 +2796,8 @@
             if (!request) return;
 
             acceptedRequestId = requestId;
+            mapResetToEmpty = false;
+            routeGeneration++;
             updateSidebarAccess();
             patientReached = false;
             hospitalRouteActive = false;
@@ -2816,6 +2893,20 @@
             activateStep(2);
 
             if (ambulanceMap) {
+                // The map is intentionally empty after a completed trip, so
+                // recreate the ambulance marker when the next request starts.
+                if (!ambulanceMarker) {
+                    const markerPosition = driverPosition
+                        ? [driverPosition.lat, driverPosition.lng]
+                        : DEFAULT_DRIVER_LOCATION;
+
+                    ambulanceMarker = L.marker(markerPosition, {
+                        icon: ambulanceIcon,
+                        title: "Ambulance current location"
+                    }).addTo(ambulanceMap);
+                }
+
+                ambulanceMarker.bindPopup("<strong>Ambulance</strong><br>Current driver location.");
                 drawRouteToAcceptedPatient();
             }
 
@@ -3035,6 +3126,7 @@
                             if (tripSub) tripSub.textContent = "Waiting for dispatch";
 
                             acceptedRequestId = null;
+                            routeGeneration++;
                             updateSidebarAccess();
                             patientReached = false;
                             hospitalRouteActive = false;
@@ -3096,7 +3188,11 @@
                                 }
                             }, 500);
 
-                            drawInitialHospitalRoute();
+                            // Fully refresh the Leaflet map after the trip is completed.
+                            // This clears the old trip route, invalidates any pending OSRM
+                            // response, refreshes the map size, recenters on the ambulance,
+                            // and then draws a fresh ambulance → hospital route.
+                            refreshMapAfterTripCompletion();
 
                         }
                     );
@@ -3131,10 +3227,37 @@
                         hospitalRouteActive = true;
                         activateStep(4);
 
-                        // Now, and only now, switch the map from Ambulance → Patient
-                        // to Ambulance → Hospital and calculate the hospital distance.
+                        // Invalidate every older patient-route request. If an
+                        // OSRM request for the patient finishes later, it is
+                        // ignored and cannot draw the old route back on top of
+                        // the hospital route.
+                        routeGeneration++;
+                        routeRequestInProgress = false;
                         clearMapRoute();
+
+                        // Remove the patient marker because the patient is now
+                        // onboard. The only destination shown on the map is the
+                        // hospital.
+                        if (patientMarker && ambulanceMap) {
+                            ambulanceMap.removeLayer(patientMarker);
+                            patientMarker = null;
+                        }
+
+                        updateMapStatus("Hospital Route", "Switching to ambulance → hospital...");
+
+                        // Draw the hospital route from the ambulance's current
+                        // GPS position and fit the map to that new route.
                         drawRouteToHospital();
+
+                        const hospitalRouteNote = document.querySelector("#mapLocationStatus span");
+                        if (hospitalRouteNote) {
+                            hospitalRouteNote.textContent = "Calculating ambulance → hospital route...";
+                        }
+
+                        const hospitalMapUpdate = document.getElementById("mapUpdate");
+                        if (hospitalMapUpdate) {
+                            hospitalMapUpdate.textContent = "Switching to hospital route...";
+                        }
 
                         patientActionButton.textContent = "ARRIVED AT HOSPITAL";
                         patientActionButton.dataset.stage = "hospital";
