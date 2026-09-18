@@ -1,45 +1,44 @@
 /* =========================================================
-   ResQ-Route
-   AUTOMATIC BED ALLOCATION ENGINE
-   ---------------------------------------------------------
-   Features:
-   1. Automatically finds an available bed
-   2. Reserves the bed for the emergency
-   3. Starts a 90-second confirmation timer
-   4. Automatically confirms after 90 seconds
-   5. Allows hospital staff to reallocate
-   6. Prevents basic double-allocation using conditional updates
-   7. Supports multiple emergency requests simultaneously
-   8. RESERVED -> OCCUPIED when patient arrives
+   RESQ-ROUTE
+   AUTOMATIC BED ALLOCATION SYSTEM
+   =========================================================
+
+   FLOW:
+
+   Family creates emergency
+          ↓
+   emergencies table
+          ↓
+   Hospital receives emergency
+          ↓
+   System finds suitable AVAILABLE bed
+          ↓
+   Bed becomes RESERVED
+          ↓
+   Hospital can:
+      CONFIRM
+      OR
+      CHANGE BED
+          ↓
+   Ambulance arrives
+          ↓
+   RESERVED → OCCUPIED
+
    ========================================================= */
 
 (function () {
 
     "use strict";
 
-
     /* =====================================================
        CONFIGURATION
        ===================================================== */
 
-    const BED_ALLOCATION_CONFIG = {
+    const CONFIG = {
 
         confirmationSeconds: 90,
 
-        resourceType: "Bed",
-
-        availableStatus: "available",
-
-        reservedStatus: "reserved",
-
-        occupiedStatus: "occupied",
-
-        cancelledStatuses: [
-            "COMPLETED",
-            "CANCELLED"
-        ],
-
-        activeEmergencyStatuses: [
+        activeStatuses: [
             "REPORTED",
             "DISPATCHING",
             "ASSIGNED",
@@ -49,6 +48,15 @@
             "PATIENT_ONBOARD",
             "EN_ROUTE_TO_HOSPITAL",
             "ARRIVED_AT_HOSPITAL"
+        ],
+
+        arrivedStatuses: [
+            "ARRIVED_AT_HOSPITAL"
+        ],
+
+        cancelledStatuses: [
+            "CANCELLED",
+            "COMPLETED"
         ]
 
     };
@@ -58,31 +66,153 @@
        STATE
        ===================================================== */
 
-    const allocationState = {
+    const state = {
 
-        supabase: null,
+        db: null,
+
+        user: null,
 
         hospitalId: null,
 
-        currentUser: null,
+        emergencies: [],
 
-        pendingAllocations: new Map(),
+        beds: [],
 
-        realtimeChannel: null,
+        timers: new Map(),
 
-        initialized: false
+        channel: null,
+
+        initialized: false,
+
+        loading: false
 
     };
 
 
     /* =====================================================
-       GET SUPABASE
+       BASIC HELPERS
        ===================================================== */
 
-    function getSupabaseClient() {
+    function escapeHtml(value) {
+
+        return String(value ?? "")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+
+    }
+
+
+    function normalize(value) {
+
+        return String(value || "")
+            .trim()
+            .toLowerCase()
+            .replace(/\s+/g, "_");
+
+    }
+
+
+    function getPatientName(emergency) {
+
+        return (
+            emergency?.patients?.name ||
+            emergency?.patient_name ||
+            "Emergency Patient"
+        );
+
+    }
+
+
+    function getPriorityRank(priority) {
+
+        const p = normalize(priority);
+
+        if (p === "critical") return 1;
+
+        if (p === "high") return 2;
+
+        if (p === "medium") return 3;
+
+        if (p === "low") return 4;
+
+        return 5;
+
+    }
+
+
+    function getPriorityClass(priority) {
+
+        const p = normalize(priority);
+
+        if (p === "critical") {
+            return "critical";
+        }
+
+        if (p === "high") {
+            return "high";
+        }
+
+        if (p === "medium") {
+            return "medium";
+        }
+
+        return "low";
+
+    }
+
+
+    function isActiveEmergency(emergency) {
+
+        const status =
+            String(emergency?.status || "")
+                .toUpperCase();
+
+        return CONFIG.activeStatuses.includes(status);
+
+    }
+
+
+    function isArrivedEmergency(emergency) {
+
+        const status =
+            String(emergency?.status || "")
+                .toUpperCase();
+
+        return CONFIG.arrivedStatuses.includes(status);
+
+    }
+
+
+    function isCancelledEmergency(emergency) {
+
+        const status =
+            String(emergency?.status || "")
+                .toUpperCase();
+
+        return CONFIG.cancelledStatuses.includes(status);
+
+    }
+
+
+    /* =====================================================
+       SUPABASE
+       ===================================================== */
+
+    function getSupabase() {
 
         if (
-            typeof window !== "undefined" &&
+            window.supabaseClient &&
+            typeof window.supabaseClient.from === "function"
+        ) {
+
+            return window.supabaseClient;
+
+        }
+
+        if (
             window.resqRoute &&
             window.resqRoute.supabase
         ) {
@@ -91,1629 +221,76 @@
 
         }
 
-
-        if (
-            typeof window !== "undefined" &&
-            window.supabaseClient
-        ) {
-
-            return window.supabaseClient;
-
-        }
-
-
-        console.error(
-            "ResQ-Route: Supabase client not available."
-        );
-
         return null;
 
     }
 
-
-    /* =====================================================
-       GET CURRENT USER
-       ===================================================== */
 
     async function getCurrentUser() {
 
-        const supabase =
-            allocationState.supabase ||
-            getSupabaseClient();
+        const db = getSupabase();
 
-
-        if (!supabase) {
-
-            return null;
-
-        }
-
-
-        try {
-
-            const result =
-                await supabase.auth.getUser();
-
-
-            if (
-                result.error ||
-                !result.data ||
-                !result.data.user
-            ) {
-
-                return null;
-
-            }
-
-
-            return result.data.user;
-
-        }
-        catch (error) {
-
-            console.error(
-                "Unable to get current user:",
-                error
-            );
-
-            return null;
-
-        }
-
-    }
-
-
-    /* =====================================================
-       GET HOSPITAL ID
-       ===================================================== */
-
-    async function getHospitalId() {
-
-        if (allocationState.hospitalId) {
-
-            return allocationState.hospitalId;
-
-        }
-
-
-        const supabase =
-            allocationState.supabase ||
-            getSupabaseClient();
-
-
-        if (!supabase) {
-
-            return null;
-
-        }
-
-
-        const user =
-            allocationState.currentUser ||
-            await getCurrentUser();
-
-
-        if (!user) {
-
-            return null;
-
-        }
-
-
-        allocationState.currentUser =
-            user;
-
-
-        /*
-         * First try localStorage.
-         */
-
-        const storedHospitalId =
-            localStorage.getItem(
-                "resq_hospital_id"
-            );
-
-
-        if (storedHospitalId) {
-
-            allocationState.hospitalId =
-                storedHospitalId;
-
-            return storedHospitalId;
-
-        }
-
-
-        /*
-         * Try hospital_staff table.
-         */
-
-        try {
-
-            const response =
-                await supabase
-                    .from("hospital_staff")
-                    .select(
-                        "hospital_id"
-                    )
-                    .eq(
-                        "user_id",
-                        user.id
-                    )
-                    .maybeSingle();
-
-
-            if (
-                !response.error &&
-                response.data &&
-                response.data.hospital_id
-            ) {
-
-                allocationState.hospitalId =
-                    response.data.hospital_id;
-
-
-                localStorage.setItem(
-                    "resq_hospital_id",
-                    response.data.hospital_id
-                );
-
-
-                return response.data.hospital_id;
-
-            }
-
-        }
-        catch (error) {
-
-            console.error(
-                "Hospital ID lookup error:",
-                error
-            );
-
-        }
-
-
-        /*
-         * Try profile metadata.
-         */
-
-        const metadata =
-            user.user_metadata || {};
-
-
-        const metadataHospitalId =
-            metadata.hospital_id ||
-            metadata.hospitalId ||
-            null;
-
-
-        if (metadataHospitalId) {
-
-            allocationState.hospitalId =
-                metadataHospitalId;
-
-
-            localStorage.setItem(
-                "resq_hospital_id",
-                metadataHospitalId
-            );
-
-
-            return metadataHospitalId;
-
-        }
-
-
-        return null;
-
-    }
-
-
-    /* =====================================================
-       NORMALIZE STATUS
-       ===================================================== */
-
-    function normalizeStatus(status) {
-
-        if (!status) {
-
-            return "available";
-
-        }
-
-
-        return String(status)
-            .trim()
-            .toLowerCase()
-            .replaceAll(
-                "-",
-                "_"
-            );
-
-    }
-
-
-    /* =====================================================
-       FORMAT TIME
-       ===================================================== */
-
-    function formatSeconds(seconds) {
-
-        const safeSeconds =
-            Math.max(
-                0,
-                Number(seconds) || 0
-            );
-
-
-        const minutes =
-            Math.floor(
-                safeSeconds / 60
-            );
-
-
-        const remainingSeconds =
-            safeSeconds % 60;
-
-
-        return (
-            String(minutes).padStart(2, "0") +
-            ":" +
-            String(remainingSeconds).padStart(2, "0")
-        );
-
-    }
-
-
-    /* =====================================================
-       GET PRIORITY SCORE
-       ===================================================== */
-
-    function getPriorityScore(priority) {
-
-        const value =
-            String(priority || "")
-                .trim()
-                .toLowerCase();
-
-
-        if (
-            value === "critical" ||
-            value === "emergency"
-        ) {
-
-            return 4;
-
-        }
-
-
-        if (value === "high") {
-
-            return 3;
-
-        }
-
-
-        if (value === "medium") {
-
-            return 2;
-
-        }
-
-
-        if (value === "low") {
-
-            return 1;
-
-        }
-
-
-        return 0;
-
-    }
-
-
-    /* =====================================================
-       DETERMINE REQUIRED ROOM TYPE
-       ===================================================== */
-
-    function getRequiredRoomTypes(emergency) {
-
-        const type =
-            String(
-                emergency?.emergency_type ||
-                emergency?.emergencyType ||
-                ""
-            )
-                .trim()
-                .toLowerCase();
-
-
-        const priority =
-            String(
-                emergency?.priority || ""
-            )
-                .trim()
-                .toLowerCase();
-
-
-        /*
-         * If the emergency already contains an explicit
-         * required room type, use it.
-         */
-
-        const explicitType =
-            emergency?.required_room_type ||
-            emergency?.requiredRoomType ||
-            emergency?.care_level ||
-            emergency?.careLevel;
-
-
-        if (explicitType) {
-
-            return [
-                String(explicitType)
-                    .trim()
-            ];
-
-        }
-
-
-        /*
-         * ICU-type emergencies.
-         *
-         * This mapping is intentionally simple for the
-         * current ResQ-Route prototype.
-         */
-
-        if (
-            type.includes("cardiac") ||
-            type.includes("heart") ||
-            type.includes("stroke") ||
-            type.includes("respiratory") ||
-            type.includes("critical")
-        ) {
-
-            return [
-                "ICU",
-                "Emergency Response"
-            ];
-
-        }
-
-
-        if (
-            priority === "critical"
-        ) {
-
-            return [
-                "ICU",
-                "Emergency Response"
-            ];
-
-        }
-
-
-        /*
-         * Otherwise Emergency Response is preferred,
-         * followed by General Ward.
-         */
-
-        return [
-            "Emergency Response",
-            "General Ward",
-            "Other"
-        ];
-
-    }
-
-
-    /* =====================================================
-       ROOM TYPE MATCH
-       ===================================================== */
-
-    function roomTypeMatches(
-        roomType,
-        requiredTypes
-    ) {
-
-        if (
-            !requiredTypes ||
-            !requiredTypes.length
-        ) {
-
-            return true;
-
-        }
-
-
-        const current =
-            String(roomType || "")
-                .trim()
-                .toLowerCase();
-
-
-        return requiredTypes.some(
-            function (required) {
-
-                return (
-                    current ===
-                    String(required)
-                        .trim()
-                        .toLowerCase()
-                );
-
-            }
-        );
-
-    }
-
-
-    /* =====================================================
-       FETCH AVAILABLE BEDS
-       ===================================================== */
-
-    async function fetchAvailableBeds(
-        hospitalId
-    ) {
-
-        const supabase =
-            allocationState.supabase;
-
-
-        if (!supabase) {
+        if (!db) {
 
             throw new Error(
-                "Supabase client is not available."
+                "Supabase client is unavailable."
             );
 
         }
 
+        const result =
+            await db.auth.getUser();
 
-        /*
-         * Get rooms first.
-         */
+        if (result.error) {
 
-        const roomResponse =
-            await supabase
-                .from("hospital_rooms")
-                .select(
-                    `
-                    id,
-                    hospital_id,
-                    floor_number,
-                    room_number,
-                    room_type,
-                    status
-                    `
-                )
-                .eq(
-                    "hospital_id",
-                    hospitalId
-                );
-
-
-        if (roomResponse.error) {
-
-            throw roomResponse.error;
+            throw result.error;
 
         }
 
+        return result.data?.user || null;
 
-        const rooms =
-            roomResponse.data || [];
-
-
-        if (!rooms.length) {
-
-            return [];
-
-        }
+    }
 
 
-        const roomMap =
-            new Map();
+    async function getHospitalId(userId) {
 
+        const result =
+            await state.db
+                .from("hospital_staff")
+                .select("hospital_id")
+                .eq("user_id", userId)
+                .limit(1)
+                .maybeSingle();
 
-        rooms.forEach(
-            function (room) {
+        if (result.error) {
 
-                roomMap.set(
-                    room.id,
-                    room
-                );
-
-            }
-        );
-
-
-        /*
-         * Get beds.
-         */
-
-        const bedResponse =
-            await supabase
-                .from(
-                    "hospital_resource_slots"
-                )
-                .select(
-                    `
-                    id,
-                    hospital_id,
-                    room_id,
-                    resource_type,
-                    slot_code,
-                    status,
-                    patient_id,
-                    emergency_id,
-                    notes
-                    `
-                )
-                .eq(
-                    "hospital_id",
-                    hospitalId
-                )
-                .eq(
-                    "resource_type",
-                    BED_ALLOCATION_CONFIG.resourceType
-                );
-
-
-        if (bedResponse.error) {
-
-            throw bedResponse.error;
+            throw result.error;
 
         }
 
-
-        const beds =
-            bedResponse.data || [];
-
-
-        return beds
-            .filter(
-                function (bed) {
-
-                    return (
-                        normalizeStatus(
-                            bed.status
-                        ) ===
-                        BED_ALLOCATION_CONFIG.availableStatus
-                    );
-
-                }
-            )
-            .map(
-                function (bed) {
-
-                    const room =
-                        roomMap.get(
-                            bed.room_id
-                        );
-
-
-                    return {
-
-                        ...bed,
-
-                        room:
-                            room || null
-
-                    };
-
-                }
-            );
+        return result.data?.hospital_id || null;
 
     }
 
 
     /* =====================================================
-       SELECT BEST BED
+       LOAD ACTIVE EMERGENCIES
        ===================================================== */
 
-    function selectBestBed(
-        beds,
-        emergency
-    ) {
-
-        if (!beds || !beds.length) {
-
-            return null;
-
-        }
-
-
-        const requiredTypes =
-            getRequiredRoomTypes(
-                emergency
-            );
-
-
-        const priority =
-            getPriorityScore(
-                emergency?.priority
-            );
-
-
-        const scored =
-            beds.map(
-                function (bed) {
-
-                    const room =
-                        bed.room ||
-                        {};
-
-
-                    let score = 0;
-
-
-                    /*
-                     * Room type suitability.
-                     */
-
-                    if (
-                        roomTypeMatches(
-                            room.room_type,
-                            requiredTypes
-                        )
-                    ) {
-
-                        score += 1000;
-
-                    }
-
-
-                    /*
-                     * Exact preferred room type.
-                     */
-
-                    if (
-                        requiredTypes.length &&
-                        String(
-                            room.room_type || ""
-                        )
-                            .toLowerCase() ===
-                        String(
-                            requiredTypes[0]
-                        )
-                            .toLowerCase()
-                    ) {
-
-                        score += 500;
-
-                    }
-
-
-                    /*
-                     * Critical cases get priority
-                     * for higher-care rooms.
-                     */
-
-                    if (
-                        priority >= 4 &&
-                        String(
-                            room.room_type || ""
-                        )
-                            .toLowerCase() ===
-                        "icu"
-                    ) {
-
-                        score += 250;
-
-                    }
-
-
-                    /*
-                     * Prefer lower floor number for
-                     * predictable routing.
-                     */
-
-                    const floor =
-                        Number(
-                            room.floor_number
-                        );
-
-
-                    if (
-                        Number.isFinite(
-                            floor
-                        )
-                    ) {
-
-                        score +=
-                            Math.max(
-                                0,
-                                50 - floor
-                            );
-
-                    }
-
-
-                    return {
-
-                        bed,
-
-                        score
-
-                    };
-
-                }
-            );
-
-
-        scored.sort(
-            function (a, b) {
-
-                return (
-                    b.score -
-                    a.score
-                );
-
-            }
-        );
-
-
-        /*
-         * Only use a room that matches the requested
-         * care type when possible.
-         */
-
-        const matching =
-            scored.find(
-                function (item) {
-
-                    return (
-                        roomTypeMatches(
-                            item.bed.room?.room_type,
-                            requiredTypes
-                        )
-                    );
-
-                }
-            );
-
-
-        if (matching) {
-
-            return matching.bed;
-
-        }
-
-
-        /*
-         * Fallback to the best available bed.
-         */
-
-        return scored[0]
-            ? scored[0].bed
-            : null;
-
-    }
-
-
-    /* =====================================================
-       CREATE ALLOCATION EVENT
-       ===================================================== */
-
-    async function createEmergencyEvent(
-        emergencyId,
-        eventType,
-        description
-    ) {
-
-        const supabase =
-            allocationState.supabase;
-
-
-        if (!supabase || !emergencyId) {
-
-            return;
-
-        }
-
-
-        try {
-
-            await supabase
-                .from(
-                    "emergency_events"
-                )
-                .insert({
-
-                    emergency_id:
-                        emergencyId,
-
-                    event_type:
-                        eventType,
-
-                    description:
-                        description,
-
-                    created_by:
-                        allocationState.currentUser
-                            ? allocationState.currentUser.id
-                            : null
-
-                });
-
-        }
-        catch (error) {
-
-            console.warn(
-                "Emergency event could not be created:",
-                error
-            );
-
-        }
-
-    }
-
-
-    /* =====================================================
-       RESERVE BED
-       ===================================================== */
-
-    async function reserveBed(
-        bed,
-        emergency,
-        source = "AUTO"
-    ) {
-
-        const supabase =
-            allocationState.supabase;
-
-
-        if (
-            !supabase ||
-            !bed ||
-            !emergency
-        ) {
-
-            throw new Error(
-                "Missing bed or emergency information."
-            );
-
-        }
-
-
-        const emergencyId =
-            emergency.id;
-
-
-        const patientId =
-            emergency.patient_id ||
-            null;
-
-
-        /*
-         * IMPORTANT:
-         *
-         * The status condition is checked in the
-         * UPDATE itself.
-         *
-         * If another request has already reserved
-         * this bed, this update affects zero rows.
-         */
-
-        const response =
-            await supabase
-                .from(
-                    "hospital_resource_slots"
-                )
-                .update({
-
-                    status:
-                        BED_ALLOCATION_CONFIG.reservedStatus,
-
-                    patient_id:
-                        patientId,
-
-                    emergency_id:
-                        emergencyId,
-
-                    notes:
-                        source === "AUTO"
-                            ? "Automatically reserved by ResQ-Route."
-                            : "Manually reallocated by hospital staff."
-
-                })
-                .eq(
-                    "id",
-                    bed.id
-                )
-                .eq(
-                    "hospital_id",
-                    allocationState.hospitalId
-                )
-                .eq(
-                    "resource_type",
-                    BED_ALLOCATION_CONFIG.resourceType
-                )
-                .eq(
-                    "status",
-                    BED_ALLOCATION_CONFIG.availableStatus
-                )
-                .select(
-                    "id,slot_code,status,room_id"
-                );
-
-
-        if (response.error) {
-
-            throw response.error;
-
-        }
-
-
-        if (
-            !response.data ||
-            !response.data.length
-        ) {
-
-            return {
-
-                success: false,
-
-                reason:
-                    "BED_ALREADY_TAKEN"
-
-            };
-
-        }
-
-
-        /*
-         * Allocation history.
-         */
-
-        try {
-
-            await supabase
-                .from(
-                    "resource_allocations"
-                )
-                .insert({
-
-                    hospital_id:
-                        allocationState.hospitalId,
-
-                    resource_slot_id:
-                        bed.id,
-
-                    resource_type:
-                        BED_ALLOCATION_CONFIG.resourceType,
-
-                    patient_id:
-                        patientId,
-
-                    emergency_id:
-                        emergencyId,
-
-                    allocated_by:
-                        allocationState.currentUser
-                            ? allocationState.currentUser.id
-                            : null,
-
-                    status:
-                        "active",
-
-                    notes:
-                        source === "AUTO"
-                            ? "AUTO_ALLOCATION"
-                            : "MANUAL_REALLOCATION"
-
-                });
-
-        }
-        catch (error) {
-
-            console.warn(
-                "Allocation history insert failed:",
-                error
-            );
-
-        }
-
-
-        await createEmergencyEvent(
-            emergencyId,
-            source === "AUTO"
-                ? "BED_AUTO_RESERVED"
-                : "BED_REALLOCATED",
-            source === "AUTO"
-                ? `${bed.slot_code || "Bed"} automatically reserved. 90-second confirmation window started.`
-                : `${bed.slot_code || "Bed"} manually selected by hospital staff.`
-        );
-
-
-        return {
-
-            success: true,
-
-            bed: {
-                ...bed,
-                status:
-                    BED_ALLOCATION_CONFIG.reservedStatus,
-                patient_id:
-                    patientId,
-                emergency_id:
-                    emergencyId
-            }
-
-        };
-
-    }
-
-
-    /* =====================================================
-       CONFIRM BED
-       ===================================================== */
-
-    async function confirmAllocation(
-        allocation
-    ) {
-
-        if (!allocation) {
-
-            return false;
-
-        }
-
-
-        const supabase =
-            allocationState.supabase;
-
-
-        const bedId =
-            allocation.bedId;
-
-
-        const emergencyId =
-            allocation.emergencyId;
-
-
-        /*
-         * Only the reserved bed belonging to this
-         * emergency may be confirmed.
-         */
-
-        const response =
-            await supabase
-                .from(
-                    "hospital_resource_slots"
-                )
-                .update({
-
-                    status:
-                        BED_ALLOCATION_CONFIG.reservedStatus,
-
-                    notes:
-                        "Bed allocation confirmed by ResQ-Route."
-
-                })
-                .eq(
-                    "id",
-                    bedId
-                )
-                .eq(
-                    "hospital_id",
-                    allocationState.hospitalId
-                )
-                .eq(
-                    "resource_type",
-                    BED_ALLOCATION_CONFIG.resourceType
-                )
-                .eq(
-                    "status",
-                    BED_ALLOCATION_CONFIG.reservedStatus
-                )
-                .eq(
-                    "emergency_id",
-                    emergencyId
-                )
-                .select(
-                    "id,status"
-                );
-
-
-        if (response.error) {
-
-            console.error(
-                "Confirm allocation error:",
-                response.error
-            );
-
-            return false;
-
-        }
-
-
-        if (
-            !response.data ||
-            !response.data.length
-        ) {
-
-            return false;
-
-        }
-
-
-        await createEmergencyEvent(
-            emergencyId,
-            "BED_ALLOCATION_CONFIRMED",
-            `${allocation.displayId || "Bed"} allocation confirmed.`
-        );
-
-
-        removePendingAllocation(
-            emergencyId
-        );
-
-
-        refreshDashboardAfterAllocation();
-
-
-        return true;
-
-    }
-
-
-    /* =====================================================
-       START TIMER
-       ===================================================== */
-
-    function startTimer(
-        allocation
-    ) {
-
-        if (!allocation) {
-
-            return;
-
-        }
-
-
-        const emergencyId =
-            allocation.emergencyId;
-
-
-        /*
-         * Clear an existing timer for the same
-         * emergency first.
-         */
-
-        stopTimer(
-            emergencyId
-        );
-
-
-        const startTime =
-            allocation.reservedAt
-                ? new Date(
-                    allocation.reservedAt
-                ).getTime()
-                : Date.now();
-
-
-        const expiryTime =
-            startTime +
-            (
-                BED_ALLOCATION_CONFIG.confirmationSeconds *
-                1000
-            );
-
-
-        allocation.expiryTime =
-            expiryTime;
-
-
-        function tick() {
-
-            const remaining =
-                Math.max(
-                    0,
-                    Math.ceil(
-                        (
-                            expiryTime -
-                            Date.now()
-                        ) / 1000
-                    )
-                );
-
-
-            allocation.remainingSeconds =
-                remaining;
-
-
-            updateTimerUI(
-                allocation
-            );
-
-
-            if (
-                remaining <= 0
-            ) {
-
-                stopTimer(
-                    emergencyId
-                );
-
-
-                autoConfirmAllocation(
-                    allocation
-                )
-                    .catch(
-                        function (error) {
-
-                            console.error(
-                                "Automatic confirmation failed:",
-                                error
-                            );
-
-                        }
-                    );
-
-
-                return;
-
-            }
-
-
-            allocation.timerId =
-                setTimeout(
-                    tick,
-                    1000
-                );
-
-        }
-
-
-        tick();
-
-    }
-
-
-    /* =====================================================
-       STOP TIMER
-       ===================================================== */
-
-    function stopTimer(
-        emergencyId
-    ) {
-
-        const allocation =
-            allocationState.pendingAllocations
-                .get(
-                    emergencyId
-                );
-
-
-        if (
-            allocation &&
-            allocation.timerId
-        ) {
-
-            clearTimeout(
-                allocation.timerId
-            );
-
-            allocation.timerId =
-                null;
-
-        }
-
-    }
-
-
-    /* =====================================================
-       AUTO CONFIRM
-       ===================================================== */
-
-    async function autoConfirmAllocation(
-        allocation
-    ) {
-
-        if (!allocation) {
-
-            return;
-
-        }
-
-
-        /*
-         * Verify that the emergency still exists and
-         * the bed is still reserved for it.
-         */
-
-        const supabase =
-            allocationState.supabase;
-
-
-        try {
-
-            const response =
-                await supabase
-                    .from(
-                        "hospital_resource_slots"
-                    )
-                    .select(
-                        "id,status,emergency_id,slot_code"
-                    )
-                    .eq(
-                        "id",
-                        allocation.bedId
-                    )
-                    .eq(
-                        "hospital_id",
-                        allocationState.hospitalId
-                    )
-                    .maybeSingle();
-
-
-            if (response.error) {
-
-                throw response.error;
-
-            }
-
-
-            const bed =
-                response.data;
-
-
-            if (
-                !bed ||
-                normalizeStatus(
-                    bed.status
-                ) !==
-                BED_ALLOCATION_CONFIG.reservedStatus ||
-                bed.emergency_id !==
-                allocation.emergencyId
-            ) {
-
-                removePendingAllocation(
-                    allocation.emergencyId
-                );
-
-                return;
-
-            }
-
-
-            const confirmed =
-                await confirmAllocation(
-                    allocation
-                );
-
-
-            if (confirmed) {
-
-                showAllocationNotification(
-                    `${allocation.displayId} automatically confirmed.`,
-                    "success"
-                );
-
-            }
-
-        }
-        catch (error) {
-
-            console.error(
-                "Auto confirmation error:",
-                error
-            );
-
-        }
-
-    }
-
-
-    /* =====================================================
-       ADD PENDING ALLOCATION
-       ===================================================== */
-
-    function addPendingAllocation(
-        emergency,
-        bed,
-        source = "AUTO"
-    ) {
-
-        if (
-            !emergency ||
-            !bed
-        ) {
-
-            return null;
-
-        }
-
-
-        const allocation = {
-
-            emergencyId:
-                emergency.id,
-
-            patientId:
-                emergency.patient_id ||
-                null,
-
-            patientName:
-                emergency.patients?.name ||
-                emergency.patient?.name ||
-                "Emergency Patient",
-
-            priority:
-                emergency.priority ||
-                "HIGH",
-
-            emergencyType:
-                emergency.emergency_type ||
-                "-",
-
-            bedId:
-                bed.id,
-
-            displayId:
-                getBedDisplayId(
-                    bed
-                ),
-
-            roomType:
-                bed.room?.room_type ||
-                "-",
-
-            floor:
-                bed.room?.floor_number ||
-                "-",
-
-            roomNumber:
-                bed.room?.room_number ||
-                "-",
-
-            source:
-                source,
-
-            reservedAt:
-                new Date().toISOString(),
-
-            remainingSeconds:
-                BED_ALLOCATION_CONFIG.confirmationSeconds,
-
-            timerId:
-                null
-
-        };
-
-
-        allocationState.pendingAllocations.set(
-            emergency.id,
-            allocation
-        );
-
-
-        startTimer(
-            allocation
-        );
-
-
-        renderPendingAllocations();
-
-
-        return allocation;
-
-    }
-
-
-    /* =====================================================
-       REMOVE PENDING ALLOCATION
-       ===================================================== */
-
-    function removePendingAllocation(
-        emergencyId
-    ) {
-
-        stopTimer(
-            emergencyId
-        );
-
-
-        allocationState.pendingAllocations.delete(
-            emergencyId
-        );
-
-
-        renderPendingAllocations();
-
-    }
-
-
-    /* =====================================================
-       BED DISPLAY ID
-       ===================================================== */
-
-    function getBedDisplayId(
-        bed
-    ) {
-
-        if (!bed) {
-
-            return "Unknown Bed";
-
-        }
-
-
-        if (bed.slot_code) {
-
-            return bed.slot_code;
-
-        }
-
-
-        const room =
-            bed.room ||
-            {};
-
-
-        return (
-            "F" +
-            (
-                room.floor_number ??
-                "-"
-            ) +
-            "-R" +
-            (
-                room.room_number ??
-                "-"
-            ) +
-            "-B" +
-            (
-                bed.id
-                    ? String(bed.id).slice(0, 5)
-                    : "-"
-            )
-        );
-
-    }
-
-
-    /* =====================================================
-       FIND EMERGENCIES NEEDING BED
-       ===================================================== */
-
-    async function fetchPendingEmergencies() {
-
-        const supabase =
-            allocationState.supabase;
-
-
-        const hospitalId =
-            allocationState.hospitalId;
-
-
-        if (
-            !supabase ||
-            !hospitalId
-        ) {
-
-            return [];
-
-        }
-
-
-        const response =
-            await supabase
-                .from(
-                    "emergencies"
-                )
-                .select(
-                    `
+    async function loadEmergencies() {
+
+        const result =
+            await state.db
+                .from("emergencies")
+                .select(`
                     id,
                     patient_id,
                     hospital_id,
                     emergency_type,
                     priority,
                     status,
+                    latitude,
+                    longitude,
                     created_at,
                     patients (
                         id,
@@ -1721,11 +298,10 @@
                         age,
                         gender
                     )
-                    `
-                )
+                `)
                 .eq(
                     "hospital_id",
-                    hospitalId
+                    state.hospitalId
                 )
                 .not(
                     "status",
@@ -1739,275 +315,1266 @@
                     }
                 );
 
+        if (result.error) {
 
-        if (response.error) {
+            console.error(
+                "Emergency loading error:",
+                result.error
+            );
 
-            throw response.error;
+            throw result.error;
 
         }
 
+        state.emergencies =
+            result.data || [];
 
-        return response.data || [];
+        state.emergencies.sort(
+            function (a, b) {
+
+                const priorityDifference =
+                    getPriorityRank(a.priority) -
+                    getPriorityRank(b.priority);
+
+                if (priorityDifference !== 0) {
+
+                    return priorityDifference;
+
+                }
+
+                return (
+                    new Date(a.created_at || 0) -
+                    new Date(b.created_at || 0)
+                );
+
+            }
+        );
 
     }
 
 
     /* =====================================================
-       CHECK WHETHER EMERGENCY ALREADY HAS BED
+       LOAD HOSPITAL ROOMS + BEDS
        ===================================================== */
 
-    async function emergencyAlreadyHasBed(
-        emergencyId
-    ) {
+    async function loadBeds() {
 
-        const supabase =
-            allocationState.supabase;
-
-
-        const response =
-            await supabase
-                .from(
-                    "hospital_resource_slots"
-                )
-                .select(
-                    "id,status,slot_code,emergency_id"
-                )
+        const roomsResult =
+            await state.db
+                .from("hospital_rooms")
+                .select(`
+                    id,
+                    hospital_id,
+                    floor_number,
+                    room_number,
+                    room_type,
+                    status
+                `)
                 .eq(
                     "hospital_id",
-                    allocationState.hospitalId
+                    state.hospitalId
+                );
+
+        if (roomsResult.error) {
+
+            throw roomsResult.error;
+
+        }
+
+
+        const rooms =
+            roomsResult.data || [];
+
+
+        const bedsResult =
+            await state.db
+                .from("hospital_resource_slots")
+                .select(`
+                    id,
+                    hospital_id,
+                    room_id,
+                    resource_type,
+                    slot_code,
+                    status,
+                    patient_id,
+                    emergency_id,
+                    notes
+                `)
+                .eq(
+                    "hospital_id",
+                    state.hospitalId
                 )
                 .eq(
                     "resource_type",
-                    BED_ALLOCATION_CONFIG.resourceType
-                )
-                .eq(
-                    "emergency_id",
-                    emergencyId
-                )
-                .in(
-                    "status",
-                    [
-                        BED_ALLOCATION_CONFIG.reservedStatus,
-                        BED_ALLOCATION_CONFIG.occupiedStatus
-                    ]
-                )
-                .limit(
-                    1
+                    "Bed"
                 );
 
 
-        if (response.error) {
+        if (bedsResult.error) {
 
-            console.error(
-                "Existing bed lookup error:",
-                response.error
+            throw bedsResult.error;
+
+        }
+
+
+        const beds =
+            bedsResult.data || [];
+
+
+        state.beds =
+            beds.map(
+                function (bed) {
+
+                    const room =
+                        rooms.find(
+                            function (item) {
+
+                                return String(item.id) ===
+                                    String(bed.room_id);
+
+                            }
+                        );
+
+
+                    return {
+
+                        ...bed,
+
+                        floor_number:
+                            room?.floor_number ?? "-",
+
+                        room_number:
+                            room?.room_number ?? "-",
+
+                        room_type:
+                            room?.room_type || "Other"
+
+                    };
+
+                }
             );
+
+    }
+
+
+    /* =====================================================
+       BED STATUS
+       ===================================================== */
+
+    function normalizeBedStatus(status) {
+
+        const value =
+            normalize(status);
+
+        if (value === "available") {
+
+            return "available";
+
+        }
+
+        if (value === "reserved") {
+
+            return "reserved";
+
+        }
+
+        if (
+            value === "occupied" ||
+            value === "booked" ||
+            value === "used" ||
+            value === "in_use" ||
+            value === "assigned"
+        ) {
+
+            return "occupied";
+
+        }
+
+        if (
+            value === "maintenance" ||
+            value === "repair" ||
+            value === "out_of_service" ||
+            value === "unavailable"
+        ) {
+
+            return "maintenance";
+
+        }
+
+        return value || "available";
+
+    }
+
+
+    /* =====================================================
+       ROOM MATCHING
+       ===================================================== */
+
+    function requiredRoomTypes(emergency) {
+
+        const priority =
+            normalize(emergency?.priority);
+
+        const emergencyType =
+            normalize(
+                emergency?.emergency_type
+            );
+
+
+        const explicitRoom =
+            normalize(
+                emergency?.required_room_type
+            );
+
+
+        const careLevel =
+            normalize(
+                emergency?.care_level
+            );
+
+
+        if (explicitRoom) {
+
+            return [
+                explicitRoom
+            ];
+
+        }
+
+
+        if (careLevel === "icu") {
+
+            return [
+                "icu",
+                "emergency",
+                "critical"
+            ];
+
+        }
+
+
+        if (
+            emergencyType.includes("cardiac") ||
+            emergencyType.includes("heart") ||
+            emergencyType.includes("stroke") ||
+            emergencyType.includes("respiratory") ||
+            emergencyType.includes("critical")
+        ) {
+
+            return [
+                "icu",
+                "emergency",
+                "critical"
+            ];
+
+        }
+
+
+        if (priority === "critical") {
+
+            return [
+                "icu",
+                "emergency",
+                "critical"
+            ];
+
+        }
+
+
+        if (priority === "high") {
+
+            return [
+                "emergency",
+                "icu",
+                "general"
+            ];
+
+        }
+
+
+        if (priority === "medium") {
+
+            return [
+                "emergency",
+                "general",
+                "ward"
+            ];
+
+        }
+
+
+        return [
+            "general",
+            "ward",
+            "emergency",
+            "other"
+        ];
+
+    }
+
+
+    function isSuitableBed(
+        bed,
+        emergency
+    ) {
+
+        if (
+            normalizeBedStatus(
+                bed.status
+            ) !== "available"
+        ) {
 
             return false;
 
         }
 
 
-        return Boolean(
-            response.data &&
-            response.data.length
+        const roomType =
+            normalize(
+                bed.room_type
+            );
+
+
+        const allowedTypes =
+            requiredRoomTypes(
+                emergency
+            );
+
+
+        if (
+            allowedTypes.includes(roomType)
+        ) {
+
+            return true;
+
+        }
+
+
+        /*
+         * General naming compatibility.
+         */
+
+        if (
+            roomType.includes("icu") &&
+            allowedTypes.includes("icu")
+        ) {
+
+            return true;
+
+        }
+
+
+        if (
+            roomType.includes("emergency") &&
+            allowedTypes.includes("emergency")
+        ) {
+
+            return true;
+
+        }
+
+
+        if (
+            roomType.includes("general") &&
+            (
+                allowedTypes.includes("general") ||
+                allowedTypes.includes("ward")
+            )
+        ) {
+
+            return true;
+
+        }
+
+
+        if (
+            roomType.includes("ward") &&
+            allowedTypes.includes("ward")
+        ) {
+
+            return true;
+
+        }
+
+
+        return false;
+
+    }
+
+
+    /* =====================================================
+       BED SCORING
+       ===================================================== */
+
+    function scoreBed(
+        bed,
+        emergency
+    ) {
+
+        let score = 0;
+
+
+        const roomType =
+            normalize(
+                bed.room_type
+            );
+
+
+        const allowed =
+            requiredRoomTypes(
+                emergency
+            );
+
+
+        const roomIndex =
+            allowed.indexOf(
+                roomType
+            );
+
+
+        if (roomIndex >= 0) {
+
+            score +=
+                100 -
+                roomIndex * 20;
+
+        }
+
+
+        /*
+         * Critical patients strongly prefer ICU.
+         */
+
+        if (
+            normalize(emergency.priority) ===
+            "critical" &&
+            roomType.includes("icu")
+        ) {
+
+            score += 50;
+
+        }
+
+
+        /*
+         * Prefer lower floor/room as a
+         * simple deterministic tie breaker.
+         */
+
+        const floor =
+            Number(
+                bed.floor_number
+            ) || 0;
+
+
+        const room =
+            Number(
+                bed.room_number
+            ) || 0;
+
+
+        score -= floor * 0.1;
+
+        score -= room * 0.01;
+
+
+        return score;
+
+    }
+
+
+    function findBestBed(emergency) {
+
+        const suitable =
+            state.beds.filter(
+                function (bed) {
+
+                    return isSuitableBed(
+                        bed,
+                        emergency
+                    );
+
+                }
+            );
+
+
+        if (!suitable.length) {
+
+            return null;
+
+        }
+
+
+        suitable.sort(
+            function (a, b) {
+
+                return (
+                    scoreBed(b, emergency) -
+                    scoreBed(a, emergency)
+                );
+
+            }
+        );
+
+
+        return suitable[0];
+
+    }
+
+
+    /* =====================================================
+       FIND EXISTING BED FOR EMERGENCY
+       ===================================================== */
+
+    function findBedForEmergency(
+        emergencyId
+    ) {
+
+        return state.beds.find(
+            function (bed) {
+
+                return (
+                    String(bed.emergency_id) ===
+                    String(emergencyId)
+                );
+
+            }
+        ) || null;
+
+    }
+
+
+    /* =====================================================
+       RESERVATION TIME
+       ===================================================== */
+
+    function getReservationTime(
+        bed
+    ) {
+
+        /*
+         * The reservation time is stored inside
+         * notes so the system can recover after
+         * page refresh.
+         */
+
+        if (!bed?.notes) {
+
+            return null;
+
+        }
+
+
+        const match =
+            String(bed.notes).match(
+                /reserved_at=([^|]+)/i
+            );
+
+
+        if (!match) {
+
+            return null;
+
+        }
+
+
+        const timestamp =
+            new Date(
+                match[1]
+            ).getTime();
+
+
+        if (
+            Number.isNaN(timestamp)
+        ) {
+
+            return null;
+
+        }
+
+
+        return timestamp;
+
+    }
+
+
+    function getReservationExpiry(
+        bed
+    ) {
+
+        const reservedAt =
+            getReservationTime(
+                bed
+            );
+
+
+        if (!reservedAt) {
+
+            return (
+                Date.now() +
+                CONFIG.confirmationSeconds *
+                1000
+            );
+
+        }
+
+
+        return (
+            reservedAt +
+            CONFIG.confirmationSeconds *
+            1000
+        );
+
+    }
+
+
+    function isPendingReservation(
+        bed
+    ) {
+
+        if (
+            !bed ||
+            normalizeBedStatus(
+                bed.status
+            ) !== "reserved"
+        ) {
+
+            return false;
+
+        }
+
+
+        const expiry =
+            getReservationExpiry(
+                bed
+            );
+
+
+        return (
+            Date.now() <
+            expiry
         );
 
     }
 
 
     /* =====================================================
-       AUTOMATICALLY ALLOCATE ONE EMERGENCY
+       CREATE ALLOCATION HISTORY
        ===================================================== */
 
-    async function automaticallyAllocateEmergency(
+    async function createAllocationHistory(
+        emergency,
+        bed,
+        notes
+    ) {
+
+        const result =
+            await state.db
+                .from("resource_allocations")
+                .insert({
+
+                    hospital_id:
+                        state.hospitalId,
+
+                    resource_slot_id:
+                        bed.id,
+
+                    resource_type:
+                        "Bed",
+
+                    patient_id:
+                        emergency.patient_id,
+
+                    emergency_id:
+                        emergency.id,
+
+                    allocated_by:
+                        state.user?.id || null,
+
+                    status:
+                        "active",
+
+                    notes:
+                        notes
+
+                });
+
+
+        if (result.error) {
+
+            console.warn(
+                "Allocation history insert failed:",
+                result.error
+            );
+
+        }
+
+    }
+
+
+    /* =====================================================
+       CREATE EMERGENCY EVENT
+       ===================================================== */
+
+    async function createEmergencyEvent(
+        emergencyId,
+        eventType,
+        description
+    ) {
+
+        const result =
+            await state.db
+                .from("emergency_events")
+                .insert({
+
+                    emergency_id:
+                        emergencyId,
+
+                    event_type:
+                        eventType,
+
+                    description:
+                        description
+
+                });
+
+
+        if (result.error) {
+
+            console.warn(
+                "Emergency event insert failed:",
+                result.error
+            );
+
+        }
+
+    }
+
+
+    /* =====================================================
+       RESERVE BED
+       ===================================================== */
+
+    async function reserveBed(
+        emergency,
+        bed
+    ) {
+
+        const now =
+            new Date().toISOString();
+
+
+        const notes =
+            [
+                "RESQ_AUTO_RESERVED",
+                "emergency=" +
+                    emergency.id,
+                "patient=" +
+                    emergency.patient_id,
+                "reserved_at=" +
+                    now,
+                "priority=" +
+                    (
+                        emergency.priority ||
+                        "HIGH"
+                    )
+            ].join("|");
+
+
+        /*
+         * IMPORTANT:
+         *
+         * We only update the bed if it is
+         * STILL AVAILABLE.
+         *
+         * This protects against two browser
+         * tabs taking the same bed.
+         */
+
+        const updateResult =
+            await state.db
+                .from(
+                    "hospital_resource_slots"
+                )
+                .update({
+
+                    status:
+                        "reserved",
+
+                    patient_id:
+                        emergency.patient_id,
+
+                    emergency_id:
+                        emergency.id,
+
+                    notes:
+                        notes
+
+                })
+                .eq(
+                    "id",
+                    bed.id
+                )
+                .eq(
+                    "hospital_id",
+                    state.hospitalId
+                )
+                .eq(
+                    "status",
+                    "available"
+                )
+                .select(
+                    `
+                    id,
+                    status,
+                    patient_id,
+                    emergency_id,
+                    notes
+                    `
+                )
+                .maybeSingle();
+
+
+        if (updateResult.error) {
+
+            throw updateResult.error;
+
+        }
+
+
+        /*
+         * No returned row means another
+         * request took the bed first.
+         */
+
+        if (!updateResult.data) {
+
+            return null;
+
+        }
+
+
+        const reservedBed =
+            {
+                ...bed,
+
+                ...updateResult.data,
+
+                status:
+                    "reserved"
+
+            };
+
+
+        await createAllocationHistory(
+            emergency,
+            reservedBed,
+            "Automatically allocated by ResQ-Route."
+        );
+
+
+        await createEmergencyEvent(
+            emergency.id,
+            "BED_AUTO_RESERVED",
+            "Bed " +
+                (
+                    bed.slot_code ||
+                    bed.id
+                ) +
+                " automatically reserved."
+        );
+
+
+        return reservedBed;
+
+    }
+
+
+    /* =====================================================
+       PROCESS ONE EMERGENCY
+       ===================================================== */
+
+    async function processEmergency(
         emergency
     ) {
 
         if (
-            !emergency ||
-            !emergency.id
+            !isActiveEmergency(
+                emergency
+            )
         ) {
 
-            return null;
+            return;
 
         }
 
 
         /*
-         * Don't allocate completed/cancelled cases.
+         * Check whether a bed is already
+         * allocated.
          */
 
-        const status =
-            String(
-                emergency.status || ""
-            )
-                .trim()
-                .toUpperCase();
+        const existingBed =
+            findBedForEmergency(
+                emergency.id
+            );
 
 
-        if (
-            BED_ALLOCATION_CONFIG
-                .cancelledStatuses
-                .includes(
-                    status
-                )
-        ) {
+        if (existingBed) {
 
-            return null;
+            return;
 
         }
 
 
         /*
-         * Don't allocate the same emergency twice.
+         * Find best suitable bed.
          */
 
+        const bestBed =
+            findBestBed(
+                emergency
+            );
+
+
+        if (!bestBed) {
+
+            return;
+
+        }
+
+
+        /*
+         * Reserve it.
+         */
+
+        await reserveBed(
+            emergency,
+            bestBed
+        );
+
+    }
+
+
+    /* =====================================================
+       PROCESS ALL EMERGENCIES
+       ===================================================== */
+
+    async function processAutomaticAllocations() {
+
         if (
-            allocationState.pendingAllocations.has(
-                emergency.id
+            state.loading ||
+            !state.db ||
+            !state.hospitalId
+        ) {
+
+            return;
+
+        }
+
+
+        state.loading = true;
+
+
+        try {
+
+            await loadEmergencies();
+
+            await loadBeds();
+
+
+            /*
+             * Highest priority patients
+             * are processed first.
+             */
+
+            for (
+                const emergency
+                of state.emergencies
+            ) {
+
+                await processEmergency(
+                    emergency
+                );
+
+            }
+
+
+            await loadBeds();
+
+            renderAllocationList();
+
+            restartAllTimers();
+
+
+        } catch (error) {
+
+            console.error(
+                "Automatic allocation error:",
+                error
+            );
+
+
+            showAllocationError(
+                error
+            );
+
+        } finally {
+
+            state.loading = false;
+
+        }
+
+    }
+
+
+    /* =====================================================
+       TIMER
+       ===================================================== */
+
+    function stopTimer(
+        bedId
+    ) {
+
+        const timer =
+            state.timers.get(
+                String(bedId)
+            );
+
+
+        if (timer) {
+
+            clearInterval(
+                timer
+            );
+
+            state.timers.delete(
+                String(bedId)
+            );
+
+        }
+
+    }
+
+
+    function startTimer(
+        bed
+    ) {
+
+        if (
+            !bed ||
+            !isPendingReservation(
+                bed
             )
         ) {
 
-            return allocationState.pendingAllocations.get(
-                emergency.id
-            );
+            return;
 
         }
 
 
-        const alreadyHasBed =
-            await emergencyAlreadyHasBed(
-                emergency.id
+        stopTimer(
+            bed.id
+        );
+
+
+        const timer =
+            setInterval(
+                async function () {
+
+                    const currentBed =
+                        state.beds.find(
+                            function (item) {
+
+                                return String(item.id) ===
+                                    String(bed.id);
+
+                            }
+                        );
+
+
+                    if (
+                        !currentBed ||
+                        normalizeBedStatus(
+                            currentBed.status
+                        ) !== "reserved"
+                    ) {
+
+                        stopTimer(
+                            bed.id
+                        );
+
+                        return;
+
+                    }
+
+
+                    const expiry =
+                        getReservationExpiry(
+                            currentBed
+                        );
+
+
+                    const remaining =
+                        Math.max(
+                            0,
+                            Math.ceil(
+                                (
+                                    expiry -
+                                    Date.now()
+                                ) / 1000
+                            )
+                        );
+
+
+                    updateTimerDisplay(
+                        currentBed.id,
+                        remaining
+                    );
+
+
+                    if (
+                        remaining <= 0
+                    ) {
+
+                        stopTimer(
+                            currentBed.id
+                        );
+
+
+                        await confirmAutomaticAllocation(
+                            currentBed.emergency_id,
+                            true
+                        );
+
+                    }
+
+                },
+                1000
             );
 
 
-        if (alreadyHasBed) {
+        state.timers.set(
+            String(bed.id),
+            timer
+        );
 
-            return null;
-
-        }
+    }
 
 
-        const beds =
-            await fetchAvailableBeds(
-                allocationState.hospitalId
+    function restartAllTimers() {
+
+        state.timers.forEach(
+            function (_, key) {
+
+                stopTimer(key);
+
+            }
+        );
+
+
+        state.beds.forEach(
+            function (bed) {
+
+                if (
+                    isPendingReservation(
+                        bed
+                    )
+                ) {
+
+                    startTimer(
+                        bed
+                    );
+
+                }
+
+            }
+        );
+
+    }
+
+
+    function updateTimerDisplay(
+        bedId,
+        seconds
+    ) {
+
+        const elements =
+            document.querySelectorAll(
+                `[data-auto-timer="${bedId}"]`
             );
 
 
-        if (!beds.length) {
+        elements.forEach(
+            function (element) {
 
-            showAllocationNotification(
-                "No suitable bed is currently available.",
-                "error"
-            );
+                const minutes =
+                    Math.floor(
+                        seconds / 60
+                    );
 
 
-            return null;
+                const remainingSeconds =
+                    seconds % 60;
 
-        }
 
+                element.textContent =
+                    String(minutes)
+                        .padStart(2, "0") +
+                    ":" +
+                    String(
+                        remainingSeconds
+                    ).padStart(2, "0");
+
+
+                if (
+                    seconds <= 20
+                ) {
+
+                    element.classList.add(
+                        "timer-danger"
+                    );
+
+                } else {
+
+                    element.classList.remove(
+                        "timer-danger"
+                    );
+
+                }
+
+            }
+        );
+
+    }
+
+
+    /* =====================================================
+       CONFIRM AUTOMATIC ALLOCATION
+       ===================================================== */
+
+    async function confirmAutomaticAllocation(
+        emergencyId,
+        automatic
+    ) {
 
         const bed =
-            selectBestBed(
-                beds,
-                emergency
+            findBedForEmergency(
+                emergencyId
             );
 
 
         if (!bed) {
 
-            return null;
+            return;
 
         }
 
 
-        const reservation =
-            await reserveBed(
-                bed,
-                emergency,
-                "AUTO"
-            );
-
-
-        /*
-         * Another emergency may have taken this bed
-         * milliseconds earlier.
-         */
-
         if (
-            !reservation ||
-            !reservation.success
-        ) {
-
-            /*
-             * Retry once with the latest bed list.
-             */
-
-            const retryBeds =
-                await fetchAvailableBeds(
-                    allocationState.hospitalId
-                );
-
-
-            const retryBed =
-                selectBestBed(
-                    retryBeds,
-                    emergency
-                );
-
-
-            if (!retryBed) {
-
-                return null;
-
-            }
-
-
-            const retryReservation =
-                await reserveBed(
-                    retryBed,
-                    emergency,
-                    "AUTO"
-                );
-
-
-            if (
-                !retryReservation ||
-                !retryReservation.success
-            ) {
-
-                return null;
-
-            }
-
-
-            return addPendingAllocation(
-                emergency,
-                retryReservation.bed,
-                "AUTO"
-            );
-
-        }
-
-
-        return addPendingAllocation(
-            emergency,
-            reservation.bed,
-            "AUTO"
-        );
-
-    }
-
-
-    /* =====================================================
-       PROCESS ALL PENDING EMERGENCIES
-       ===================================================== */
-
-    async function processPendingEmergencies() {
-
-        if (
-            !allocationState.hospitalId
+            normalizeBedStatus(
+                bed.status
+            ) !== "reserved"
         ) {
 
             return;
@@ -2015,521 +1582,175 @@
         }
 
 
-        try {
-
-            const emergencies =
-                await fetchPendingEmergencies();
-
-
-            /*
-             * Sort by priority first, then creation time.
-             */
-
-            emergencies.sort(
-                function (a, b) {
-
-                    const priorityDifference =
-                        getPriorityScore(
-                            b.priority
-                        ) -
-                        getPriorityScore(
-                            a.priority
-                        );
+        stopTimer(
+            bed.id
+        );
 
 
-                    if (
-                        priorityDifference !== 0
-                    ) {
-
-                        return priorityDifference;
-
-                    }
-
-
-                    return (
-                        new Date(
-                            a.created_at
-                        ).getTime() -
-                        new Date(
-                            b.created_at
-                        ).getTime()
-                    );
-
-                }
-            );
+        const confirmationNote =
+            [
+                "RESQ_AUTO_CONFIRMED",
+                "emergency=" +
+                    emergencyId,
+                "confirmed_at=" +
+                    new Date().toISOString()
+            ].join("|");
 
 
-            /*
-             * Process sequentially so this browser does
-             * not intentionally reserve several beds at
-             * the same time.
-             */
+        const result =
+            await state.db
+                .from(
+                    "hospital_resource_slots"
+                )
+                .update({
 
-            for (
-                const emergency
-                of emergencies
-            ) {
+                    notes:
+                        confirmationNote
 
-                await automaticallyAllocateEmergency(
-                    emergency
-                );
+                })
+                .eq(
+                    "id",
+                    bed.id
+                )
+                .eq(
+                    "hospital_id",
+                    state.hospitalId
+                )
+                .eq(
+                    "status",
+                    "reserved"
+                )
+                .eq(
+                    "emergency_id",
+                    emergencyId
+                )
+                .select(
+                    "id,status,notes"
+                )
+                .maybeSingle();
 
-            }
 
-
-            renderPendingAllocations();
-
-        }
-        catch (error) {
+        if (result.error) {
 
             console.error(
-                "Emergency bed processing error:",
-                error
+                "Confirmation error:",
+                result.error
             );
-
-        }
-
-    }
-
-
-    /* =====================================================
-       UPDATE TIMER UI
-       ===================================================== */
-
-    function updateTimerUI(
-        allocation
-    ) {
-
-        const timerElements =
-            document.querySelectorAll(
-                `[data-bed-timer="${allocation.emergencyId}"]`
-            );
-
-
-        timerElements.forEach(
-            function (element) {
-
-                element.textContent =
-                    formatSeconds(
-                        allocation.remainingSeconds
-                    );
-
-
-                element.classList.toggle(
-                    "timer-warning",
-                    allocation.remainingSeconds <= 30
-                );
-
-
-                element.classList.toggle(
-                    "timer-danger",
-                    allocation.remainingSeconds <= 10
-                );
-
-            }
-        );
-
-
-        const row =
-            document.querySelector(
-                `[data-bed-allocation="${allocation.emergencyId}"]`
-            );
-
-
-        if (row) {
-
-            const timer =
-                row.querySelector(
-                    "[data-bed-timer]"
-                );
-
-
-            if (timer) {
-
-                timer.textContent =
-                    formatSeconds(
-                        allocation.remainingSeconds
-                    );
-
-            }
-
-        }
-
-    }
-
-
-    /* =====================================================
-       RENDER PENDING ALLOCATIONS
-       ===================================================== */
-
-    function renderPendingAllocations() {
-
-        const container =
-            document.getElementById(
-                "automaticBedAllocations"
-            );
-
-
-        if (!container) {
 
             return;
 
         }
 
 
-        const allocations =
-            Array.from(
-                allocationState
-                    .pendingAllocations
-                    .values()
-            );
-
-
-        /*
-         * Sort by priority.
-         */
-
-        allocations.sort(
-            function (a, b) {
-
-                return (
-                    getPriorityScore(
-                        b.priority
-                    ) -
-                    getPriorityScore(
-                        a.priority
-                    )
-                );
-
-            }
-        );
-
-
-        if (!allocations.length) {
-
-            container.innerHTML = `
-                <div class="bed-allocation-empty">
-                    No pending automatic bed allocations.
-                </div>
-            `;
+        if (!result.data) {
 
             return;
 
         }
 
 
-        container.innerHTML =
-            allocations
-                .map(
-                    function (allocation) {
-
-                        return `
-                            <div
-                                class="automatic-bed-row"
-                                data-bed-allocation="${escapeHtml(
-                                    allocation.emergencyId
-                                )}"
-                            >
-
-                                <div class="bed-patient-info">
-
-                                    <strong>
-                                        ${escapeHtml(
-                                            allocation.patientName
-                                        )}
-                                    </strong>
-
-                                    <span>
-                                        ${escapeHtml(
-                                            allocation.emergencyType
-                                        )}
-                                    </span>
-
-                                </div>
+        await createEmergencyEvent(
+            emergencyId,
+            automatic
+                ? "BED_AUTO_CONFIRMED"
+                : "BED_CONFIRMED",
+            automatic
+                ? "Automatic bed allocation confirmed after timeout."
+                : "Hospital staff confirmed the automatic bed allocation."
+        );
 
 
-                                <div class="bed-priority">
-                                    <span class="priority-badge ${priorityClass(
-                                        allocation.priority
-                                    )}">
-                                        ${escapeHtml(
-                                            String(
-                                                allocation.priority
-                                            ).toUpperCase()
-                                        )}
-                                    </span>
-                                </div>
+        await loadBeds();
 
-
-                                <div class="bed-auto-location">
-
-                                    <strong>
-                                        ${escapeHtml(
-                                            allocation.displayId
-                                        )}
-                                    </strong>
-
-                                    <span>
-                                        ${escapeHtml(
-                                            allocation.roomType
-                                        )}
-                                        • Floor
-                                        ${escapeHtml(
-                                            allocation.floor
-                                        )}
-                                    </span>
-
-                                </div>
-
-
-                                <div class="bed-confirm-timer">
-
-                                    <small>
-                                        Auto confirmation in
-                                    </small>
-
-                                    <strong
-                                        data-bed-timer="${escapeHtml(
-                                            allocation.emergencyId
-                                        )}"
-                                    >
-                                        ${formatSeconds(
-                                            allocation.remainingSeconds
-                                        )}
-                                    </strong>
-
-                                </div>
-
-
-                                <div class="bed-actions">
-
-                                    <button
-                                        type="button"
-                                        class="bed-confirm-btn"
-                                        data-confirm-bed="${escapeHtml(
-                                            allocation.emergencyId
-                                        )}"
-                                    >
-                                        ✓ Confirm
-                                    </button>
-
-                                    <button
-                                        type="button"
-                                        class="bed-reallocate-btn"
-                                        data-reallocate-bed="${escapeHtml(
-                                            allocation.emergencyId
-                                        )}"
-                                    >
-                                        ⇄ Reallocate
-                                    </button>
-
-                                </div>
-
-                            </div>
-                        `;
-
-                    }
-                )
-                .join("");
-
-
-        attachAllocationButtons();
+        renderAllocationList();
 
     }
 
 
     /* =====================================================
-       ATTACH BUTTONS
+       REALLOCATION
        ===================================================== */
 
-    function attachAllocationButtons() {
+    let reallocationEmergencyId =
+        null;
 
-        document
-            .querySelectorAll(
-                "[data-confirm-bed]"
-            )
-            .forEach(
-                function (button) {
-
-                    button.onclick =
-                        async function () {
-
-                            const emergencyId =
-                                button.dataset
-                                    .confirmBed;
+    let reallocationSelectedBedId =
+        null;
 
 
-                            const allocation =
-                                allocationState
-                                    .pendingAllocations
-                                    .get(
-                                        emergencyId
-                                    );
+    function ensureReallocationModal() {
 
-
-                            if (!allocation) {
-
-                                return;
-
-                            }
-
-
-                            button.disabled =
-                                true;
-
-
-                            button.textContent =
-                                "Confirming...";
-
-
-                            const confirmed =
-                                await confirmAllocation(
-                                    allocation
-                                );
-
-
-                            if (!confirmed) {
-
-                                button.disabled =
-                                    false;
-
-                                button.textContent =
-                                    "✓ Confirm";
-
-                                showAllocationNotification(
-                                    "Unable to confirm this allocation. The bed may have changed.",
-                                    "error"
-                                );
-
-                            }
-
-                        };
-
-                }
-            );
-
-
-        document
-            .querySelectorAll(
-                "[data-reallocate-bed]"
-            )
-            .forEach(
-                function (button) {
-
-                    button.onclick =
-                        function () {
-
-                            const emergencyId =
-                                button.dataset
-                                    .reallocateBed;
-
-
-                            openReallocationModal(
-                                emergencyId
-                            );
-
-                        };
-
-                }
-            );
-
-    }
-
-
-    /* =====================================================
-       REALLOCATION MODAL
-       ===================================================== */
-
-    function getOrCreateReallocationModal() {
-
-        let modal =
+        if (
             document.getElementById(
-                "bedReallocationModal"
-            );
+                "resqReallocationModal"
+            )
+        ) {
 
-
-        if (modal) {
-
-            return modal;
+            return;
 
         }
 
 
-        modal =
+        const modal =
             document.createElement(
                 "div"
             );
 
 
         modal.id =
-            "bedReallocationModal";
-
-
-        modal.className =
-            "bed-reallocation-modal";
+            "resqReallocationModal";
 
 
         modal.innerHTML = `
 
-            <div class="bed-reallocation-dialog">
+            <div class="resq-modal-overlay">
 
-                <div class="bed-reallocation-header">
+                <div class="resq-modal">
 
-                    <div>
+                    <h2>
+                        Change Bed Allocation
+                    </h2>
 
-                        <h3>
-                            Change Bed Allocation
-                        </h3>
+                    <p
+                        id="resqReallocationPatient"
+                        class="resq-modal-subtitle"
+                    >
+                        Select another suitable bed.
+                    </p>
 
-                        <p>
-                            Select another suitable available bed.
-                        </p>
-
+                    <div
+                        id="resqCurrentBed"
+                        class="resq-current-bed"
+                    >
                     </div>
 
-                    <button
-                        type="button"
-                        data-close-reallocation
+                    <div
+                        id="resqAvailableBeds"
+                        class="resq-available-beds"
                     >
-                        ×
-                    </button>
+                        Loading...
+                    </div>
 
-                </div>
+                    <div class="resq-modal-actions">
 
+                        <button
+                            type="button"
+                            id="resqCancelReallocation"
+                            class="resq-btn secondary"
+                        >
+                            CANCEL
+                        </button>
 
-                <div
-                    class="bed-current-allocation"
-                    id="currentBedAllocation"
-                ></div>
+                        <button
+                            type="button"
+                            id="resqConfirmReallocation"
+                            class="resq-btn primary"
+                            disabled
+                        >
+                            CONFIRM NEW BED
+                        </button>
 
-
-                <div
-                    class="bed-reallocation-list"
-                    id="reallocationBedList"
-                >
-
-                    Loading available beds...
-
-                </div>
-
-
-                <div class="bed-reallocation-actions">
-
-                    <button
-                        type="button"
-                        class="bed-cancel-reallocation"
-                        data-close-reallocation
-                    >
-                        Cancel
-                    </button>
-
-                    <button
-                        type="button"
-                        class="bed-save-reallocation"
-                        id="saveBedReallocation"
-                    >
-                        Confirm Reallocation
-                    </button>
+                    </div>
 
                 </div>
 
@@ -2543,1008 +1764,634 @@
         );
 
 
-        /*
-         * Add styles dynamically.
-         */
-
-        addReallocationStyles();
-
-
-        modal
-            .querySelectorAll(
-                "[data-close-reallocation]"
+        document
+            .getElementById(
+                "resqCancelReallocation"
             )
-            .forEach(
-                function (button) {
+            .addEventListener(
+                "click",
+                closeReallocationModal
+            );
 
-                    button.onclick =
-                        closeReallocationModal;
+
+        document
+            .getElementById(
+                "resqConfirmReallocation"
+            )
+            .addEventListener(
+                "click",
+                confirmReallocation
+            );
+
+    }
+
+
+    function openReallocationModal(
+        emergencyId
+    ) {
+
+        ensureReallocationModal();
+
+
+        const emergency =
+            state.emergencies.find(
+                function (item) {
+
+                    return String(item.id) ===
+                        String(emergencyId);
 
                 }
             );
 
 
-        return modal;
-
-    }
-
-
-    /* =====================================================
-       OPEN REALLOCATION MODAL
-       ===================================================== */
-
-    async function openReallocationModal(
-        emergencyId
-    ) {
-
-        const allocation =
-            allocationState
-                .pendingAllocations
-                .get(
-                    emergencyId
-                );
+        const oldBed =
+            findBedForEmergency(
+                emergencyId
+            );
 
 
-        if (!allocation) {
+        if (
+            !emergency ||
+            !oldBed
+        ) {
+
+            alert(
+                "Current bed allocation could not be found."
+            );
 
             return;
 
         }
 
 
+        reallocationEmergencyId =
+            emergencyId;
+
+
+        reallocationSelectedBedId =
+            null;
+
+
         const modal =
-            getOrCreateReallocationModal();
+            document.getElementById(
+                "resqReallocationModal"
+            );
 
 
         modal.classList.add(
-            "active"
+            "show"
         );
 
 
-        const current =
+        const patientElement =
             document.getElementById(
-                "currentBedAllocation"
+                "resqReallocationPatient"
             );
 
 
-        const list =
+        if (patientElement) {
+
+            patientElement.textContent =
+                "Patient: " +
+                getPatientName(
+                    emergency
+                );
+
+        }
+
+
+        const currentElement =
             document.getElementById(
-                "reallocationBedList"
+                "resqCurrentBed"
             );
 
 
-        const saveButton =
-            document.getElementById(
-                "saveBedReallocation"
+        if (currentElement) {
+
+            currentElement.innerHTML =
+                `
+                    <strong>
+                        Current Bed
+                    </strong>
+                    <br>
+                    ${escapeHtml(
+                        getBedLabel(
+                            oldBed
+                        )
+                    )}
+                `;
+
+        }
+
+
+        const availableBeds =
+            state.beds.filter(
+                function (bed) {
+
+                    return (
+                        String(bed.id) !==
+                        String(oldBed.id)
+                    ) &&
+                    isSuitableBed(
+                        bed,
+                        emergency
+                    );
+
+                }
             );
 
 
-        if (current) {
+        renderReallocationBeds(
+            availableBeds
+        );
 
-            current.innerHTML = `
-                <strong>Current allocation</strong>
-                <span>
-                    ${escapeHtml(
-                        allocation.displayId
-                    )}
-                    •
-                    ${escapeHtml(
-                        allocation.roomType
-                    )}
-                    • Floor
-                    ${escapeHtml(
-                        allocation.floor
-                    )}
-                </span>
+    }
+
+
+    function renderReallocationBeds(
+        beds
+    ) {
+
+        const container =
+            document.getElementById(
+                "resqAvailableBeds"
+            );
+
+
+        if (!container) {
+
+            return;
+
+        }
+
+
+        if (!beds.length) {
+
+            container.innerHTML = `
+
+                <div class="resq-no-beds">
+
+                    No other suitable available beds
+                    are currently available.
+
+                </div>
+
             `;
 
-        }
-
-
-        if (list) {
-
-            list.innerHTML =
-                "Loading available suitable beds...";
+            return;
 
         }
 
 
-        let selectedBedId =
-            null;
+        container.innerHTML =
+            beds.map(
+                function (bed) {
+
+                    return `
+
+                        <button
+                            type="button"
+                            class="resq-bed-option"
+                            data-bed-id="${escapeHtml(
+                                bed.id
+                            )}"
+                        >
+
+                            <strong>
+                                ${escapeHtml(
+                                    bed.slot_code ||
+                                    "Bed"
+                                )}
+                            </strong>
+
+                            <span>
+                                Floor
+                                ${escapeHtml(
+                                    bed.floor_number
+                                )}
+                                •
+                                Room
+                                ${escapeHtml(
+                                    bed.room_number
+                                )}
+                            </span>
+
+                            <small>
+                                ${escapeHtml(
+                                    formatRoomType(
+                                        bed.room_type
+                                    )
+                                )}
+                            </small>
+
+                        </button>
+
+                    `;
+
+                }
+            )
+            .join("");
+
+
+        container
+            .querySelectorAll(
+                ".resq-bed-option"
+            )
+            .forEach(
+                function (button) {
+
+                    button.addEventListener(
+                        "click",
+                        function () {
+
+                            container
+                                .querySelectorAll(
+                                    ".resq-bed-option"
+                                )
+                                .forEach(
+                                    function (item) {
+
+                                        item.classList.remove(
+                                            "selected"
+                                        );
+
+                                    }
+                                );
+
+
+                            button.classList.add(
+                                "selected"
+                            );
+
+
+                            reallocationSelectedBedId =
+                                button.dataset.bedId;
+
+
+                            const confirmButton =
+                                document.getElementById(
+                                    "resqConfirmReallocation"
+                                );
+
+
+                            if (confirmButton) {
+
+                                confirmButton.disabled =
+                                    false;
+
+                            }
+
+                        }
+                    );
+
+                }
+            );
+
+    }
+
+
+    async function confirmReallocation() {
+
+        const emergency =
+            state.emergencies.find(
+                function (item) {
+
+                    return String(item.id) ===
+                        String(
+                            reallocationEmergencyId
+                        );
+
+                }
+            );
+
+
+        const oldBed =
+            findBedForEmergency(
+                reallocationEmergencyId
+            );
+
+
+        const newBed =
+            state.beds.find(
+                function (bed) {
+
+                    return String(bed.id) ===
+                        String(
+                            reallocationSelectedBedId
+                        );
+
+                }
+            );
+
+
+        if (
+            !emergency ||
+            !oldBed ||
+            !newBed
+        ) {
+
+            alert(
+                "The selected allocation is no longer available."
+            );
+
+            closeReallocationModal();
+
+            await processAutomaticAllocations();
+
+            return;
+
+        }
+
+
+        const button =
+            document.getElementById(
+                "resqConfirmReallocation"
+            );
+
+
+        if (button) {
+
+            button.disabled = true;
+
+            button.textContent =
+                "CHANGING...";
+
+        }
 
 
         try {
 
-            const beds =
-                await fetchAvailableBeds(
-                    allocationState.hospitalId
+            /*
+             * STEP 1
+             *
+             * Reserve NEW bed first.
+             */
+
+            const newReservation =
+                await reserveBed(
+                    emergency,
+                    newBed
                 );
+
+
+            if (!newReservation) {
+
+                throw new Error(
+                    "That bed was just taken. Please select another bed."
+                );
+
+            }
 
 
             /*
-             * We need the emergency object again so
-             * the same suitability rules are applied.
+             * STEP 2
+             *
+             * Release OLD bed.
              */
 
-            const emergency =
-                await getEmergencyById(
-                    emergencyId
+            const releaseResult =
+                await state.db
+                    .from(
+                        "hospital_resource_slots"
+                    )
+                    .update({
+
+                        status:
+                            "available",
+
+                        patient_id:
+                            null,
+
+                        emergency_id:
+                            null,
+
+                        notes:
+                            "RESQ_REALLOCATED|" +
+                            "emergency=" +
+                            emergency.id
+
+                    })
+                    .eq(
+                        "id",
+                        oldBed.id
+                    )
+                    .eq(
+                        "hospital_id",
+                        state.hospitalId
+                    )
+                    .eq(
+                        "status",
+                        "reserved"
+                    )
+                    .eq(
+                        "emergency_id",
+                        emergency.id
+                    );
+
+
+            if (
+                releaseResult.error
+            ) {
+
+                throw releaseResult.error;
+
+            }
+
+
+            stopTimer(
+                oldBed.id
+            );
+
+
+            await createEmergencyEvent(
+                emergency.id,
+                "BED_REALLOCATED",
+                "Bed changed from " +
+                    (
+                        oldBed.slot_code ||
+                        oldBed.id
+                    ) +
+                    " to " +
+                    (
+                        newBed.slot_code ||
+                        newBed.id
+                    ) +
+                    "."
+            );
+
+
+            closeReallocationModal();
+
+
+            await loadBeds();
+
+            renderAllocationList();
+
+            restartAllTimers();
+
+
+        } catch (error) {
+
+            console.error(
+                "Reallocation error:",
+                error
+            );
+
+
+            alert(
+                error.message ||
+                "Unable to change the bed allocation."
+            );
+
+
+            await loadBeds();
+
+            renderAllocationList();
+
+            restartAllTimers();
+
+        } finally {
+
+            if (button) {
+
+                button.disabled =
+                    !reallocationSelectedBedId;
+
+                button.textContent =
+                    "CONFIRM NEW BED";
+
+            }
+
+        }
+
+    }
+
+
+    function closeReallocationModal() {
+
+        const modal =
+            document.getElementById(
+                "resqReallocationModal"
+            );
+
+
+        if (modal) {
+
+            modal.classList.remove(
+                "show"
+            );
+
+        }
+
+
+        reallocationEmergencyId =
+            null;
+
+
+        reallocationSelectedBedId =
+            null;
+
+    }
+
+
+    /* =====================================================
+       AMBULANCE ARRIVAL
+       ===================================================== */
+
+    async function handleEmergencyStatusChange(
+        emergency
+    ) {
+
+        if (!emergency) {
+
+            return;
+
+        }
+
+
+        const emergencyId =
+            emergency.id;
+
+
+        const bed =
+            findBedForEmergency(
+                emergencyId
+            );
+
+
+        if (
+            bed &&
+            normalizeBedStatus(
+                bed.status
+            ) === "reserved" &&
+            isArrivedEmergency(
+                emergency
+            )
+        ) {
+
+            const result =
+                await state.db
+                    .from(
+                        "hospital_resource_slots"
+                    )
+                    .update({
+
+                        status:
+                            "occupied",
+
+                        notes:
+                            "RESQ_AUTO_OCCUPIED|" +
+                            "emergency=" +
+                            emergencyId
+
+                    })
+                    .eq(
+                        "id",
+                        bed.id
+                    )
+                    .eq(
+                        "hospital_id",
+                        state.hospitalId
+                    )
+                    .eq(
+                        "status",
+                        "reserved"
+                    )
+                    .eq(
+                        "emergency_id",
+                        emergencyId
+                    );
+
+
+            if (
+                result.error
+            ) {
+
+                console.error(
+                    "Arrival bed update error:",
+                    result.error
                 );
-
-
-            const suitableBeds =
-                beds.filter(
-                    function (bed) {
-
-                        const required =
-                            getRequiredRoomTypes(
-                                emergency || {
-                                    priority:
-                                        allocation.priority,
-                                    emergency_type:
-                                        allocation.emergencyType
-                                }
-                            );
-
-
-                        return roomTypeMatches(
-                            bed.room?.room_type,
-                            required
-                        );
-
-                    }
-                );
-
-
-            if (!suitableBeds.length) {
-
-                if (list) {
-
-                    list.innerHTML = `
-                        <div class="no-reallocation-beds">
-                            No other suitable available beds
-                            are currently available.
-                        </div>
-                    `;
-
-                }
-
-
-                if (saveButton) {
-
-                    saveButton.disabled =
-                        true;
-
-                }
-
 
                 return;
 
             }
 
 
-            if (saveButton) {
-
-                saveButton.disabled =
-                    false;
-
-            }
-
-
-            if (list) {
-
-                list.innerHTML =
-                    suitableBeds
-                        .map(
-                            function (bed) {
-
-                                const displayId =
-                                    getBedDisplayId(
-                                        bed
-                                    );
-
-
-                                return `
-                                    <label class="reallocation-bed-option">
-
-                                        <input
-                                            type="radio"
-                                            name="reallocationBed"
-                                            value="${escapeHtml(
-                                                bed.id
-                                            )}"
-                                        >
-
-                                        <span>
-
-                                            <strong>
-                                                ${escapeHtml(
-                                                    displayId
-                                                )}
-                                            </strong>
-
-                                            <small>
-                                                ${escapeHtml(
-                                                    bed.room?.room_type ||
-                                                    "Bed"
-                                                )}
-                                                • Floor
-                                                ${escapeHtml(
-                                                    bed.room?.floor_number ??
-                                                    "-"
-                                                )}
-                                                • Room
-                                                ${escapeHtml(
-                                                    bed.room?.room_number ??
-                                                    "-"
-                                                )}
-                                            </small>
-
-                                        </span>
-
-                                    </label>
-                                `;
-
-                            }
-                        )
-                        .join("");
-
-
-                list
-                    .querySelectorAll(
-                        'input[name="reallocationBed"]'
-                    )
-                    .forEach(
-                        function (radio) {
-
-                            radio.addEventListener(
-                                "change",
-                                function () {
-
-                                    selectedBedId =
-                                        radio.value;
-
-                                }
-                            );
-
-                        }
-                    );
-
-            }
-
-
-            if (saveButton) {
-
-                saveButton.onclick =
-                    async function () {
-
-                        if (!selectedBedId) {
-
-                            alert(
-                                "Please select another bed."
-                            );
-
-                            return;
-
-                        }
-
-
-                        saveButton.disabled =
-                            true;
-
-
-                        saveButton.textContent =
-                            "Reallocating...";
-
-
-                        try {
-
-                            const result =
-                                await reallocateBed(
-                                    allocation,
-                                    selectedBedId
-                                );
-
-
-                            if (result.success) {
-
-                                closeReallocationModal();
-
-
-                                showAllocationNotification(
-                                    `Bed changed to ${result.newBed.displayId}.`,
-                                    "success"
-                                );
-
-                            }
-                            else {
-
-                                alert(
-                                    result.message ||
-                                    "Unable to reallocate the bed."
-                                );
-
-                            }
-
-                        }
-                        catch (error) {
-
-                            console.error(
-                                "Reallocation error:",
-                                error
-                            );
-
-
-                            alert(
-                                error.message ||
-                                "Unable to reallocate the bed."
-                            );
-
-                        }
-                        finally {
-
-                            saveButton.disabled =
-                                false;
-
-
-                            saveButton.textContent =
-                                "Confirm Reallocation";
-
-                        }
-
-                    };
-
-            }
-
-        }
-        catch (error) {
-
-            console.error(
-                "Unable to load reallocation beds:",
-                error
-            );
-
-
-            if (list) {
-
-                list.innerHTML = `
-                    <div class="no-reallocation-beds">
-                        Unable to load available beds.
-                    </div>
-                `;
-
-            }
-
-        }
-
-    }
-
-
-    /* =====================================================
-       GET EMERGENCY
-       ===================================================== */
-
-    async function getEmergencyById(
-        emergencyId
-    ) {
-
-        const supabase =
-            allocationState.supabase;
-
-
-        const response =
-            await supabase
-                .from(
-                    "emergencies"
-                )
-                .select(
-                    `
-                    id,
-                    patient_id,
-                    emergency_type,
-                    priority,
-                    status,
-                    hospital_id
-                    `
-                )
-                .eq(
-                    "id",
-                    emergencyId
-                )
-                .maybeSingle();
-
-
-        if (response.error) {
-
-            throw response.error;
-
-        }
-
-
-        return response.data;
-
-    }
-
-
-    /* =====================================================
-       REALLOCATE BED
-       ===================================================== */
-
-    async function reallocateBed(
-        allocation,
-        newBedId
-    ) {
-
-        const supabase =
-            allocationState.supabase;
-
-
-        if (
-            !allocation ||
-            !newBedId
-        ) {
-
-            return {
-
-                success: false,
-
-                message:
-                    "Invalid allocation."
-
-            };
-
-        }
-
-
-        /*
-         * First reserve the new bed.
-         *
-         * The new bed must still be available.
-         */
-
-        const newBedResponse =
-            await supabase
-                .from(
-                    "hospital_resource_slots"
-                )
-                .update({
-
-                    status:
-                        BED_ALLOCATION_CONFIG.reservedStatus,
-
-                    patient_id:
-                        allocation.patientId,
-
-                    emergency_id:
-                        allocation.emergencyId,
-
-                    notes:
-                        "Manually reallocated during 90-second confirmation window."
-
-                })
-                .eq(
-                    "id",
-                    newBedId
-                )
-                .eq(
-                    "hospital_id",
-                    allocationState.hospitalId
-                )
-                .eq(
-                    "resource_type",
-                    BED_ALLOCATION_CONFIG.resourceType
-                )
-                .eq(
-                    "status",
-                    BED_ALLOCATION_CONFIG.availableStatus
-                )
-                .select(
-                    `
-                    id,
-                    slot_code,
-                    room_id,
-                    status
-                    `
-                );
-
-
-        if (newBedResponse.error) {
-
-            throw newBedResponse.error;
-
-        }
-
-
-        if (
-            !newBedResponse.data ||
-            !newBedResponse.data.length
-        ) {
-
-            return {
-
-                success: false,
-
-                message:
-                    "That bed is no longer available. Please choose another bed."
-
-            };
-
-        }
-
-
-        const newBed =
-            newBedResponse.data[0];
-
-
-        /*
-         * Get room information.
-         */
-
-        const roomResponse =
-            await supabase
-                .from(
-                    "hospital_rooms"
-                )
-                .select(
-                    `
-                    id,
-                    floor_number,
-                    room_number,
-                    room_type
-                    `
-                )
-                .eq(
-                    "id",
-                    newBed.room_id
-                )
-                .maybeSingle();
-
-
-        const room =
-            roomResponse.data ||
-            null;
-
-
-        const displayId =
-            getBedDisplayId({
-
-                ...newBed,
-
-                room:
-                    room
-
-            });
-
-
-        /*
-         * Release old reserved bed.
-         */
-
-        const oldBedResponse =
-            await supabase
-                .from(
-                    "hospital_resource_slots"
-                )
-                .update({
-
-                    status:
-                        BED_ALLOCATION_CONFIG.availableStatus,
-
-                    patient_id:
-                        null,
-
-                    emergency_id:
-                        null,
-
-                    notes:
-                        "Released after manual reallocation."
-
-                })
-                .eq(
-                    "id",
-                    allocation.bedId
-                )
-                .eq(
-                    "hospital_id",
-                    allocationState.hospitalId
-                )
-                .eq(
-                    "resource_type",
-                    BED_ALLOCATION_CONFIG.resourceType
-                )
-                .eq(
-                    "status",
-                    BED_ALLOCATION_CONFIG.reservedStatus
-                )
-                .eq(
-                    "emergency_id",
-                    allocation.emergencyId
-                );
-
-
-        if (oldBedResponse.error) {
-
-            /*
-             * Roll the new bed back if the old bed could
-             * not be released.
-             */
-
-            await supabase
-                .from(
-                    "hospital_resource_slots"
-                )
-                .update({
-
-                    status:
-                        BED_ALLOCATION_CONFIG.availableStatus,
-
-                    patient_id:
-                        null,
-
-                    emergency_id:
-                        null,
-
-                    notes:
-                        "Reservation rollback."
-
-                })
-                .eq(
-                    "id",
-                    newBedId
-                )
-                .eq(
-                    "hospital_id",
-                    allocationState.hospitalId
-                )
-                .eq(
-                    "status",
-                    BED_ALLOCATION_CONFIG.reservedStatus
-                )
-                .eq(
-                    "emergency_id",
-                    allocation.emergencyId
-                );
-
-
-            throw oldBedResponse.error;
-
-        }
-
-
-        /*
-         * Create allocation history.
-         */
-
-        try {
-
-            await supabase
-                .from(
-                    "resource_allocations"
-                )
-                .insert({
-
-                    hospital_id:
-                        allocationState.hospitalId,
-
-                    resource_slot_id:
-                        newBedId,
-
-                    resource_type:
-                        BED_ALLOCATION_CONFIG.resourceType,
-
-                    patient_id:
-                        allocation.patientId,
-
-                    emergency_id:
-                        allocation.emergencyId,
-
-                    allocated_by:
-                        allocationState.currentUser
-                            ? allocationState.currentUser.id
-                            : null,
-
-                    status:
-                        "active",
-
-                    notes:
-                        "MANUAL_REALLOCATION"
-
-                });
-
-        }
-        catch (error) {
-
-            console.warn(
-                "Reallocation history error:",
-                error
-            );
-
-        }
-
-
-        await createEmergencyEvent(
-            allocation.emergencyId,
-            "BED_REALLOCATED",
-            `Bed changed from ${allocation.displayId} to ${displayId}.`
-        );
-
-
-        stopTimer(
-            allocation.emergencyId
-        );
-
-
-        allocation.bedId =
-            newBedId;
-
-
-        allocation.displayId =
-            displayId;
-
-
-        allocation.roomType =
-            room?.room_type ||
-            "-";
-
-
-        allocation.floor =
-            room?.floor_number ||
-            "-";
-
-
-        allocation.roomNumber =
-            room?.room_number ||
-            "-";
-
-
-        allocation.reservedAt =
-            new Date().toISOString();
-
-
-        allocation.remainingSeconds =
-            BED_ALLOCATION_CONFIG.confirmationSeconds;
-
-
-        /*
-         * Continue the 90-second confirmation period
-         * after reallocation.
-         */
-
-        startTimer(
-            allocation
-        );
-
-
-        renderPendingAllocations();
-
-
-        refreshDashboardAfterAllocation();
-
-
-        return {
-
-            success: true,
-
-            newBed: {
-
-                id:
-                    newBedId,
-
-                displayId:
-                    displayId,
-
-                room:
-                    room
-
-            }
-
-        };
-
-    }
-
-
-    /* =====================================================
-       HANDLE EMERGENCY ARRIVAL
-       ===================================================== */
-
-    async function handleHospitalArrival(
-        emergencyId
-    ) {
-
-        const supabase =
-            allocationState.supabase;
-
-
-        if (!supabase || !emergencyId) {
-
-            return false;
-
-        }
-
-
-        const response =
-            await supabase
-                .from(
-                    "hospital_resource_slots"
-                )
-                .update({
-
-                    status:
-                        BED_ALLOCATION_CONFIG.occupiedStatus,
-
-                    notes:
-                        "Patient arrived at hospital and bed occupied."
-
-                })
-                .eq(
-                    "hospital_id",
-                    allocationState.hospitalId
-                )
-                .eq(
-                    "resource_type",
-                    BED_ALLOCATION_CONFIG.resourceType
-                )
-                .eq(
-                    "emergency_id",
-                    emergencyId
-                )
-                .eq(
-                    "status",
-                    BED_ALLOCATION_CONFIG.reservedStatus
-                )
-                .select(
-                    "id,slot_code,status"
-                );
-
-
-        if (response.error) {
-
-            console.error(
-                "Hospital arrival bed update error:",
-                response.error
-            );
-
-            return false;
-
-        }
-
-
-        if (
-            response.data &&
-            response.data.length
-        ) {
-
             stopTimer(
-                emergencyId
-            );
-
-
-            removePendingAllocation(
-                emergencyId
+                bed.id
             );
 
 
             await createEmergencyEvent(
                 emergencyId,
                 "BED_OCCUPIED",
-                `${response.data[0].slot_code || "Reserved bed"} marked occupied after hospital arrival.`
+                "Automatically allocated bed marked occupied when ambulance arrived."
             );
 
 
-            refreshDashboardAfterAllocation();
+            await loadBeds();
 
-
-            return true;
-
-        }
-
-
-        return false;
-
-    }
-
-
-    /* =====================================================
-       HANDLE EMERGENCY CANCELLATION
-       ===================================================== */
-
-    async function releaseEmergencyBed(
-        emergencyId
-    ) {
-
-        const supabase =
-            allocationState.supabase;
-
-
-        if (
-            !supabase ||
-            !emergencyId
-        ) {
-
-            return false;
-
-        }
-
-
-        const response =
-            await supabase
-                .from(
-                    "hospital_resource_slots"
-                )
-                .update({
-
-                    status:
-                        BED_ALLOCATION_CONFIG.availableStatus,
-
-                    patient_id:
-                        null,
-
-                    emergency_id:
-                        null,
-
-                    notes:
-                        "Released because emergency was cancelled/completed."
-
-                })
-                .eq(
-                    "hospital_id",
-                    allocationState.hospitalId
-                )
-                .eq(
-                    "resource_type",
-                    BED_ALLOCATION_CONFIG.resourceType
-                )
-                .eq(
-                    "emergency_id",
-                    emergencyId
-                )
-                .eq(
-                    "status",
-                    BED_ALLOCATION_CONFIG.reservedStatus
-                );
-
-
-        if (response.error) {
-
-            console.error(
-                "Emergency bed release error:",
-                response.error
-            );
-
-            return false;
-
-        }
-
-
-        stopTimer(
-            emergencyId
-        );
-
-
-        removePendingAllocation(
-            emergencyId
-        );
-
-
-        refreshDashboardAfterAllocation();
-
-
-        return true;
-
-    }
-
-
-    /* =====================================================
-       REALTIME SUBSCRIPTION
-       ===================================================== */
-
-    function setupRealtime() {
-
-        const supabase =
-            allocationState.supabase;
-
-
-        if (!supabase) {
+            renderAllocationList();
 
             return;
 
@@ -3552,440 +2399,663 @@
 
 
         /*
-         * Remove old channel if present.
+         * If emergency was cancelled
+         * before arrival, release reservation.
          */
 
         if (
-            allocationState.realtimeChannel
+            bed &&
+            normalizeBedStatus(
+                bed.status
+            ) === "reserved" &&
+            isCancelledEmergency(
+                emergency
+            )
         ) {
 
-            try {
+            const result =
+                await state.db
+                    .from(
+                        "hospital_resource_slots"
+                    )
+                    .update({
 
-                supabase.removeChannel(
-                    allocationState.realtimeChannel
+                        status:
+                            "available",
+
+                        patient_id:
+                            null,
+
+                        emergency_id:
+                            null,
+
+                        notes:
+                            "RESQ_AUTO_RELEASED|" +
+                            "emergency=" +
+                            emergencyId
+
+                    })
+                    .eq(
+                        "id",
+                        bed.id
+                    )
+                    .eq(
+                        "hospital_id",
+                        state.hospitalId
+                    )
+                    .eq(
+                        "status",
+                        "reserved"
+                    )
+                    .eq(
+                        "emergency_id",
+                        emergencyId
+                    );
+
+
+            if (
+                result.error
+            ) {
+
+                console.error(
+                    "Bed release error:",
+                    result.error
                 );
 
-            }
-            catch (error) {
-
-                console.warn(
-                    "Unable to remove old allocation channel:",
-                    error
-                );
+                return;
 
             }
+
+
+            stopTimer(
+                bed.id
+            );
+
+
+            await loadBeds();
+
+            renderAllocationList();
 
         }
 
-
-        allocationState.realtimeChannel =
-            supabase
-                .channel(
-                    "resq-bed-allocation-" +
-                    Date.now()
-                )
-                .on(
-                    "postgres_changes",
-                    {
-                        event: "*",
-                        schema: "public",
-                        table: "emergencies"
-                    },
-                    async function (payload) {
-
-                        const emergency =
-                            payload.new ||
-                            null;
-
-
-                        if (!emergency) {
-
-                            return;
-
-                        }
-
-
-                        if (
-                            emergency.hospital_id !==
-                            allocationState.hospitalId
-                        ) {
-
-                            return;
-
-                        }
-
-
-                        const status =
-                            String(
-                                emergency.status ||
-                                ""
-                            )
-                                .trim()
-                                .toUpperCase();
-
-
-                        if (
-                            BED_ALLOCATION_CONFIG
-                                .cancelledStatuses
-                                .includes(
-                                    status
-                                )
-                        ) {
-
-                            await releaseEmergencyBed(
-                                emergency.id
-                            );
-
-                            return;
-
-                        }
-
-
-                        /*
-                         * Give the database a short moment to
-                         * finish related inserts/updates.
-                         */
-
-                        setTimeout(
-                            function () {
-
-                                automaticallyAllocateEmergency(
-                                    emergency
-                                )
-                                    .then(
-                                        function () {
-
-                                            renderPendingAllocations();
-
-                                        }
-                                    )
-                                    .catch(
-                                        function (error) {
-
-                                            console.error(
-                                                "Realtime automatic allocation error:",
-                                                error
-                                            );
-
-                                        }
-                                    );
-
-                            },
-                            300
-                        );
-
-                    }
-                )
-                .on(
-                    "postgres_changes",
-                    {
-                        event: "*",
-                        schema: "public",
-                        table: "hospital_resource_slots"
-                    },
-                    function (payload) {
-
-                        /*
-                         * When a bed changes elsewhere,
-                         * refresh our dashboard.
-                         */
-
-                        if (
-                            payload.new &&
-                            payload.new.hospital_id &&
-                            payload.new.hospital_id !==
-                            allocationState.hospitalId
-                        ) {
-
-                            return;
-
-                        }
-
-
-                        renderPendingAllocations();
-
-
-                        refreshDashboardAfterAllocation();
-
-                    }
-                )
-                .subscribe(
-                    function (status) {
-
-                        console.log(
-                            "Bed allocation realtime status:",
-                            status
-                        );
-
-                    }
-                );
-
     }
 
 
     /* =====================================================
-       REFRESH EXISTING DASHBOARD
+       BED LABEL
        ===================================================== */
 
-    function refreshDashboardAfterAllocation() {
-
-        /*
-         * Your existing hospital dashboard has its own
-         * refresh functions. We call them when available.
-         */
-
-        const functionsToCall = [
-
-            "refreshBedInventory",
-
-            "loadBedInventory",
-
-            "refreshBeds",
-
-            "loadHospitalBeds",
-
-            "refreshDashboard",
-
-            "loadDashboardData"
-
-        ];
-
-
-        functionsToCall.forEach(
-            function (functionName) {
-
-                if (
-                    typeof window[
-                        functionName
-                    ] ===
-                    "function"
-                ) {
-
-                    try {
-
-                        window[
-                            functionName
-                        ]();
-
-                    }
-                    catch (error) {
-
-                        console.warn(
-                            functionName +
-                            " refresh failed:",
-                            error
-                        );
-
-                    }
-
-                }
-
-            }
-        );
-
-    }
-
-
-    /* =====================================================
-       NOTIFICATION
-       ===================================================== */
-
-    function showAllocationNotification(
-        message,
-        type = "success"
+    function getBedLabel(
+        bed
     ) {
 
-        let notification =
-            document.getElementById(
-                "bedAllocationNotification"
-            );
+        if (!bed) {
 
-
-        if (!notification) {
-
-            notification =
-                document.createElement(
-                    "div"
-                );
-
-
-            notification.id =
-                "bedAllocationNotification";
-
-
-            notification.style.position =
-                "fixed";
-
-
-            notification.style.top =
-                "85px";
-
-
-            notification.style.right =
-                "25px";
-
-
-            notification.style.zIndex =
-                "100000";
-
-
-            notification.style.padding =
-                "13px 17px";
-
-
-            notification.style.borderRadius =
-                "10px";
-
-
-            notification.style.fontSize =
-                "12px";
-
-
-            notification.style.fontWeight =
-                "700";
-
-
-            notification.style.boxShadow =
-                "0 8px 25px rgba(0,0,0,.15)";
-
-
-            document.body.appendChild(
-                notification
-            );
+            return "No bed";
 
         }
 
 
-        notification.textContent =
-            message;
-
-
-        notification.style.background =
-            type === "success"
-                ? "#dcfce7"
-                : "#fee2e2";
-
-
-        notification.style.color =
-            type === "success"
-                ? "#166534"
-                : "#991b1b";
-
-
-        notification.style.display =
-            "block";
-
-
-        clearTimeout(
-            notification._hideTimer
+        return (
+            "Floor " +
+            (
+                bed.floor_number ??
+                "-"
+            ) +
+            " • Room " +
+            (
+                bed.room_number ??
+                "-"
+            ) +
+            " • " +
+            (
+                bed.slot_code ||
+                "Bed"
+            )
         );
-
-
-        notification._hideTimer =
-            setTimeout(
-                function () {
-
-                    notification.style.display =
-                        "none";
-
-                },
-                5000
-            );
 
     }
 
 
-    /* =====================================================
-       ESCAPE HTML
-       ===================================================== */
-
-    function escapeHtml(
+    function formatRoomType(
         value
     ) {
 
         return String(
-            value ?? ""
+            value ||
+            "Other"
         )
-            .replaceAll(
-                "&",
-                "&amp;"
+            .replace(
+                /_/g,
+                " "
             )
-            .replaceAll(
-                "<",
-                "&lt;"
-            )
-            .replaceAll(
-                ">",
-                "&gt;"
-            )
-            .replaceAll(
-                '"',
-                "&quot;"
-            )
-            .replaceAll(
-                "'",
-                "&#039;"
+            .replace(
+                /\b\w/g,
+                function (char) {
+
+                    return char.toUpperCase();
+
+                }
             );
 
     }
 
 
     /* =====================================================
-       PRIORITY CSS CLASS
+       ALLOCATION UI
        ===================================================== */
 
-    function priorityClass(
-        priority
+    function renderAllocationList() {
+
+        const list =
+            document.getElementById(
+                "autoAllocationList"
+            );
+
+
+        if (!list) {
+
+            return;
+
+        }
+
+
+        const active =
+            state.emergencies
+                .filter(
+                    isActiveEmergency
+                );
+
+
+        if (!active.length) {
+
+            list.innerHTML = `
+
+                <div class="auto-empty">
+
+                    No active emergency requests.
+
+                </div>
+
+            `;
+
+
+            updateAllocationCount();
+
+            return;
+
+        }
+
+
+        list.innerHTML =
+            active.map(
+                function (emergency) {
+
+                    const bed =
+                        findBedForEmergency(
+                            emergency.id
+                        );
+
+
+                    const priority =
+                        String(
+                            emergency.priority ||
+                            "HIGH"
+                        ).toUpperCase();
+
+
+                    const priorityClass =
+                        getPriorityClass(
+                            emergency.priority
+                        );
+
+
+                    /*
+                     * Patient has no bed yet.
+                     */
+
+                    if (!bed) {
+
+                        return `
+
+                            <div
+                                class="auto-case waiting-case"
+                            >
+
+                                <div class="auto-case-patient">
+
+                                    <strong>
+                                        ${escapeHtml(
+                                            getPatientName(
+                                                emergency
+                                            )
+                                        )}
+                                    </strong>
+
+                                    <small>
+                                        Emergency:
+                                        ${escapeHtml(
+                                            emergency.id
+                                        )}
+                                    </small>
+
+                                </div>
+
+
+                                <div class="auto-case-info">
+
+                                    <span
+                                        class="priority-badge ${priorityClass}"
+                                    >
+                                        ${escapeHtml(
+                                            priority
+                                        )}
+                                    </span>
+
+                                    <span>
+                                        ${escapeHtml(
+                                            emergency.emergency_type ||
+                                            "Emergency"
+                                        )}
+                                    </span>
+
+                                </div>
+
+
+                                <div class="auto-case-bed">
+
+                                    <strong>
+                                        Waiting for bed
+                                    </strong>
+
+                                    <small>
+                                        No suitable available
+                                        bed currently found.
+                                    </small>
+
+                                </div>
+
+
+                            </div>
+
+                        `;
+
+                    }
+
+
+                    const pending =
+                        isPendingReservation(
+                            bed
+                        );
+
+
+                    const status =
+                        normalizeBedStatus(
+                            bed.status
+                        );
+
+
+                    let timerHtml =
+                        "";
+
+
+                    if (pending) {
+
+                        const expiry =
+                            getReservationExpiry(
+                                bed
+                            );
+
+
+                        const seconds =
+                            Math.max(
+                                0,
+                                Math.ceil(
+                                    (
+                                        expiry -
+                                        Date.now()
+                                    ) / 1000
+                                )
+                            );
+
+
+                        const minutes =
+                            Math.floor(
+                                seconds / 60
+                            );
+
+
+                        const remaining =
+                            seconds % 60;
+
+
+                        timerHtml = `
+
+                            <div
+                                class="auto-timer"
+                                data-auto-timer="${escapeHtml(
+                                    bed.id
+                                )}"
+                            >
+                                ${String(
+                                    minutes
+                                ).padStart(2, "0")}:${String(
+                                    remaining
+                                ).padStart(2, "0")}
+                            </div>
+
+                        `;
+
+                    }
+
+
+                    let statusText =
+                        "RESERVED";
+
+
+                    if (
+                        status ===
+                        "occupied"
+                    ) {
+
+                        statusText =
+                            "OCCUPIED";
+
+                    }
+
+
+                    return `
+
+                        <div
+                            class="auto-case ${
+                                priorityClass ===
+                                "critical"
+                                    ? "critical-case"
+                                    : ""
+                            }"
+                        >
+
+                            <div class="auto-case-patient">
+
+                                <strong>
+                                    ${escapeHtml(
+                                        getPatientName(
+                                            emergency
+                                        )
+                                    )}
+                                </strong>
+
+                                <small>
+                                    Emergency:
+                                    ${escapeHtml(
+                                        emergency.id
+                                    )}
+                                </small>
+
+                                <small>
+                                    ${escapeHtml(
+                                        emergency.emergency_type ||
+                                        "Emergency"
+                                    )}
+                                </small>
+
+                            </div>
+
+
+                            <div class="auto-case-info">
+
+                                <span
+                                    class="priority-badge ${priorityClass}"
+                                >
+                                    ${escapeHtml(
+                                        priority
+                                    )}
+                                </span>
+
+                                <span>
+                                    ${escapeHtml(
+                                        emergency.status
+                                    )}
+                                </span>
+
+                            </div>
+
+
+                            <div class="auto-case-bed">
+
+                                <strong>
+                                    ${escapeHtml(
+                                        getBedLabel(
+                                            bed
+                                        )
+                                    )}
+                                </strong>
+
+                                <small>
+                                    ${escapeHtml(
+                                        formatRoomType(
+                                            bed.room_type
+                                        )
+                                    )}
+                                </small>
+
+                                <small>
+                                    ${statusText}
+                                </small>
+
+                            </div>
+
+
+                            <div class="auto-case-actions">
+
+                                ${
+                                    pending
+                                        ? `
+                                            ${timerHtml}
+
+                                            <button
+                                                type="button"
+                                                class="auto-btn confirm"
+                                                data-confirm-emergency="${escapeHtml(
+                                                    emergency.id
+                                                )}"
+                                            >
+                                                CONFIRM
+                                            </button>
+                                        `
+                                        : ""
+                                }
+
+
+                                ${
+                                    status ===
+                                    "reserved"
+                                        ? `
+                                            <button
+                                                type="button"
+                                                class="auto-btn change"
+                                                data-change-emergency="${escapeHtml(
+                                                    emergency.id
+                                                )}"
+                                            >
+                                                CHANGE BED
+                                            </button>
+                                        `
+                                        : ""
+                                }
+
+
+                                ${
+                                    status ===
+                                    "occupied"
+                                        ? `
+                                            <span
+                                                class="occupied-label"
+                                            >
+                                                PATIENT IN BED
+                                            </span>
+                                        `
+                                        : ""
+                                }
+
+                            </div>
+
+                        </div>
+
+                    `;
+
+                }
+            )
+            .join("");
+
+
+        attachAllocationButtons();
+
+        updateAllocationCount();
+
+    }
+
+
+    function attachAllocationButtons() {
+
+        document
+            .querySelectorAll(
+                "[data-confirm-emergency]"
+            )
+            .forEach(
+                function (button) {
+
+                    button.addEventListener(
+                        "click",
+                        async function () {
+
+                            button.disabled =
+                                true;
+
+
+                            await confirmAutomaticAllocation(
+                                button.dataset
+                                    .confirmEmergency,
+                                false
+                            );
+
+                        }
+                    );
+
+                }
+            );
+
+
+        document
+            .querySelectorAll(
+                "[data-change-emergency]"
+            )
+            .forEach(
+                function (button) {
+
+                    button.addEventListener(
+                        "click",
+                        function () {
+
+                            openReallocationModal(
+                                button.dataset
+                                    .changeEmergency
+                            );
+
+                        }
+                    );
+
+                }
+            );
+
+    }
+
+
+    function updateAllocationCount() {
+
+        const counter =
+            document.getElementById(
+                "autoAllocationCount"
+            );
+
+
+        if (!counter) {
+
+            return;
+
+        }
+
+
+        const count =
+            state.beds.filter(
+                function (bed) {
+
+                    return (
+                        normalizeBedStatus(
+                            bed.status
+                        ) ===
+                        "reserved"
+                    );
+
+                }
+            ).length;
+
+
+        counter.textContent =
+            String(count);
+
+    }
+
+
+    function showAllocationError(
+        error
     ) {
 
-        const value =
-            String(
-                priority || ""
-            )
-                .toLowerCase();
+        const list =
+            document.getElementById(
+                "autoAllocationList"
+            );
 
 
-        if (
-            value === "critical"
-        ) {
+        if (!list) {
 
-            return "priority-critical";
+            return;
 
         }
 
 
-        if (
-            value === "high"
-        ) {
+        list.innerHTML = `
 
-            return "priority-high";
+            <div class="auto-empty">
 
-        }
+                Automatic allocation could not
+                connect to the hospital data.
 
+                <br>
 
-        if (
-            value === "medium"
-        ) {
+                <small>
+                    ${escapeHtml(
+                        error?.message ||
+                        "Unknown error"
+                    )}
+                </small>
 
-            return "priority-medium";
+            </div>
 
-        }
-
-
-        return "priority-low";
+        `;
 
     }
 
 
     /* =====================================================
-       REALLOCATION STYLES
+       CSS
        ===================================================== */
 
-    function addReallocationStyles() {
+    function injectStyles() {
 
         if (
             document.getElementById(
-                "bedAllocationStyles"
+                "resqAutoBedStyles"
             )
         ) {
 
@@ -4001,36 +3071,47 @@
 
 
         style.id =
-            "bedAllocationStyles";
+            "resqAutoBedStyles";
 
 
         style.textContent = `
 
-            .automatic-bed-row {
+            .auto-case {
 
                 display: grid;
 
                 grid-template-columns:
                     1.2fr
-                    .7fr
-                    1.2fr
                     .8fr
+                    1.4fr
                     auto;
 
-                gap: 14px;
+                gap: 16px;
 
                 align-items: center;
 
-                padding: 14px 16px;
+                background: #ffffff;
 
-                border-bottom: 1px solid #edf0f4;
+                border: 1px solid #e4e8ee;
 
-                background: white;
+                border-radius: 14px;
+
+                padding: 16px;
+
+                margin-bottom: 12px;
 
             }
 
 
-            .bed-patient-info {
+            .auto-case.critical-case {
+
+                border-left:
+                    5px solid #e63946;
+
+            }
+
+
+            .auto-case-patient {
 
                 display: flex;
 
@@ -4041,321 +3122,91 @@
             }
 
 
-            .bed-patient-info strong {
+            .auto-case-patient strong {
 
-                font-size: 13px;
+                font-size: 15px;
 
-            }
-
-
-            .bed-patient-info span {
-
-                color: #7a8494;
-
-                font-size: 10px;
+                color: #172033;
 
             }
 
 
-            .priority-badge {
+            .auto-case-patient small {
 
-                display: inline-block;
-
-                padding: 5px 8px;
-
-                border-radius: 999px;
-
-                font-size: 8px;
-
-                font-weight: 900;
-
-            }
-
-
-            .priority-critical {
-
-                background: #fee2e2;
-
-                color: #b91c1c;
-
-            }
-
-
-            .priority-high {
-
-                background: #ffedd5;
-
-                color: #c2410c;
-
-            }
-
-
-            .priority-medium {
-
-                background: #fef3c7;
-
-                color: #a16207;
-
-            }
-
-
-            .priority-low {
-
-                background: #dcfce7;
-
-                color: #15803d;
-
-            }
-
-
-            .bed-auto-location {
-
-                display: flex;
-
-                flex-direction: column;
-
-                gap: 4px;
-
-            }
-
-
-            .bed-auto-location strong {
-
-                font-size: 12px;
-
-            }
-
-
-            .bed-auto-location span {
-
-                color: #64748b;
-
-                font-size: 9px;
-
-            }
-
-
-            .bed-confirm-timer {
-
-                text-align: center;
-
-                display: flex;
-
-                flex-direction: column;
-
-                gap: 3px;
-
-            }
-
-
-            .bed-confirm-timer small {
-
-                color: #64748b;
-
-                font-size: 8px;
-
-            }
-
-
-            .bed-confirm-timer strong {
-
-                font-size: 18px;
-
-                font-weight: 900;
-
-            }
-
-
-            .bed-confirm-timer strong.timer-warning {
-
-                color: #c2410c;
-
-            }
-
-
-            .bed-confirm-timer strong.timer-danger {
-
-                color: #dc2626;
-
-            }
-
-
-            .bed-actions {
-
-                display: flex;
-
-                gap: 6px;
-
-            }
-
-
-            .bed-confirm-btn,
-            .bed-reallocate-btn {
-
-                border: 0;
-
-                border-radius: 7px;
-
-                padding: 8px 10px;
-
-                font-size: 9px;
-
-                font-weight: 800;
-
-                cursor: pointer;
-
-                white-space: nowrap;
-
-            }
-
-
-            .bed-confirm-btn {
-
-                background: #172033;
-
-                color: white;
-
-            }
-
-
-            .bed-reallocate-btn {
-
-                background: #f1f5f9;
-
-                color: #334155;
-
-            }
-
-
-            .bed-confirm-btn:disabled,
-            .bed-reallocate-btn:disabled {
-
-                opacity: .5;
-
-                cursor: not-allowed;
-
-            }
-
-
-            .bed-allocation-empty {
-
-                padding: 25px;
-
-                text-align: center;
-
-                color: #64748b;
+                color: #687386;
 
                 font-size: 11px;
 
             }
 
 
-            .bed-reallocation-modal {
-
-                position: fixed;
-
-                inset: 0;
-
-                background: rgba(15,23,42,.55);
-
-                display: none;
-
-                align-items: center;
-
-                justify-content: center;
-
-                z-index: 99999;
-
-                padding: 20px;
-
-            }
-
-
-            .bed-reallocation-modal.active {
+            .auto-case-info {
 
                 display: flex;
 
-            }
+                flex-direction: column;
 
+                gap: 7px;
 
-            .bed-reallocation-dialog {
+                font-size: 11px;
 
-                width: min(620px, 100%);
-
-                max-height: 85vh;
-
-                overflow: auto;
-
-                background: white;
-
-                border-radius: 14px;
-
-                box-shadow: 0 20px 60px rgba(0,0,0,.2);
+                color: #687386;
 
             }
 
 
-            .bed-reallocation-header {
+            .priority-badge {
 
-                padding: 18px 20px;
+                width: fit-content;
 
-                border-bottom: 1px solid #edf0f4;
+                padding: 5px 9px;
 
-                display: flex;
+                border-radius: 20px;
 
-                justify-content: space-between;
-
-                align-items: flex-start;
-
-            }
-
-
-            .bed-reallocation-header h3 {
-
-                margin: 0 0 5px;
-
-                font-size: 16px;
-
-            }
-
-
-            .bed-reallocation-header p {
-
-                margin: 0;
-
-                color: #64748b;
+                font-weight: 800;
 
                 font-size: 10px;
 
             }
 
 
-            .bed-reallocation-header button {
+            .priority-badge.critical {
 
-                border: 0;
+                background: #fff0f1;
 
-                background: transparent;
-
-                font-size: 25px;
-
-                cursor: pointer;
-
-                color: #64748b;
+                color: #c72535;
 
             }
 
 
-            .bed-current-allocation {
+            .priority-badge.high {
 
-                margin: 16px 20px;
+                background: #fff5e8;
 
-                padding: 12px;
+                color: #9b6813;
 
-                background: #f8fafc;
+            }
 
-                border: 1px solid #e2e8f0;
 
-                border-radius: 9px;
+            .priority-badge.medium {
+
+                background: #eef5ff;
+
+                color: #2463a5;
+
+            }
+
+
+            .priority-badge.low {
+
+                background: #eef8f1;
+
+                color: #237444;
+
+            }
+
+
+            .auto-case-bed {
 
                 display: flex;
 
@@ -4363,149 +3214,102 @@
 
                 gap: 5px;
 
+            }
+
+
+            .auto-case-bed strong {
+
+                font-size: 13px;
+
+                color: #172033;
+
+            }
+
+
+            .auto-case-bed small {
+
+                color: #687386;
+
                 font-size: 11px;
 
             }
 
 
-            .bed-current-allocation span {
-
-                color: #64748b;
-
-            }
-
-
-            .bed-reallocation-list {
-
-                padding: 0 20px 15px;
-
-                display: flex;
-
-                flex-direction: column;
-
-                gap: 8px;
-
-            }
-
-
-            .reallocation-bed-option {
+            .auto-case-actions {
 
                 display: flex;
 
                 align-items: center;
 
-                gap: 10px;
+                justify-content: flex-end;
 
-                padding: 12px;
+                gap: 7px;
 
-                border: 1px solid #e2e8f0;
-
-                border-radius: 9px;
-
-                cursor: pointer;
+                flex-wrap: wrap;
 
             }
 
 
-            .reallocation-bed-option:hover {
+            .auto-timer {
 
-                border-color: #ef3340;
+                font-size: 17px;
 
-                background: #fffafa;
+                font-weight: 900;
 
-            }
+                color: #e63946;
 
-
-            .reallocation-bed-option input {
-
-                width: auto;
-
-            }
-
-
-            .reallocation-bed-option span {
-
-                display: flex;
-
-                flex-direction: column;
-
-                gap: 3px;
-
-            }
-
-
-            .reallocation-bed-option strong {
-
-                font-size: 11px;
-
-            }
-
-
-            .reallocation-bed-option small {
-
-                color: #64748b;
-
-                font-size: 9px;
-
-            }
-
-
-            .no-reallocation-beds {
-
-                padding: 20px;
+                min-width: 52px;
 
                 text-align: center;
 
-                color: #64748b;
+            }
 
-                font-size: 11px;
+
+            .auto-timer.timer-danger {
+
+                animation: resqPulse .8s infinite;
 
             }
 
 
-            .bed-reallocation-actions {
+            @keyframes resqPulse {
 
-                padding: 15px 20px;
+                50% {
 
-                border-top: 1px solid #edf0f4;
+                    opacity: .35;
 
-                display: flex;
-
-                justify-content: flex-end;
-
-                gap: 8px;
+                }
 
             }
 
 
-            .bed-cancel-reallocation,
-            .bed-save-reallocation {
+            .auto-btn {
 
                 border: 0;
 
                 border-radius: 8px;
 
-                padding: 10px 14px;
+                padding: 9px 12px;
+
+                cursor: pointer;
 
                 font-size: 10px;
 
                 font-weight: 800;
 
-                cursor: pointer;
+            }
+
+
+            .auto-btn.confirm {
+
+                background: #16834a;
+
+                color: white;
 
             }
 
 
-            .bed-cancel-reallocation {
-
-                background: #f1f5f9;
-
-                color: #334155;
-
-            }
-
-
-            .bed-save-reallocation {
+            .auto-btn.change {
 
                 background: #172033;
 
@@ -4514,7 +3318,7 @@
             }
 
 
-            .bed-save-reallocation:disabled {
+            .auto-btn:disabled {
 
                 opacity: .5;
 
@@ -4523,18 +3327,321 @@
             }
 
 
-            @media (max-width: 900px) {
+            .occupied-label {
 
-                .automatic-bed-row {
+                background: #eef8f1;
 
-                    grid-template-columns: 1fr 1fr;
+                color: #237444;
+
+                padding: 8px 10px;
+
+                border-radius: 8px;
+
+                font-size: 10px;
+
+                font-weight: 800;
+
+                white-space: nowrap;
+
+            }
+
+
+            .waiting-case {
+
+                border-left:
+                    5px solid #f59e0b;
+
+            }
+
+
+            .auto-empty {
+
+                padding: 25px;
+
+                text-align: center;
+
+                color: #687386;
+
+                background: #ffffff;
+
+                border: 1px solid #e4e8ee;
+
+                border-radius: 12px;
+
+            }
+
+
+            /* MODAL */
+
+            #resqReallocationModal {
+
+                display: none;
+
+                position: fixed;
+
+                inset: 0;
+
+                z-index: 99999;
+
+            }
+
+
+            #resqReallocationModal.show {
+
+                display: block;
+
+            }
+
+
+            .resq-modal-overlay {
+
+                position: absolute;
+
+                inset: 0;
+
+                background:
+                    rgba(0,0,0,.45);
+
+                display: flex;
+
+                align-items: center;
+
+                justify-content: center;
+
+                padding: 20px;
+
+            }
+
+
+            .resq-modal {
+
+                width: min(
+                    600px,
+                    100%
+                );
+
+                max-height: 85vh;
+
+                overflow-y: auto;
+
+                background: white;
+
+                border-radius: 16px;
+
+                padding: 24px;
+
+                box-shadow:
+                    0 20px 60px
+                    rgba(0,0,0,.2);
+
+            }
+
+
+            .resq-modal h2 {
+
+                margin-bottom: 7px;
+
+                color: #172033;
+
+            }
+
+
+            .resq-modal-subtitle {
+
+                color: #687386;
+
+                font-size: 13px;
+
+                margin-bottom: 18px;
+
+            }
+
+
+            .resq-current-bed {
+
+                background: #f5f7fa;
+
+                border-radius: 10px;
+
+                padding: 13px;
+
+                margin-bottom: 15px;
+
+                font-size: 12px;
+
+                color: #4f5b6d;
+
+            }
+
+
+            .resq-available-beds {
+
+                display: grid;
+
+                grid-template-columns:
+                    repeat(
+                        2,
+                        minmax(0,1fr)
+                    );
+
+                gap: 10px;
+
+            }
+
+
+            .resq-bed-option {
+
+                border: 1px solid #dfe4eb;
+
+                background: white;
+
+                border-radius: 10px;
+
+                padding: 13px;
+
+                text-align: left;
+
+                cursor: pointer;
+
+                display: flex;
+
+                flex-direction: column;
+
+                gap: 5px;
+
+            }
+
+
+            .resq-bed-option:hover {
+
+                border-color: #e63946;
+
+            }
+
+
+            .resq-bed-option.selected {
+
+                border:
+                    2px solid #e63946;
+
+                background: #fff7f7;
+
+            }
+
+
+            .resq-bed-option strong {
+
+                color: #172033;
+
+                font-size: 13px;
+
+            }
+
+
+            .resq-bed-option span,
+
+            .resq-bed-option small {
+
+                color: #687386;
+
+                font-size: 10px;
+
+            }
+
+
+            .resq-no-beds {
+
+                padding: 20px;
+
+                background: #fff7ed;
+
+                color: #9b6813;
+
+                border-radius: 10px;
+
+                font-size: 12px;
+
+            }
+
+
+            .resq-modal-actions {
+
+                display: flex;
+
+                justify-content: flex-end;
+
+                gap: 10px;
+
+                margin-top: 20px;
+
+            }
+
+
+            .resq-btn {
+
+                border: 0;
+
+                border-radius: 8px;
+
+                padding: 11px 15px;
+
+                cursor: pointer;
+
+                font-size: 11px;
+
+                font-weight: 800;
+
+            }
+
+
+            .resq-btn.secondary {
+
+                background: #eef1f5;
+
+                color: #4f5b6d;
+
+            }
+
+
+            .resq-btn.primary {
+
+                background: #e63946;
+
+                color: white;
+
+            }
+
+
+            .resq-btn:disabled {
+
+                opacity: .5;
+
+                cursor: not-allowed;
+
+            }
+
+
+            @media (
+                max-width: 850px
+            ) {
+
+                .auto-case {
+
+                    grid-template-columns: 1fr;
 
                 }
 
+                .auto-case-actions {
 
-                .bed-actions {
+                    justify-content:
+                        flex-start;
 
-                    grid-column: 1 / -1;
+                }
+
+                .resq-available-beds {
+
+                    grid-template-columns:
+                        1fr;
 
                 }
 
@@ -4551,13 +3658,14 @@
 
 
     /* =====================================================
-       INITIALIZE
+       REALTIME
        ===================================================== */
 
-    async function initialize() {
+    function startRealtime() {
 
         if (
-            allocationState.initialized
+            !state.db ||
+            !state.hospitalId
         ) {
 
             return;
@@ -4565,151 +3673,247 @@
         }
 
 
-        const supabase =
-            getSupabaseClient();
+        if (state.channel) {
 
+            try {
 
-        if (!supabase) {
+                state.db.removeChannel(
+                    state.channel
+                );
 
-            console.warn(
-                "Bed allocation engine waiting for Supabase."
-            );
+            } catch (error) {
 
-            return;
+                console.warn(
+                    error
+                );
 
-        }
-
-
-        allocationState.supabase =
-            supabase;
-
-
-        allocationState.currentUser =
-            await getCurrentUser();
-
-
-        allocationState.hospitalId =
-            await getHospitalId();
-
-
-        if (
-            !allocationState.hospitalId
-        ) {
-
-            console.warn(
-                "Bed allocation engine: hospital ID not found."
-            );
-
-            return;
+            }
 
         }
 
 
-        allocationState.initialized =
-            true;
+        state.channel =
+            state.db
+                .channel(
+                    "resq-auto-bed-" +
+                    state.hospitalId
+                )
 
 
-        addReallocationStyles();
+                /*
+                 * EMERGENCIES
+                 */
+
+                .on(
+                    "postgres_changes",
+                    {
+                        event: "*",
+                        schema: "public",
+                        table: "emergencies",
+                        filter:
+                            "hospital_id=eq." +
+                            state.hospitalId
+                    },
+
+                    async function (
+                        payload
+                    ) {
+
+                        const emergency =
+                            payload?.new ||
+                            payload?.old;
 
 
-        setupRealtime();
+                        if (emergency) {
+
+                            await handleEmergencyStatusChange(
+                                emergency
+                            );
+
+                        }
 
 
-        /*
-         * Process existing emergencies immediately.
-         */
+                        await processAutomaticAllocations();
 
-        await processPendingEmergencies();
-
-
-        renderPendingAllocations();
+                    }
+                )
 
 
-        console.log(
-            "ResQ-Route automatic bed allocation initialized."
-        );
+                /*
+                 * BED CHANGES
+                 */
+
+                .on(
+                    "postgres_changes",
+                    {
+                        event: "*",
+                        schema: "public",
+                        table:
+                            "hospital_resource_slots",
+                        filter:
+                            "hospital_id=eq." +
+                            state.hospitalId
+                    },
+
+                    async function () {
+
+                        await processAutomaticAllocations();
+
+                    }
+                )
+
+
+                .subscribe(
+                    function (
+                        status
+                    ) {
+
+                        console.log(
+                            "ResQ automatic bed realtime:",
+                            status
+                        );
+
+                    }
+                );
 
     }
 
 
     /* =====================================================
-       PUBLIC API
+       INITIALIZATION
        ===================================================== */
 
-    window.resqBedAllocation = {
+    async function initialize() {
 
-        initialize:
+        if (
+            state.initialized
+        ) {
 
-            initialize,
+            return;
 
-        process:
-
-            processPendingEmergencies,
-
-        confirm:
-
-            async function (
-                emergencyId
-            ) {
-
-                const allocation =
-                    allocationState
-                        .pendingAllocations
-                        .get(
-                            emergencyId
-                        );
+        }
 
 
-                if (!allocation) {
-
-                    return false;
-
-                }
+        state.initialized =
+            true;
 
 
-                return confirmAllocation(
-                    allocation
+        try {
+
+            injectStyles();
+
+            ensureReallocationModal();
+
+
+            state.db =
+                getSupabase();
+
+
+            if (!state.db) {
+
+                throw new Error(
+                    "Supabase client is unavailable."
                 );
-
-            },
-
-        reallocate:
-
-            reallocateBed,
-
-        hospitalArrival:
-
-            handleHospitalArrival,
-
-        release:
-
-            releaseEmergencyBed,
-
-        getPending:
-
-            function () {
-
-                return Array.from(
-                    allocationState
-                        .pendingAllocations
-                        .values()
-                );
-
-            },
-
-        getState:
-
-            function () {
-
-                return allocationState;
 
             }
 
-    };
+
+            state.user =
+                await getCurrentUser();
+
+
+            if (!state.user) {
+
+                return;
+
+            }
+
+
+            state.hospitalId =
+                await getHospitalId(
+                    state.user.id
+                );
+
+
+            if (
+                !state.hospitalId
+            ) {
+
+                throw new Error(
+                    "Hospital account is not assigned to a hospital."
+                );
+
+            }
+
+
+            /*
+             * FIRST LOAD
+             */
+
+            await processAutomaticAllocations();
+
+
+            /*
+             * REALTIME
+             */
+
+            startRealtime();
+
+
+            /*
+             * Backup refresh.
+             *
+             * If realtime misses an event,
+             * the system checks every 10 seconds.
+             */
+
+            setInterval(
+                function () {
+
+                    processAutomaticAllocations();
+
+                },
+                10000
+            );
+
+
+            console.log(
+                "===================================="
+            );
+
+            console.log(
+                "RESQ-ROUTE AUTOMATIC BED SYSTEM ON"
+            );
+
+            console.log(
+                "Hospital:",
+                state.hospitalId
+            );
+
+            console.log(
+                "===================================="
+            );
+
+
+        } catch (error) {
+
+            console.error(
+                "Automatic bed allocation initialization error:",
+                error
+            );
+
+
+            showAllocationError(
+                error
+            );
+
+        }
+
+    }
 
 
     /* =====================================================
-       DOM READY
+       START
        ===================================================== */
 
     if (
@@ -4719,15 +3923,42 @@
 
         document.addEventListener(
             "DOMContentLoaded",
-            initialize
+            initialize,
+            {
+                once: true
+            }
         );
 
-    }
-    else {
+    } else {
 
         initialize();
 
     }
+
+
+    /* =====================================================
+       PUBLIC API
+       ===================================================== */
+
+    window.resqAutoBedAllocation = {
+
+        refresh:
+            processAutomaticAllocations,
+
+        confirm:
+            confirmAutomaticAllocation,
+
+        reallocate:
+            openReallocationModal,
+
+        getState:
+            function () {
+
+                return state;
+
+            }
+
+    };
 
 
 })();
