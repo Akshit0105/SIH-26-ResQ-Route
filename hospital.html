@@ -2202,7 +2202,19 @@
 
             <div class="side-menu">
                 <button class="side-item active" data-section="overview">🏠 Dashboard</button>
-                <button class="side-item" data-section="emergencyPatients">🚨 Emergency Patients <span id="sidebarEmergencyCount" style="float:right;">04</span></button>
+                <a
+    href="emergency-patients.html"
+    class="side-item"
+    style="
+        text-decoration:none;
+        display:flex;
+        align-items:center;
+        gap:10px;
+    "
+>
+    🚨 Emergency Patients
+    <span id="sidebarEmergencyCount" style="margin-left:auto;">04</span>
+</a>
                 <button class="side-item" data-section="incoming">🚑 Incoming Ambulances</button>
 
                 <div class="sidebar-title" style="margin-top:18px;">Resource Management</div>
@@ -2648,7 +2660,7 @@
                             <h2>Emergency Patients</h2>
                             <span>Only active emergencies assigned to this hospital</span>
                         </div>
-                        <button class="small-btn primary" type="button" data-go-section="emergencyPatients">VIEW ALL</button>
+                        <a class="small-btn primary" href="emergency-patients.html?v=2" style="text-decoration:none;display:inline-flex;align-items:center;justify-content:center;">VIEW ALL</a>
                     </div>
                     <div class="card-body">
                         <div class="patient-cards">
@@ -2665,10 +2677,6 @@
                                     <div class="patient-metric"><span>SpO₂</span><strong>91%</strong></div>
                                     <div class="patient-metric"><span>BLOOD</span><strong>B+</strong></div>
                                 </div>
-                                <div class="patient-card-actions">
-                                    <button type="button" data-patient="Rahul Sharma">VIEW PATIENT</button>
-                                    <button type="button" class="primary" data-patient="Rahul Sharma" data-resource="ICU-03">ALLOCATE BED</button>
-                                </div>
                             </div>
 
                             <div class="emergency-patient-card">
@@ -2684,104 +2692,11 @@
                                     <div class="patient-metric"><span>SpO₂</span><strong>95%</strong></div>
                                     <div class="patient-metric"><span>BLOOD</span><strong>O+</strong></div>
                                 </div>
-                                <div class="patient-card-actions">
-                                    <button type="button" data-patient="Aman Singh">VIEW PATIENT</button>
-                                    <button type="button" class="primary" data-patient="Aman Singh" data-resource="ER-04">ALLOCATE BED</button>
-                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-            </section>
-
-            <!-- EMERGENCY PATIENTS -->
-            <section class="operations-section" id="emergencyPatientsSection">
-                <div class="section-toolbar">
-                    <div>
-                        <h2>Emergency Patients</h2>
-                        <p>Registered patients with active emergency cases assigned to this hospital.</p>
-                    </div>
-                    <div class="live-counter"><span></span> 04 ACTIVE</div>
-                </div>
-
-                <div class="patient-cards">
-                    <div class="emergency-patient-card">
-                        <div class="patient-card-top">
-                            <div>
-                                <div class="patient-card-name">Rahul Sharma</div>
-                                <div class="patient-card-meta">RQ-2026-1048 • Road Accident • 54 years</div>
-                            </div>
-                            <span class="status-pill red">CRITICAL</span>
-                        </div>
-                        <div class="patient-card-details">
-                            <div class="patient-metric"><span>HEART RATE</span><strong>118 BPM</strong></div>
-                            <div class="patient-metric"><span>SpO₂</span><strong>91%</strong></div>
-                            <div class="patient-metric"><span>BLOOD</span><strong>B+</strong></div>
-                        </div>
-                        <div class="patient-card-actions">
-                            <button type="button" data-patient="Rahul Sharma">VIEW DATA</button>
-                            <button type="button" class="primary" data-patient="Rahul Sharma" data-resource="ICU-03">ALLOCATE RESOURCE</button>
-                        </div>
-                    </div>
-
-                    <div class="emergency-patient-card">
-                        <div class="patient-card-top">
-                            <div>
-                                <div class="patient-card-name">Aman Singh</div>
-                                <div class="patient-card-meta">RQ-2026-1044 • Chest Pain • 31 years</div>
-                            </div>
-                            <span class="status-pill orange">HIGH</span>
-                        </div>
-                        <div class="patient-card-details">
-                            <div class="patient-metric"><span>HEART RATE</span><strong>104 BPM</strong></div>
-                            <div class="patient-metric"><span>SpO₂</span><strong>95%</strong></div>
-                            <div class="patient-metric"><span>BLOOD</span><strong>O+</strong></div>
-                        </div>
-                        <div class="patient-card-actions">
-                            <button type="button" data-patient="Aman Singh">VIEW DATA</button>
-                            <button type="button" class="primary" data-patient="Aman Singh" data-resource="ER-04">ALLOCATE RESOURCE</button>
-                        </div>
-                    </div>
-
-                    <div class="emergency-patient-card">
-                        <div class="patient-card-top">
-                            <div>
-                                <div class="patient-card-name">Simran Kaur</div>
-                                <div class="patient-card-meta">RQ-2026-1041 • Fall Injury • 27 years</div>
-                            </div>
-                            <span class="status-pill orange">MEDIUM</span>
-                        </div>
-                        <div class="patient-card-details">
-                            <div class="patient-metric"><span>HEART RATE</span><strong>88 BPM</strong></div>
-                            <div class="patient-metric"><span>SpO₂</span><strong>98%</strong></div>
-                            <div class="patient-metric"><span>BLOOD</span><strong>A+</strong></div>
-                        </div>
-                        <div class="patient-card-actions">
-                            <button type="button" data-patient="Simran Kaur">VIEW DATA</button>
-                            <button type="button" class="primary" data-patient="Simran Kaur" data-resource="WARD-12">ALLOCATE RESOURCE</button>
-                        </div>
-                    </div>
-
-                    <div class="emergency-patient-card">
-                        <div class="patient-card-top">
-                            <div>
-                                <div class="patient-card-name">Karan Mehta</div>
-                                <div class="patient-card-meta">RQ-2026-1037 • Breathing Difficulty • 46 years</div>
-                            </div>
-                            <span class="status-pill red">CRITICAL</span>
-                        </div>
-                        <div class="patient-card-details">
-                            <div class="patient-metric"><span>HEART RATE</span><strong>126 BPM</strong></div>
-                            <div class="patient-metric"><span>SpO₂</span><strong>88%</strong></div>
-                            <div class="patient-metric"><span>BLOOD</span><strong>O-</strong></div>
-                        </div>
-                        <div class="patient-card-actions">
-                            <button type="button" data-patient="Karan Mehta">VIEW DATA</button>
-                            <button type="button" class="primary" data-patient="Karan Mehta" data-resource="ICU-05">ALLOCATE RESOURCE</button>
-                        </div>
-                    </div>
-                </div>
             </section>
 
             <!-- RESOURCE MANAGEMENT -->
@@ -3072,7 +2987,6 @@
 
     const sections = {
         overview: "overviewSection",
-        emergencyPatients: "emergencyPatientsSection",
         incoming: "incomingSection",
         beds: "bedsSection",
         teams: "teamsSection",
@@ -3095,6 +3009,15 @@
 
 
     function showSection(name) {
+
+        if (name === "emergencyPatients") {
+
+            window.location.href =
+                "emergency-patients.html?v=2";
+
+            return;
+
+        }
 
         const targetId =
             sections[name] ||
@@ -3185,8 +3108,23 @@
                     "click",
                     function () {
 
+                        const targetSection =
+                            button.dataset.goSection;
+
+                        if (
+                            targetSection ===
+                            "emergencyPatients"
+                        ) {
+
+                            window.location.href =
+                                "emergency-patients.html?v=2";
+
+                            return;
+
+                        }
+
                         showSection(
-                            button.dataset.goSection
+                            targetSection
                         );
 
                     }
@@ -5351,9 +5289,12 @@
                     "click",
                     function () {
 
-                        openPatientMonitoringDashboard(
-                            button.dataset.patient
-                        );
+                        const patientName =
+                            button.dataset.patient || "";
+
+                        window.location.href =
+                            "emergency-patients.html?v=2&patient=" +
+                            encodeURIComponent(patientName);
 
                     }
                 );

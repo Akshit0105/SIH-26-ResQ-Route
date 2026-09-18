@@ -1,0 +1,2990 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Emergency Patients | ResQ-Route</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background: #f4f7fb;
+            color: #172033;
+        }
+
+        nav {
+            height: 70px;
+            background: #fff;
+            border-bottom: 1px solid #e5e9ef;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 4%;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            color: #172033;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: #e63946;
+            color: white;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+        }
+
+        .logo-text {
+            font-size: 20px;
+            font-weight: 800;
+        }
+
+        .logo-text span {
+            color: #e63946;
+        }
+
+        .nav-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .role-badge {
+            padding: 7px 12px;
+            border-radius: 20px;
+            background: #fff1f2;
+            color: #c72535;
+            font-size: 11px;
+            font-weight: 800;
+        }
+
+        .hospital-user {
+            font-size: 12px;
+            color: #596579;
+            font-weight: 700;
+        }
+
+        .logout-btn {
+            border: 1px solid #dce2ea;
+            background: white;
+            color: #596579;
+            border-radius: 8px;
+            padding: 9px 14px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .logout-btn:hover {
+            border-color: #e63946;
+            color: #e63946;
+        }
+
+        .page {
+            max-width: 1400px;
+            margin: auto;
+            padding: 30px 4% 50px;
+        }
+
+        .page-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        .page-header h1 {
+            font-size: 28px;
+            margin-bottom: 7px;
+        }
+
+        .page-header p {
+            color: #758092;
+            font-size: 13px;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            border: 1px solid #dce2ea;
+            background: white;
+            color: #364152;
+            border-radius: 8px;
+            padding: 10px 15px;
+            font-size: 11px;
+            font-weight: 800;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            border-color: #e63946;
+            color: #e63946;
+        }
+
+        .btn.primary {
+            background: #e63946;
+            border-color: #e63946;
+            color: white;
+        }
+
+        .btn.primary:hover {
+            background: #cf2938;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 14px;
+            margin-bottom: 22px;
+        }
+
+        .stat-card {
+            background: white;
+            border: 1px solid #e3e8ef;
+            border-radius: 13px;
+            padding: 18px;
+        }
+
+        .stat-label {
+            color: #7b8595;
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 25px;
+            font-weight: 800;
+        }
+
+        .stat-card.critical .stat-value {
+            color: #e63946;
+        }
+
+        .stat-card.high .stat-value {
+            color: #b27612;
+        }
+
+        .stat-card.normal .stat-value {
+            color: #16834a;
+        }
+
+        .toolbar {
+            background: white;
+            border: 1px solid #e3e8ef;
+            border-radius: 13px;
+            padding: 15px;
+            display: flex;
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+
+        .search {
+            flex: 1;
+            height: 40px;
+            border: 1px solid #dce2ea;
+            border-radius: 8px;
+            padding: 0 12px;
+            outline: none;
+            font-size: 12px;
+        }
+
+        .search:focus {
+            border-color: #e63946;
+        }
+
+        .filter {
+            width: 160px;
+            height: 40px;
+            border: 1px solid #dce2ea;
+            border-radius: 8px;
+            padding: 0 10px;
+            background: white;
+            font-size: 11px;
+            color: #364152;
+        }
+
+        .live {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            background: #edf9f2;
+            color: #16834a;
+            border-radius: 20px;
+            padding: 8px 12px;
+            font-size: 9px;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
+        .live-dot {
+            width: 7px;
+            height: 7px;
+            background: #1fa463;
+            border-radius: 50%;
+        }
+
+        .patient-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+
+        .patient-card {
+            background: white;
+            border: 1px solid #e3e8ef;
+            border-radius: 15px;
+            padding: 18px;
+        }
+
+        .patient-top {
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+            align-items: flex-start;
+        }
+
+        .patient-name {
+            font-size: 17px;
+            font-weight: 800;
+            margin-bottom: 5px;
+        }
+
+        .patient-id {
+            color: #7a8494;
+            font-size: 10px;
+        }
+
+        .priority {
+            padding: 6px 9px;
+            border-radius: 15px;
+            font-size: 8px;
+            font-weight: 800;
+        }
+
+        .priority.critical {
+            background: #fff0f1;
+            color: #c72535;
+        }
+
+        .priority.high {
+            background: #fff4e3;
+            color: #9b6813;
+        }
+
+        .priority.medium {
+            background: #fff8df;
+            color: #8c6c11;
+        }
+
+        .priority.low {
+            background: #edf9f2;
+            color: #16834a;
+        }
+
+        .condition {
+            margin-top: 15px;
+            padding: 11px;
+            background: #f8fafc;
+            border-radius: 9px;
+        }
+
+        .condition-label {
+            font-size: 8px;
+            color: #98a2b3;
+            font-weight: 800;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+
+        .condition-value {
+            font-size: 12px;
+            font-weight: 800;
+        }
+
+        .vitals {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .vital {
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 10px;
+        }
+
+        .vital span {
+            display: block;
+            color: #8a94a3;
+            font-size: 8px;
+            margin-bottom: 4px;
+        }
+
+        .vital strong {
+            font-size: 11px;
+        }
+
+        .patient-meta {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .meta-box {
+            border: 1px solid #edf0f4;
+            border-radius: 8px;
+            padding: 9px;
+        }
+
+        .meta-box span {
+            display: block;
+            color: #8a94a3;
+            font-size: 8px;
+            margin-bottom: 4px;
+        }
+
+        .meta-box strong {
+            font-size: 10px;
+        }
+
+        .card-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 15px;
+        }
+
+        .card-actions button {
+            flex: 1;
+        }
+
+        .empty {
+            grid-column: 1 / -1;
+            background: white;
+            border: 1px dashed #d8dfe8;
+            border-radius: 14px;
+            padding: 55px 20px;
+            text-align: center;
+            color: #7a8494;
+        }
+
+        .empty-icon {
+            font-size: 35px;
+            margin-bottom: 12px;
+        }
+
+        .empty h3 {
+            color: #364152;
+            margin-bottom: 6px;
+        }
+
+        .loading {
+            grid-column: 1 / -1;
+            background: white;
+            border-radius: 14px;
+            padding: 50px;
+            text-align: center;
+            color: #7a8494;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(14,21,34,.58);
+            z-index: 500;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-card {
+            width: 100%;
+            max-width: 650px;
+            max-height: 90vh;
+            overflow-y: auto;
+            background: white;
+            border-radius: 16px;
+            padding: 25px;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+            align-items: flex-start;
+            margin-bottom: 20px;
+        }
+
+        .modal-header h2 {
+            font-size: 20px;
+            margin-bottom: 5px;
+        }
+
+        .modal-header p {
+            color: #7a8494;
+            font-size: 11px;
+        }
+
+        .close {
+            border: 0;
+            background: #f3f5f8;
+            width: 35px;
+            height: 35px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 18px;
+        }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .detail {
+            border: 1px solid #edf0f4;
+            border-radius: 9px;
+            padding: 12px;
+        }
+
+        .detail span {
+            display: block;
+            color: #98a2b3;
+            font-size: 8px;
+            font-weight: 800;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        .detail strong {
+            font-size: 11px;
+            word-break: break-word;
+        }
+
+        .modal-footer {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .allocation-modal-card {
+            max-width: 720px;
+        }
+
+        .allocation-subtitle {
+            color: #7a8494;
+            font-size: 11px;
+            margin-top: 4px;
+        }
+
+        .allocation-patient {
+            background: #f8fafc;
+            border: 1px solid #e5e9ef;
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 15px;
+        }
+
+        .allocation-patient span {
+            display: block;
+            color: #98a2b3;
+            font-size: 8px;
+            font-weight: 800;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+
+        .allocation-patient strong {
+            font-size: 13px;
+        }
+
+        .bed-list {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            max-height: 330px;
+            overflow-y: auto;
+            padding: 2px;
+        }
+
+        .bed-option {
+            border: 1px solid #dce2ea;
+            background: white;
+            border-radius: 10px;
+            padding: 13px;
+            cursor: pointer;
+            text-align: left;
+            transition: .15s ease;
+        }
+
+        .bed-option:hover {
+            border-color: #e63946;
+            transform: translateY(-1px);
+        }
+
+        .bed-option.selected {
+            border: 2px solid #e63946;
+            background: #fff5f5;
+        }
+
+        .bed-option strong {
+            display: block;
+            font-size: 13px;
+            margin-bottom: 5px;
+        }
+
+        .bed-option span {
+            display: block;
+            color: #7a8494;
+            font-size: 9px;
+            line-height: 1.5;
+        }
+
+        .bed-empty {
+            padding: 35px 15px;
+            text-align: center;
+            color: #7a8494;
+            border: 1px dashed #d8dfe8;
+            border-radius: 10px;
+            grid-column: 1 / -1;
+        }
+
+        .current-allocation { display:none; margin-bottom:15px; padding:13px; border:1px solid #dbe7df; background:#f2faf5; border-radius:10px; }
+        .current-allocation.active { display:block; }
+        .current-allocation-title { font-size:9px; font-weight:800; color:#16834a; text-transform:uppercase; margin-bottom:5px; }
+        .current-allocation-bed { font-size:15px; font-weight:800; margin-bottom:4px; }
+        .current-allocation-info { color:#667085; font-size:10px; }
+        .danger-btn { margin-top:10px; background:#fff0f1; border:1px solid #f1b8be; color:#c72535; border-radius:8px; padding:9px 12px; font-size:10px; font-weight:800; cursor:pointer; }
+        .danger-btn:hover { background:#ffe1e4; }
+        .allocation-section-title { font-size:9px; color:#98a2b3; font-weight:800; text-transform:uppercase; margin-bottom:8px; }
+
+        .bed-summary-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:14px; }
+        .bed-summary-card { border:1px solid #e5e9ef; background:#fff; border-radius:10px; padding:10px; }
+        .bed-summary-card strong { display:block; font-size:18px; line-height:1; margin-bottom:4px; }
+        .bed-summary-card span { font-size:8px; color:#7a8494; text-transform:uppercase; font-weight:800; }
+        .bed-summary-card.available strong { color:#16834a; }
+        .bed-summary-card.total strong { color:#344054; }
+        .bed-summary-card.floor-count strong { color:#d97706; }
+        .allocation-controls { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px; }
+        .allocation-control label { display:block; font-size:8px; font-weight:800; color:#667085; text-transform:uppercase; margin-bottom:5px; }
+        .allocation-control select { width:100%; border:1px solid #dce2ea; border-radius:8px; padding:9px 10px; font-size:11px; background:#fff; }
+        .floor-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:12px; }
+        .floor-card { border:1px solid #dce2ea; background:#fff; border-radius:9px; padding:9px; cursor:pointer; text-align:left; }
+        .floor-card.active { border:2px solid #e63946; background:#fff5f5; }
+        .floor-card strong { display:block; font-size:11px; margin-bottom:3px; }
+        .floor-card span { display:block; font-size:8px; color:#7a8494; }
+        .room-list { display:grid; gap:7px; margin-bottom:12px; }
+        .room-row { display:flex; align-items:center; justify-content:space-between; gap:10px; border:1px solid #e5e9ef; border-radius:9px; padding:9px 10px; background:#fafbfc; }
+        .room-row strong { display:block; font-size:10px; }
+        .room-row span { font-size:8px; color:#7a8494; }
+        .room-row button { border:1px solid #dce2ea; background:#fff; border-radius:7px; padding:7px 9px; font-size:8px; font-weight:800; cursor:pointer; }
+        .room-row button.active { border-color:#e63946; color:#c72535; }
+        .bed-toolbar { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:7px; }
+        .bed-toolbar small { color:#7a8494; font-size:8px; }
+        .bed-list { grid-template-columns:repeat(4,1fr); max-height:210px; }
+        @media (max-width:700px) { .floor-grid{grid-template-columns:repeat(2,1fr)} .bed-summary-grid{grid-template-columns:1fr 1fr 1fr} .bed-list{grid-template-columns:repeat(2,1fr)} }
+        .allocation-status {
+            margin-top: 12px;
+            font-size: 10px;
+            color: #7a8494;
+            min-height: 16px;
+        }
+
+        @media (max-width: 600px) {
+            .bed-list {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 900px) {
+            .stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .patient-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 600px) {
+            nav {
+                padding: 0 15px;
+            }
+
+            .hospital-user,
+            .role-badge {
+                display: none;
+            }
+
+            .page {
+                padding: 20px 14px 40px;
+            }
+
+            .page-header {
+                flex-direction: column;
+            }
+
+            .header-actions {
+                width: 100%;
+            }
+
+            .header-actions button {
+                flex: 1;
+            }
+
+            .toolbar {
+                flex-direction: column;
+            }
+
+            .filter {
+                width: 100%;
+            }
+
+            .stats {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .vitals {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .patient-meta {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<nav>
+
+    <a href="hospital.html" class="logo">
+        <div class="logo-icon">R</div>
+
+        <div class="logo-text">
+            ResQ<span>-Route</span>
+        </div>
+    </a>
+
+    <div class="nav-right">
+
+        <span class="role-badge">
+            HOSPITAL / ER
+        </span>
+
+        <span
+            class="hospital-user"
+            id="hospitalUser">
+            Hospital Staff
+        </span>
+
+        <button
+            class="logout-btn"
+            id="logoutButton"
+            type="button">
+            Logout
+        </button>
+
+    </div>
+
+</nav>
+
+
+<main class="page">
+
+    <div class="page-header">
+
+        <div>
+            <h1>Emergency Patients</h1>
+
+            <p>
+                Live emergency cases currently assigned to this hospital.
+            </p>
+        </div>
+
+        <div class="header-actions">
+
+            <a
+                href="hospital.html"
+                class="btn"
+                style="text-decoration:none;">
+                ← Dashboard
+            </a>
+
+            <button
+                class="btn primary"
+                id="refreshButton">
+                ↻ Refresh
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <!-- STATS -->
+
+    <div class="stats">
+
+        <div class="stat-card">
+            <div class="stat-label">
+                Active Emergencies
+            </div>
+
+            <div
+                class="stat-value"
+                id="totalPatients">
+                0
+            </div>
+        </div>
+
+
+        <div class="stat-card critical">
+            <div class="stat-label">
+                Critical
+            </div>
+
+            <div
+                class="stat-value"
+                id="criticalPatients">
+                0
+            </div>
+        </div>
+
+
+        <div class="stat-card high">
+            <div class="stat-label">
+                High Priority
+            </div>
+
+            <div
+                class="stat-value"
+                id="highPatients">
+                0
+            </div>
+        </div>
+
+
+        <div class="stat-card normal">
+            <div class="stat-label">
+                Other
+            </div>
+
+            <div
+                class="stat-value"
+                id="otherPatients">
+                0
+            </div>
+        </div>
+
+    </div>
+
+
+    <!-- SEARCH -->
+
+    <div class="toolbar">
+
+        <input
+            type="text"
+            id="searchInput"
+            class="search"
+            placeholder="Search patient name, emergency type or emergency ID...">
+
+        <select
+            id="priorityFilter"
+            class="filter">
+
+            <option value="all">
+                All Priorities
+            </option>
+
+            <option value="critical">
+                Critical
+            </option>
+
+            <option value="high">
+                High
+            </option>
+
+            <option value="medium">
+                Medium
+            </option>
+
+            <option value="low">
+                Low
+            </option>
+
+        </select>
+
+        <div class="live">
+            <span class="live-dot"></span>
+            LIVE
+        </div>
+
+    </div>
+
+
+    <!-- PATIENTS -->
+
+    <div
+        class="patient-grid"
+        id="patientGrid">
+
+        <div class="loading">
+            Loading emergency patients...
+        </div>
+
+    </div>
+
+</main>
+
+
+<!-- PATIENT DETAILS MODAL -->
+
+<div
+    class="modal"
+    id="patientModal">
+
+    <div class="modal-card">
+
+        <div class="modal-header">
+
+            <div>
+                <h2 id="modalPatientName">
+                    Patient
+                </h2>
+
+                <p id="modalEmergencyId">
+                    Emergency
+                </p>
+            </div>
+
+            <button
+                class="close"
+                id="closeModal">
+                ×
+            </button>
+
+        </div>
+
+
+        <div
+            class="detail-grid"
+            id="patientDetails">
+        </div>
+
+
+        <div class="modal-footer">
+
+            <button
+                class="btn"
+                id="closeModalBottom">
+                Close
+            </button>
+
+            <button
+                class="btn primary"
+                id="manageBedFromDetails"
+                type="button">
+                Manage Bed / Resources
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- BED ALLOCATION MODAL -->
+
+<div
+    class="modal"
+    id="allocationModal">
+
+    <div class="modal-card allocation-modal-card">
+
+        <div class="modal-header">
+            <div>
+                <h2>Manage Bed</h2>
+                <p class="allocation-subtitle">Select an available bed and allocate it to this emergency patient.</p>
+            </div>
+
+            <button class="close" id="closeAllocationModal" type="button">×</button>
+        </div>
+
+        <div class="allocation-patient">
+            <span>Patient</span>
+            <strong id="allocationPatientName">—</strong>
+        </div>
+
+        <div class="current-allocation" id="currentAllocationBox">
+            <div class="current-allocation-title">Current Bed Allocation</div>
+            <div class="current-allocation-bed" id="currentAllocationBed">—</div>
+            <div class="current-allocation-info" id="currentAllocationInfo">—</div>
+            <button class="danger-btn" id="deallocateBedButton" type="button">DEALLOCATE BED</button>
+        </div>
+
+        <div class="bed-summary-grid">
+            <div class="bed-summary-card total"><strong id="totalBedCount">0</strong><span>Total Beds</span></div>
+            <div class="bed-summary-card available"><strong id="availableBedCount">0</strong><span>Available Now</span></div>
+            <div class="bed-summary-card floor-count"><strong id="availableFloorCount">0</strong><span>Floors With Beds</span></div>
+        </div>
+
+        <div class="allocation-controls">
+            <div class="allocation-control">
+                <label for="floorSelect">Floor</label>
+                <select id="floorSelect"><option value="all">All Floors</option></select>
+            </div>
+            <div class="allocation-control">
+                <label for="roomTypeSelect">Room Type</label>
+                <select id="roomTypeSelect"><option value="all">All Types</option></select>
+            </div>
+        </div>
+
+        <div class="allocation-section-title">Available beds by floor</div>
+        <div class="floor-grid" id="floorGrid"><div class="bed-empty">Loading floor availability...</div></div>
+
+        <div class="allocation-section-title">Rooms with available beds</div>
+        <div class="room-list" id="roomList"><div class="bed-empty">Loading rooms...</div></div>
+
+        <div class="bed-toolbar">
+            <div class="allocation-section-title" id="availableBedsTitle" style="margin:0">Select a bed</div>
+            <small id="bedResultCount">0 beds</small>
+        </div>
+        <div class="bed-list" id="allocationBedList">
+            <div class="bed-empty">Loading available beds...</div>
+        </div>
+
+        <div class="allocation-status" id="allocationStatus"></div>
+
+        <div class="modal-footer">
+            <button class="btn" id="cancelAllocation" type="button">Cancel</button>
+            <button class="btn primary" id="confirmAllocation" type="button" disabled>ALLOCATE BED</button>
+        </div>
+
+    </div>
+
+</div>
+
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+
+<script>
+
+(function () {
+
+    "use strict";
+
+
+    /* =====================================================
+       SUPABASE
+    ===================================================== */
+
+    const SUPABASE_URL =
+        "https://teunajhcuadiacbzohsh.supabase.co";
+
+    const SUPABASE_PUBLISHABLE_KEY =
+        "sb_publishable_watS5zhRnq_dE6v9ZUTm2w_7y_fbv3c";
+
+
+    const supabaseClient =
+        window.supabase.createClient(
+            SUPABASE_URL,
+            SUPABASE_PUBLISHABLE_KEY,
+            {
+                auth: {
+                    persistSession: true,
+                    autoRefreshToken: true,
+                    detectSessionInUrl: true,
+                    flowType: "pkce"
+                }
+            }
+        );
+
+
+    let hospitalId = null;
+
+    let allEmergencies = [];
+
+    let realtimeChannel = null;
+
+    let allocationEmergencyId = null;
+    let allocationPatientId = null;
+    let selectedBedId = null;
+    let availableBeds = [];
+    let bedInventory = [];
+    let selectedFloor = "all";
+    let selectedRoomType = "all";
+    let selectedRoomId = "all";
+    let currentDetailEmergencyId = null;
+    let currentAllocations = {};
+
+
+    /* =====================================================
+       ELEMENTS
+    ===================================================== */
+
+    const patientGrid =
+        document.getElementById("patientGrid");
+
+    const searchInput =
+        document.getElementById("searchInput");
+
+    const priorityFilter =
+        document.getElementById("priorityFilter");
+
+    const refreshButton =
+        document.getElementById("refreshButton");
+
+    const totalPatients =
+        document.getElementById("totalPatients");
+
+    const criticalPatients =
+        document.getElementById("criticalPatients");
+
+    const highPatients =
+        document.getElementById("highPatients");
+
+    const otherPatients =
+        document.getElementById("otherPatients");
+
+    const allocationModal =
+        document.getElementById("allocationModal");
+
+    const allocationPatientName =
+        document.getElementById("allocationPatientName");
+
+    const allocationBedList =
+        document.getElementById("allocationBedList");
+
+    const allocationStatus =
+        document.getElementById("allocationStatus");
+
+    const confirmAllocation =
+        document.getElementById("confirmAllocation");
+
+    const currentAllocationBox = document.getElementById("currentAllocationBox");
+    const currentAllocationBed = document.getElementById("currentAllocationBed");
+    const currentAllocationInfo = document.getElementById("currentAllocationInfo");
+    const deallocateBedButton = document.getElementById("deallocateBedButton");
+    const availableBedsTitle = document.getElementById("availableBedsTitle");
+    const totalBedCount = document.getElementById("totalBedCount");
+    const availableBedCount = document.getElementById("availableBedCount");
+    const availableFloorCount = document.getElementById("availableFloorCount");
+    const floorSelect = document.getElementById("floorSelect");
+    const roomTypeSelect = document.getElementById("roomTypeSelect");
+    const floorGrid = document.getElementById("floorGrid");
+    const roomList = document.getElementById("roomList");
+    const bedResultCount = document.getElementById("bedResultCount");
+
+    const manageBedFromDetails =
+        document.getElementById("manageBedFromDetails");
+
+
+    /* =====================================================
+       HELPERS
+    ===================================================== */
+
+    function escapeHtml(value) {
+
+        return String(value ?? "")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+
+    }
+
+
+    function normalizePriority(priority) {
+
+        return String(priority || "medium")
+            .trim()
+            .toLowerCase();
+
+    }
+
+
+    function priorityClass(priority) {
+
+        const p =
+            normalizePriority(priority);
+
+        if (p === "critical") {
+            return "critical";
+        }
+
+        if (p === "high") {
+            return "high";
+        }
+
+        if (p === "low") {
+            return "low";
+        }
+
+        return "medium";
+
+    }
+
+
+    function formatPriority(priority) {
+
+        return String(priority || "MEDIUM")
+            .replace(/_/g, " ")
+            .toUpperCase();
+
+    }
+
+
+    function formatDate(value) {
+
+        if (!value) {
+            return "—";
+        }
+
+        const date =
+            new Date(value);
+
+        if (Number.isNaN(date.getTime())) {
+            return "—";
+        }
+
+        return date.toLocaleString(
+            "en-IN",
+            {
+                dateStyle: "medium",
+                timeStyle: "short"
+            }
+        );
+
+    }
+
+
+    /* =====================================================
+       LOAD HOSPITAL
+    ===================================================== */
+
+    async function loadHospital() {
+
+        const {
+            data: {
+                user
+            },
+            error: userError
+        } = await supabaseClient.auth.getUser();
+
+
+        if (userError) {
+            throw userError;
+        }
+
+
+        if (!user) {
+
+            window.location.replace(
+                "signin.html"
+            );
+
+            return null;
+
+        }
+
+
+        const profileResult =
+            await supabaseClient
+                .from("profiles")
+                .select("id,name,email,role")
+                .eq("id", user.id)
+                .maybeSingle();
+
+
+        if (profileResult.error) {
+            throw profileResult.error;
+        }
+
+
+        const role =
+            String(
+                profileResult.data?.role || ""
+            )
+            .trim()
+            .toLowerCase();
+
+
+        if (
+            role !== "hospital" &&
+            role !== "hospital_staff"
+        ) {
+
+            document.body.innerHTML = `
+                <div style="
+                    min-height:100vh;
+                    display:flex;
+                    align-items:center;
+                    justify-content:center;
+                    padding:30px;
+                    background:#f4f7fb;
+                    font-family:Arial;
+                    color:#172033;
+                ">
+
+                    <div style="
+                        max-width:500px;
+                        width:100%;
+                        background:#fff;
+                        border:1px solid #e3e8ef;
+                        border-radius:16px;
+                        padding:35px;
+                        text-align:center;
+                    ">
+
+                        <div style="font-size:45px;">
+                            🔒
+                        </div>
+
+                        <h2>
+                            Hospital Access Required
+                        </h2>
+
+                        <p style="
+                            color:#667085;
+                            margin:12px 0 20px;
+                        ">
+                            This page is restricted to hospital accounts.
+                        </p>
+
+                        <button
+                            onclick="window.location.replace('signin.html')"
+                            style="
+                                border:0;
+                                background:#e63946;
+                                color:white;
+                                padding:12px 20px;
+                                border-radius:8px;
+                                cursor:pointer;
+                            ">
+                            Return to Sign In
+                        </button>
+
+                    </div>
+
+                </div>
+            `;
+
+            return null;
+
+        }
+
+
+        const staffResult =
+            await supabaseClient
+                .from("hospital_staff")
+                .select("hospital_id")
+                .eq("user_id", user.id)
+                .maybeSingle();
+
+
+        if (staffResult.error) {
+            throw staffResult.error;
+        }
+
+
+        if (!staffResult.data?.hospital_id) {
+            throw new Error(
+                "Hospital account is not assigned to a hospital."
+            );
+        }
+
+
+        hospitalId =
+            staffResult.data.hospital_id;
+
+
+        const hospitalUser =
+            document.getElementById(
+                "hospitalUser"
+            );
+
+
+        if (
+            hospitalUser &&
+            profileResult.data?.name
+        ) {
+
+            hospitalUser.textContent =
+                profileResult.data.name;
+
+        }
+
+
+        return hospitalId;
+
+    }
+
+
+    /* =====================================================
+       LOAD EMERGENCY PATIENTS
+    ===================================================== */
+
+    async function loadEmergencyPatients() {
+
+        patientGrid.innerHTML = `
+            <div class="loading">
+                Loading emergency patients...
+            </div>
+        `;
+
+
+        const response =
+            await supabaseClient
+                .from("emergencies")
+                .select(`
+                    id,
+                    patient_id,
+                    emergency_type,
+                    priority,
+                    status,
+                    created_at,
+                    updated_at,
+
+                    patients (
+                        id,
+                        name,
+                        age,
+                        gender,
+                        blood_group,
+                        allergies,
+                        medical_conditions
+                    )
+                `)
+                .eq(
+                    "hospital_id",
+                    hospitalId
+                )
+                .not(
+                    "status",
+                    "in",
+                    "(COMPLETED,CANCELLED)"
+                )
+                .order(
+                    "created_at",
+                    {
+                        ascending: false
+                    }
+                );
+
+
+        if (response.error) {
+            throw response.error;
+        }
+
+
+        const emergencies =
+            response.data || [];
+
+
+        /* =================================================
+           LOAD LATEST VITALS
+        ================================================= */
+
+        for (
+            const emergency of emergencies
+        ) {
+
+            const vitalResponse =
+                await supabaseClient
+                    .from("patient_vitals")
+                    .select(`
+                        id,
+                        heart_rate,
+                        spo2,
+                        blood_pressure,
+                        temperature,
+                        ecg_status,
+                        created_at
+                    `)
+                    .eq(
+                        "emergency_id",
+                        emergency.id
+                    )
+                    .order(
+                        "created_at",
+                        {
+                            ascending: false
+                        }
+                    )
+                    .limit(1);
+
+
+            if (
+                !vitalResponse.error &&
+                vitalResponse.data &&
+                vitalResponse.data.length
+            ) {
+
+                emergency.latestVitals =
+                    vitalResponse.data[0];
+
+            } else {
+
+                emergency.latestVitals =
+                    null;
+
+            }
+
+        }
+
+
+        allEmergencies =
+            emergencies;
+
+        try {
+            await loadCurrentBedAllocations();
+        } catch (allocationError) {
+            console.warn("Current bed allocation lookup skipped:", allocationError);
+            currentAllocations = {};
+        }
+
+        updateStats();
+
+        renderPatients();
+
+    }
+
+
+    /* =====================================================
+       CURRENT BED ALLOCATIONS
+    ===================================================== */
+
+    async function loadCurrentBedAllocations() {
+        currentAllocations = {};
+        const ids = allEmergencies.map(e => e.id).filter(Boolean);
+        if (!ids.length) return;
+        const response = await supabaseClient
+            .from("hospital_resource_slots")
+            .select(`id,slot_code,status,emergency_id,patient_id,room_id,hospital_rooms(floor_number,room_number,room_type)`)
+            .eq("hospital_id", hospitalId)
+            .eq("resource_type", "Bed")
+            .eq("status", "occupied")
+            .in("emergency_id", ids);
+        if (response.error) throw response.error;
+        (response.data || []).forEach(bed => {
+            if (bed.emergency_id) currentAllocations[String(bed.emergency_id)] = bed;
+        });
+    }
+
+    function getCurrentAllocation(emergencyId) {
+        return currentAllocations[String(emergencyId)] || null;
+    }
+
+    /* =====================================================
+       STATS
+    ===================================================== */
+
+    function updateStats() {
+
+        const total =
+            allEmergencies.length;
+
+
+        const critical =
+            allEmergencies.filter(
+                e =>
+                    normalizePriority(e.priority)
+                    === "critical"
+            ).length;
+
+
+        const high =
+            allEmergencies.filter(
+                e =>
+                    normalizePriority(e.priority)
+                    === "high"
+            ).length;
+
+
+        totalPatients.textContent =
+            total;
+
+
+        criticalPatients.textContent =
+            critical;
+
+
+        highPatients.textContent =
+            high;
+
+
+        otherPatients.textContent =
+            Math.max(
+                0,
+                total - critical - high
+            );
+
+
+        const sidebarCount =
+            window.parent !== window
+                ? null
+                : document.getElementById(
+                    "sidebarEmergencyCount"
+                );
+
+
+        if (sidebarCount) {
+            sidebarCount.textContent =
+                total;
+        }
+
+    }
+
+
+    /* =====================================================
+       FILTER
+    ===================================================== */
+
+    function getFilteredPatients() {
+
+        const search =
+            String(
+                searchInput.value || ""
+            )
+            .trim()
+            .toLowerCase();
+
+
+        const priority =
+            priorityFilter.value;
+
+
+        return allEmergencies.filter(
+            function (emergency) {
+
+                const patient =
+                    emergency.patients || {};
+
+
+                const searchable =
+                    [
+                        patient.name,
+                        emergency.id,
+                        emergency.emergency_type,
+                        emergency.status
+                    ]
+                    .join(" ")
+                    .toLowerCase();
+
+
+                const matchesSearch =
+                    !search ||
+                    searchable.includes(search);
+
+
+                const matchesPriority =
+                    priority === "all" ||
+                    normalizePriority(
+                        emergency.priority
+                    ) === priority;
+
+
+                return (
+                    matchesSearch &&
+                    matchesPriority
+                );
+
+            }
+        );
+
+    }
+
+
+    /* =====================================================
+       RENDER
+    ===================================================== */
+
+    function renderPatients() {
+
+        const patients =
+            getFilteredPatients();
+
+
+        if (!patients.length) {
+
+            patientGrid.innerHTML = `
+                <div class="empty">
+
+                    <div class="empty-icon">
+                        🚑
+                    </div>
+
+                    <h3>
+                        No emergency patients found
+                    </h3>
+
+                    <p>
+                        There are currently no patients matching your search.
+                    </p>
+
+                </div>
+            `;
+
+            return;
+
+        }
+
+
+        patientGrid.innerHTML =
+            patients.map(
+                createPatientCard
+            ).join("");
+
+
+        patientGrid
+            .querySelectorAll(
+                "[data-view-id]"
+            )
+            .forEach(
+                button => {
+
+                    button.addEventListener(
+                        "click",
+                        function () {
+
+                            openPatientModal(
+                                button.dataset.viewId
+                            );
+
+                        }
+                    );
+
+                }
+            );
+
+
+        // Bed buttons use one delegated listener attached once below.
+
+
+    }
+
+
+    /* =====================================================
+       PATIENT CARD
+    ===================================================== */
+
+    function createPatientCard(
+        emergency
+    ) {
+
+        const patient =
+            emergency.patients || {};
+
+
+        const vitals =
+            emergency.latestVitals || {};
+
+
+        const priority =
+            normalizePriority(
+                emergency.priority
+            );
+
+
+        return `
+            <div class="patient-card">
+
+                <div class="patient-top">
+
+                    <div>
+
+                        <div class="patient-name">
+                            ${escapeHtml(
+                                patient.name ||
+                                "Unknown Patient"
+                            )}
+                        </div>
+
+                        <div class="patient-id">
+                            Emergency ID:
+                            ${escapeHtml(
+                                emergency.id
+                            )}
+                        </div>
+
+                    </div>
+
+                    <span class="priority ${priorityClass(priority)}">
+                        ${formatPriority(
+                            emergency.priority
+                        )}
+                    </span>
+
+                </div>
+
+
+                <div class="condition">
+
+                    <div class="condition-label">
+                        Emergency Type
+                    </div>
+
+                    <div class="condition-value">
+                        ${escapeHtml(
+                            emergency.emergency_type ||
+                            "Emergency"
+                        )}
+                    </div>
+
+                </div>
+
+
+                <div class="vitals">
+
+                    <div class="vital">
+                        <span>
+                            HEART RATE
+                        </span>
+
+                        <strong>
+                            ${escapeHtml(
+                                vitals.heart_rate
+                                    ? vitals.heart_rate + " BPM"
+                                    : "—"
+                            )}
+                        </strong>
+                    </div>
+
+
+                    <div class="vital">
+                        <span>
+                            SpO₂
+                        </span>
+
+                        <strong>
+                            ${escapeHtml(
+                                vitals.spo2
+                                    ? vitals.spo2 + "%"
+                                    : "—"
+                            )}
+                        </strong>
+                    </div>
+
+
+                    <div class="vital">
+                        <span>
+                            BP
+                        </span>
+
+                        <strong>
+                            ${escapeHtml(
+                                vitals.blood_pressure ||
+                                "—"
+                            )}
+                        </strong>
+                    </div>
+
+
+                    <div class="vital">
+                        <span>
+                            TEMP
+                        </span>
+
+                        <strong>
+                            ${escapeHtml(
+                                vitals.temperature
+                                    ? vitals.temperature + " °C"
+                                    : "—"
+                            )}
+                        </strong>
+                    </div>
+
+                </div>
+
+
+                <div class="patient-meta">
+
+                    <div class="meta-box">
+                        <span>
+                            AGE
+                        </span>
+
+                        <strong>
+                            ${escapeHtml(
+                                patient.age ??
+                                "—"
+                            )}
+                        </strong>
+                    </div>
+
+
+                    <div class="meta-box">
+                        <span>
+                            GENDER
+                        </span>
+
+                        <strong>
+                            ${escapeHtml(
+                                patient.gender ||
+                                "—"
+                            )}
+                        </strong>
+                    </div>
+
+
+                    <div class="meta-box">
+                        <span>
+                            STATUS
+                        </span>
+
+                        <strong>
+                            ${escapeHtml(
+                                emergency.status ||
+                                "ACTIVE"
+                            )}
+                        </strong>
+                    </div>
+
+                </div>
+
+
+                <div class="card-actions">
+
+                    <button
+                        class="btn"
+                        type="button"
+                        data-view-id="${escapeHtml(
+                            emergency.id
+                        )}">
+                        VIEW DETAILS
+                    </button>
+
+
+                    <button
+                        class="btn primary"
+                        type="button"
+                        data-bed-id="${escapeHtml(
+                            emergency.id
+                        )}">
+                        ${getCurrentAllocation(emergency.id) ? "MANAGE BED" : "ALLOCATE BED"}
+                    </button>
+
+                </div>
+
+            </div>
+        `;
+
+    }
+
+
+    /* =====================================================
+       BED ALLOCATION MODAL
+    ===================================================== */
+
+    async function loadAvailableBeds() {
+
+        allocationBedList.innerHTML = `<div class="bed-empty">Loading bed inventory...</div>`;
+        floorGrid.innerHTML = `<div class="bed-empty">Loading floor availability...</div>`;
+        roomList.innerHTML = `<div class="bed-empty">Loading rooms...</div>`;
+
+        const response = await supabaseClient
+            .from("hospital_resource_slots")
+            .select(`
+                id,
+                slot_code,
+                status,
+                resource_type,
+                room_id,
+                hospital_rooms (
+                    id,
+                    floor_number,
+                    room_number,
+                    room_type,
+                    status
+                )
+            `)
+            .eq("hospital_id", hospitalId)
+            .eq("resource_type", "Bed")
+            .order("slot_code", { ascending: true });
+
+        if (response.error) throw response.error;
+
+        bedInventory = response.data || [];
+        availableBeds = bedInventory.filter(b => String(b.status).toLowerCase() === "available");
+
+        // Never show the patient's already allocated bed as an option.
+        if (allocationEmergencyId) {
+            const current = getCurrentAllocation(allocationEmergencyId);
+            if (current) {
+                availableBeds = availableBeds.filter(b => String(b.id) !== String(current.id));
+            }
+        }
+
+        buildBedFilters();
+        renderFloorSummary();
+        renderRoomSummary();
+        renderAvailableBeds();
+    }
+
+
+    function normalizedRoomType(room) {
+        return String(room?.room_type || "General").trim();
+    }
+
+
+    function buildBedFilters() {
+        const floors = [...new Set(availableBeds.map(b => b.hospital_rooms?.floor_number).filter(v => v !== null && v !== undefined))]
+            .sort((a,b) => Number(a) - Number(b));
+        const types = [...new Set(availableBeds.map(b => normalizedRoomType(b.hospital_rooms)))]
+            .sort((a,b) => a.localeCompare(b));
+
+        floorSelect.innerHTML = `<option value="all">All Floors</option>` +
+            floors.map(f => `<option value="${escapeHtml(String(f))}">Floor ${escapeHtml(String(f))}</option>`).join("");
+        roomTypeSelect.innerHTML = `<option value="all">All Types</option>` +
+            types.map(t => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join("");
+
+        floorSelect.value = selectedFloor;
+        roomTypeSelect.value = selectedRoomType;
+    }
+
+
+    function renderFloorSummary() {
+        const floorMap = {};
+        availableBeds.forEach(bed => {
+            const floor = bed.hospital_rooms?.floor_number;
+            if (floor === null || floor === undefined) return;
+            const key = String(floor);
+            if (!floorMap[key]) floorMap[key] = { available: 0, rooms: new Set() };
+            floorMap[key].available++;
+            if (bed.room_id) floorMap[key].rooms.add(String(bed.room_id));
+        });
+
+        const floors = Object.keys(floorMap).sort((a,b) => Number(a) - Number(b));
+        totalBedCount.textContent = bedInventory.length;
+        availableBedCount.textContent = availableBeds.length;
+        availableFloorCount.textContent = floors.length;
+
+        if (!floors.length) {
+            floorGrid.innerHTML = `<div class="bed-empty">No available beds on any floor.</div>`;
+            return;
+        }
+
+        floorGrid.innerHTML = floors.map(floor => `
+            <button type="button" class="floor-card ${selectedFloor === floor ? "active" : ""}" data-floor="${escapeHtml(floor)}">
+                <strong>Floor ${escapeHtml(floor)}</strong>
+                <span>${floorMap[floor].available} beds free • ${floorMap[floor].rooms.size} rooms</span>
+            </button>
+        `).join("");
+
+        floorGrid.querySelectorAll("[data-floor]").forEach(button => {
+            button.addEventListener("click", function () {
+                selectedFloor = selectedFloor === button.dataset.floor ? "all" : button.dataset.floor;
+                floorSelect.value = selectedFloor;
+                selectedRoomId = "all";
+                renderFloorSummary();
+                renderRoomSummary();
+                renderAvailableBeds();
+            });
+        });
+    }
+
+
+    function filteredAvailableBeds() {
+        return availableBeds.filter(bed => {
+            const room = bed.hospital_rooms || {};
+            const floorOk = selectedFloor === "all" || String(room.floor_number) === String(selectedFloor);
+            const typeOk = selectedRoomType === "all" || normalizedRoomType(room) === selectedRoomType;
+            const roomOk = selectedRoomId === "all" || String(bed.room_id) === String(selectedRoomId);
+            return floorOk && typeOk && roomOk;
+        });
+    }
+
+
+    function renderRoomSummary() {
+        const grouped = {};
+        availableBeds.forEach(bed => {
+            const room = bed.hospital_rooms || {};
+            if (selectedFloor !== "all" && String(room.floor_number) !== String(selectedFloor)) return;
+            if (selectedRoomType !== "all" && normalizedRoomType(room) !== selectedRoomType) return;
+            const key = String(bed.room_id || `${room.floor_number}-${room.room_number}`);
+            if (!grouped[key]) grouped[key] = { roomId: bed.room_id, room, count: 0 };
+            grouped[key].count++;
+        });
+
+        const rooms = Object.values(grouped).sort((a,b) => {
+            return Number(a.room.floor_number || 0) - Number(b.room.floor_number || 0) ||
+                   String(a.room.room_number || "").localeCompare(String(b.room.room_number || ""), undefined, {numeric:true});
+        });
+
+        if (!rooms.length) {
+            roomList.innerHTML = `<div class="bed-empty">No rooms match the selected filters.</div>`;
+            return;
+        }
+
+        roomList.innerHTML = rooms.map(item => `
+            <div class="room-row">
+                <div>
+                    <strong>Room ${escapeHtml(item.room.room_number ?? "—")} • Floor ${escapeHtml(item.room.floor_number ?? "—")}</strong>
+                    <span>${escapeHtml(normalizedRoomType(item.room))} • ${item.count} bed${item.count === 1 ? "" : "s"} free</span>
+                </div>
+                <button type="button" class="${selectedRoomId !== "all" && String(selectedRoomId) === String(item.roomId) ? "active" : ""}" data-room="${escapeHtml(String(item.roomId))}">
+                    ${selectedRoomId !== "all" && String(selectedRoomId) === String(item.roomId) ? "SELECTED" : "VIEW BEDS"}
+                </button>
+            </div>
+        `).join("");
+
+        roomList.querySelectorAll("[data-room]").forEach(button => {
+            button.addEventListener("click", function () {
+                selectedRoomId = selectedRoomId === button.dataset.room ? "all" : button.dataset.room;
+                renderRoomSummary();
+                renderAvailableBeds();
+            });
+        });
+    }
+
+
+    function renderAvailableBeds() {
+        const list = filteredAvailableBeds();
+        bedResultCount.textContent = `${list.length} bed${list.length === 1 ? "" : "s"} shown`;
+
+        if (!list.length) {
+            allocationBedList.innerHTML = `<div class="bed-empty">No available beds match these filters.</div>`;
+            selectedBedId = null;
+            confirmAllocation.disabled = true;
+            return;
+        }
+
+        allocationBedList.innerHTML = list.map(function (bed) {
+            const room = bed.hospital_rooms || {};
+            return `
+                <button type="button" class="bed-option" data-select-bed="${escapeHtml(bed.id)}">
+                    <strong>🛏 ${escapeHtml(bed.slot_code || "Bed")}</strong>
+                    <span>Room ${escapeHtml(room.room_number ?? "—")} • Floor ${escapeHtml(room.floor_number ?? "—")}</span>
+                    <span>${escapeHtml(normalizedRoomType(room))} • AVAILABLE</span>
+                </button>
+            `;
+        }).join("");
+
+        allocationBedList.querySelectorAll("[data-select-bed]").forEach(function (button) {
+            button.addEventListener("click", function () {
+                selectedBedId = button.dataset.selectBed;
+                allocationBedList.querySelectorAll(".bed-option").forEach(item => item.classList.toggle("selected", item === button));
+                confirmAllocation.disabled = false;
+                const selected = availableBeds.find(b => String(b.id) === String(selectedBedId));
+                const room = selected?.hospital_rooms || {};
+                allocationStatus.textContent = selected
+                    ? `Selected: ${selected.slot_code} • Floor ${room.floor_number ?? "—"} • Room ${room.room_number ?? "—"}`
+                    : "Selected bed.";
+            });
+        });
+    }
+
+
+    async function openBedAllocationModal(emergencyId) {
+
+        const emergency =
+            allEmergencies.find(function (item) {
+                return String(item.id) === String(emergencyId);
+            });
+
+        if (!emergency) {
+            return;
+        }
+
+        const patient = emergency.patients || {};
+
+        allocationEmergencyId = emergency.id;
+        allocationPatientId = emergency.patient_id || patient.id || null;
+        selectedBedId = null;
+        selectedFloor = "all";
+        selectedRoomType = "all";
+        selectedRoomId = "all";
+
+        allocationPatientName.textContent =
+            patient.name || "Unknown Patient";
+
+        const currentBed = getCurrentAllocation(emergency.id);
+        if (currentBed) {
+            const room = currentBed.hospital_rooms || {};
+            currentAllocationBox.classList.add("active");
+            currentAllocationBed.textContent = currentBed.slot_code || "Bed";
+            currentAllocationInfo.textContent =
+                (room.room_number != null ? "Room " + room.room_number : "Room —") +
+                " • " +
+                (room.floor_number != null ? "Floor " + room.floor_number : "Floor —") +
+                (room.room_type ? " • " + room.room_type : "");
+            availableBedsTitle.textContent = "Available Beds";
+            allocationStatus.textContent = "Patient already has a bed. Deallocate it before allocating another bed.";
+        } else {
+            currentAllocationBox.classList.remove("active");
+            availableBedsTitle.textContent = "Allocate Bed";
+            allocationStatus.textContent = "Choose a bed to continue.";
+        }
+
+        confirmAllocation.disabled = true;
+        allocationModal.classList.add("active");
+
+        try {
+            await loadAvailableBeds();
+        } catch (error) {
+            console.error("Unable to load beds:", error);
+            allocationBedList.innerHTML =
+                `<div class="bed-empty">Unable to load available beds.</div>`;
+            allocationStatus.textContent =
+                error.message || "Unable to load beds.";
+        }
+
+    }
+
+
+    function closeBedAllocationModal() {
+        allocationModal.classList.remove("active");
+        allocationEmergencyId = null;
+        allocationPatientId = null;
+        selectedBedId = null;
+        confirmAllocation.disabled = true;
+    }
+
+
+    async function allocateSelectedBed() {
+
+        if (!allocationEmergencyId || !selectedBedId) {
+            return;
+        }
+
+        confirmAllocation.disabled = true;
+        confirmAllocation.textContent = "Allocating...";
+        allocationStatus.textContent = "Saving bed allocation...";
+
+        try {
+
+            const userResult =
+                await supabaseClient.auth.getUser();
+
+            const user = userResult.data?.user;
+
+            if (!user) {
+                throw new Error("Please sign in again.");
+            }
+
+            const bed =
+                availableBeds.find(function (item) {
+                    return String(item.id) === String(selectedBedId);
+                });
+
+            if (!bed) {
+                throw new Error("Selected bed is no longer available.");
+            }
+
+            if (getCurrentAllocation(allocationEmergencyId)) {
+                throw new Error("This patient already has an allocated bed. Deallocate it first.");
+            }
+
+            // Re-check availability immediately before allocation.
+            const availabilityCheck =
+                await supabaseClient
+                    .from("hospital_resource_slots")
+                    .select("id,slot_code,status")
+                    .eq("id", selectedBedId)
+                    .eq("hospital_id", hospitalId)
+                    .eq("resource_type", "Bed")
+                    .eq("status", "available")
+                    .maybeSingle();
+
+            if (availabilityCheck.error) {
+                throw availabilityCheck.error;
+            }
+
+            if (!availabilityCheck.data) {
+                throw new Error("That bed is no longer available. Refresh and choose another bed.");
+            }
+
+            const updateResponse =
+                await supabaseClient
+                    .from("hospital_resource_slots")
+                    .update({
+                        status: "occupied",
+                        patient_id: allocationPatientId,
+                        emergency_id: allocationEmergencyId,
+                        notes: "Allocated from Emergency Patients page."
+                    })
+                    .eq("id", selectedBedId)
+                    .eq("hospital_id", hospitalId)
+                    .eq("resource_type", "Bed")
+                    .eq("status", "available");
+
+            if (updateResponse.error) {
+                throw updateResponse.error;
+            }
+
+            const allocationResponse =
+                await supabaseClient
+                    .from("resource_allocations")
+                    .insert({
+                        hospital_id: hospitalId,
+                        resource_slot_id: selectedBedId,
+                        resource_type: "Bed",
+                        patient_id: allocationPatientId,
+                        emergency_id: allocationEmergencyId,
+                        allocated_by: user.id,
+                        status: "active",
+                        notes: "Bed " + (bed.slot_code || selectedBedId) + " allocated from Emergency Patients page."
+                    });
+
+            if (allocationResponse.error) {
+                // Best-effort rollback if history insert fails.
+                await supabaseClient
+                    .from("hospital_resource_slots")
+                    .update({
+                        status: "available",
+                        patient_id: null,
+                        emergency_id: null,
+                        notes: null
+                    })
+                    .eq("id", selectedBedId)
+                    .eq("hospital_id", hospitalId);
+
+                throw allocationResponse.error;
+            }
+
+            const eventResponse =
+                await supabaseClient
+                    .from("emergency_events")
+                    .insert({
+                        emergency_id: allocationEmergencyId,
+                        event_type: "BED_ALLOCATED",
+                        description: "Hospital bed " + (bed.slot_code || selectedBedId) + " allocated.",
+                        created_by: user.id
+                    });
+
+            if (eventResponse.error) {
+                console.warn("Bed allocated, but timeline event could not be saved:", eventResponse.error);
+            }
+
+            currentAllocations[String(allocationEmergencyId)] = {
+                ...bed, status: "occupied", emergency_id: allocationEmergencyId, patient_id: allocationPatientId
+            };
+
+            closeBedAllocationModal();
+            renderPatients();
+
+            alert(
+                (bed.slot_code || "Bed") +
+                " has been allocated successfully."
+            );
+
+        } catch (error) {
+
+            console.error("Bed allocation error:", error);
+            allocationStatus.textContent =
+                error.message || "Unable to allocate bed.";
+            alert(error.message || "Unable to allocate bed.");
+            confirmAllocation.disabled = !selectedBedId;
+
+        } finally {
+            confirmAllocation.textContent = "ALLOCATE BED";
+        }
+
+    }
+
+
+    /* =====================================================
+       DEALLOCATE BED
+    ===================================================== */
+
+    async function deallocateCurrentBed() {
+        if (!allocationEmergencyId) return;
+        const emergencyId = allocationEmergencyId;
+        const currentBed = getCurrentAllocation(emergencyId);
+        if (!currentBed) { alert("No allocated bed was found for this patient."); return; }
+        if (!window.confirm("Deallocate " + (currentBed.slot_code || "this bed") + " from this patient?")) return;
+
+        deallocateBedButton.disabled = true;
+        deallocateBedButton.textContent = "DEALLOCATING...";
+        allocationStatus.textContent = "Releasing bed...";
+        try {
+            const userResult = await supabaseClient.auth.getUser();
+            const user = userResult.data?.user;
+            if (!user) throw new Error("Please sign in again.");
+
+            const updateResponse = await supabaseClient
+                .from("hospital_resource_slots")
+                .update({ status:"available", patient_id:null, emergency_id:null, notes:null })
+                .eq("id", currentBed.id)
+                .eq("hospital_id", hospitalId)
+                .eq("resource_type", "Bed")
+                .eq("status", "occupied");
+            if (updateResponse.error) throw updateResponse.error;
+
+            const allocationUpdate = await supabaseClient
+                .from("resource_allocations")
+                .update({ status:"inactive", notes:"Bed deallocated from Emergency Patients page." })
+                .eq("resource_slot_id", currentBed.id)
+                .eq("emergency_id", emergencyId)
+                .eq("status", "active");
+            if (allocationUpdate.error) console.warn("Bed released, but allocation history could not be updated:", allocationUpdate.error);
+
+            const eventResponse = await supabaseClient
+                .from("emergency_events")
+                .insert({ emergency_id:emergencyId, event_type:"BED_DEALLOCATED", description:"Hospital bed " + (currentBed.slot_code || currentBed.id) + " deallocated.", created_by:user.id });
+            if (eventResponse.error) console.warn("Bed released, but timeline event could not be saved:", eventResponse.error);
+
+            delete currentAllocations[String(emergencyId)];
+            currentAllocationBox.classList.remove("active");
+            availableBedsTitle.textContent = "Allocate Bed";
+            allocationStatus.textContent = "Bed deallocated. Select a new bed if needed.";
+            confirmAllocation.disabled = true;
+            selectedBedId = null;
+            await loadAvailableBeds();
+            renderPatients();
+            alert((currentBed.slot_code || "Bed") + " has been deallocated successfully.");
+        } catch (error) {
+            console.error("Bed deallocation error:", error);
+            allocationStatus.textContent = error.message || "Unable to deallocate bed.";
+            alert(error.message || "Unable to deallocate bed.");
+        } finally {
+            deallocateBedButton.disabled = false;
+            deallocateBedButton.textContent = "DEALLOCATE BED";
+        }
+    }
+
+    floorSelect.addEventListener("change", function () {
+        selectedFloor = floorSelect.value;
+        selectedRoomId = "all";
+        renderFloorSummary();
+        renderRoomSummary();
+        renderAvailableBeds();
+    });
+
+    roomTypeSelect.addEventListener("change", function () {
+        selectedRoomType = roomTypeSelect.value;
+        selectedRoomId = "all";
+        renderFloorSummary();
+        renderRoomSummary();
+        renderAvailableBeds();
+    });
+
+    deallocateBedButton.addEventListener("click", deallocateCurrentBed);
+
+    /* =====================================================
+       PATIENT MODAL
+    ===================================================== */
+
+    function openPatientModal(
+        emergencyId
+    ) {
+
+        const emergency =
+            allEmergencies.find(
+                e =>
+                    String(e.id) ===
+                    String(emergencyId)
+            );
+
+
+        if (!emergency) {
+            return;
+        }
+
+
+        const patient =
+            emergency.patients || {};
+
+
+        const vitals =
+            emergency.latestVitals || {};
+
+
+        document.getElementById(
+            "modalPatientName"
+        ).textContent =
+            patient.name ||
+            "Unknown Patient";
+
+
+        document.getElementById(
+            "modalEmergencyId"
+        ).textContent =
+            "Emergency ID: " +
+            emergency.id;
+
+
+        document.getElementById(
+            "patientDetails"
+        ).innerHTML = `
+
+            <div class="detail">
+                <span>
+                    Emergency Type
+                </span>
+
+                <strong>
+                    ${escapeHtml(
+                        emergency.emergency_type ||
+                        "—"
+                    )}
+                </strong>
+            </div>
+
+
+            <div class="detail">
+                <span>
+                    Priority
+                </span>
+
+                <strong>
+                    ${escapeHtml(
+                        formatPriority(
+                            emergency.priority
+                        )
+                    )}
+                </strong>
+            </div>
+
+
+            <div class="detail">
+                <span>
+                    Status
+                </span>
+
+                <strong>
+                    ${escapeHtml(
+                        emergency.status ||
+                        "—"
+                    )}
+                </strong>
+            </div>
+
+
+            <div class="detail">
+                <span>
+                    Age
+                </span>
+
+                <strong>
+                    ${escapeHtml(
+                        patient.age ??
+                        "—"
+                    )}
+                </strong>
+            </div>
+
+
+            <div class="detail">
+                <span>
+                    Gender
+                </span>
+
+                <strong>
+                    ${escapeHtml(
+                        patient.gender ||
+                        "—"
+                    )}
+                </strong>
+            </div>
+
+
+            <div class="detail">
+                <span>
+                    Blood Group
+                </span>
+
+                <strong>
+                    ${escapeHtml(
+                        patient.blood_group ||
+                        "—"
+                    )}
+                </strong>
+            </div>
+
+
+            <div class="detail">
+                <span>
+                    Allergies
+                </span>
+
+                <strong>
+                    ${escapeHtml(
+                        patient.allergies ||
+                        "None recorded"
+                    )}
+                </strong>
+            </div>
+
+
+            <div class="detail">
+                <span>
+                    Medical Conditions
+                </span>
+
+                <strong>
+                    ${escapeHtml(
+                        patient.medical_conditions ||
+                        "None recorded"
+                    )}
+                </strong>
+            </div>
+
+
+            <div class="detail">
+                <span>
+                    Heart Rate
+                </span>
+
+                <strong>
+                    ${escapeHtml(
+                        vitals.heart_rate
+                            ? vitals.heart_rate + " BPM"
+                            : "—"
+                    )}
+                </strong>
+            </div>
+
+
+            <div class="detail">
+                <span>
+                    SpO₂
+                </span>
+
+                <strong>
+                    ${escapeHtml(
+                        vitals.spo2
+                            ? vitals.spo2 + "%"
+                            : "—"
+                    )}
+                </strong>
+            </div>
+
+
+            <div class="detail">
+                <span>
+                    Blood Pressure
+                </span>
+
+                <strong>
+                    ${escapeHtml(
+                        vitals.blood_pressure ||
+                        "—"
+                    )}
+                </strong>
+            </div>
+
+
+            <div class="detail">
+                <span>
+                    Temperature
+                </span>
+
+                <strong>
+                    ${escapeHtml(
+                        vitals.temperature
+                            ? vitals.temperature + " °C"
+                            : "—"
+                    )}
+                </strong>
+            </div>
+
+
+            <div class="detail">
+                <span>
+                    ECG
+                </span>
+
+                <strong>
+                    ${escapeHtml(
+                        vitals.ecg_status ||
+                        "—"
+                    )}
+                </strong>
+            </div>
+
+
+            <div class="detail">
+                <span>
+                    Emergency Created
+                </span>
+
+                <strong>
+                    ${escapeHtml(
+                        formatDate(
+                            emergency.created_at
+                        )
+                    )}
+                </strong>
+            </div>
+
+        `;
+
+
+        document.getElementById(
+            "patientModal"
+        ).classList.add("active");
+
+    }
+
+
+    function closeModal() {
+
+        document.getElementById(
+            "patientModal"
+        ).classList.remove("active");
+
+    }
+
+
+    // Use event delegation so ALLOCATE BED / MANAGE BED always work
+    // even after patient cards are re-rendered by search, refresh or realtime.
+    patientGrid.addEventListener("click", function (event) {
+        const bedButton = event.target.closest("button[data-bed-id]");
+        if (bedButton && patientGrid.contains(bedButton)) {
+            event.preventDefault();
+            event.stopPropagation();
+            const emergencyId = bedButton.getAttribute("data-bed-id");
+            openBedAllocationModal(emergencyId).catch(function (error) {
+                console.error("Unable to open bed allocation modal:", error);
+                alert(error.message || "Unable to open bed allocation.");
+            });
+            return;
+        }
+
+        const viewButton = event.target.closest("button[data-view-id]");
+        if (viewButton && patientGrid.contains(viewButton)) {
+            event.preventDefault();
+            event.stopPropagation();
+            openPatientModal(viewButton.getAttribute("data-view-id"));
+        }
+    });
+
+
+    /* =====================================================
+       EVENTS
+    ===================================================== */
+
+    searchInput.addEventListener(
+        "input",
+        renderPatients
+    );
+
+
+    priorityFilter.addEventListener(
+        "change",
+        renderPatients
+    );
+
+
+    refreshButton.addEventListener(
+        "click",
+        async function () {
+
+            refreshButton.disabled = true;
+
+            refreshButton.textContent =
+                "Refreshing...";
+
+            try {
+
+                await loadEmergencyPatients();
+
+            } catch (error) {
+
+                console.error(
+                    error
+                );
+
+                alert(
+                    error.message ||
+                    "Unable to refresh patients."
+                );
+
+            } finally {
+
+                refreshButton.disabled =
+                    false;
+
+                refreshButton.textContent =
+                    "↻ Refresh";
+
+            }
+
+        }
+    );
+
+
+    document.getElementById(
+        "closeModal"
+    ).addEventListener(
+        "click",
+        closeModal
+    );
+
+
+    document.getElementById(
+        "closeModalBottom"
+    ).addEventListener(
+        "click",
+        closeModal
+    );
+
+
+    document.getElementById(
+        "patientModal"
+    ).addEventListener(
+        "click",
+        function (event) {
+
+            if (
+                event.target ===
+                this
+            ) {
+                closeModal();
+            }
+
+        }
+    );
+
+
+    manageBedFromDetails.addEventListener(
+        "click",
+        function () {
+
+            const emergencyId = currentDetailEmergencyId;
+
+            closeModal();
+
+            if (emergencyId) {
+                openBedAllocationModal(emergencyId);
+            }
+
+        }
+    );
+
+
+    document.getElementById("closeAllocationModal")
+        .addEventListener("click", closeBedAllocationModal);
+
+    document.getElementById("cancelAllocation")
+        .addEventListener("click", closeBedAllocationModal);
+
+    confirmAllocation.addEventListener(
+        "click",
+        allocateSelectedBed
+    );
+
+    allocationModal.addEventListener(
+        "click",
+        function (event) {
+            if (event.target === allocationModal) {
+                closeBedAllocationModal();
+            }
+        }
+    );
+
+
+    /* =====================================================
+       REALTIME
+    ===================================================== */
+
+    function startRealtime() {
+
+        if (!hospitalId) {
+            return;
+        }
+
+
+        realtimeChannel =
+            supabaseClient
+                .channel(
+                    "emergency-patients-page-" +
+                    hospitalId
+                )
+
+                .on(
+                    "postgres_changes",
+                    {
+                        event: "*",
+                        schema: "public",
+                        table: "emergencies",
+                        filter:
+                            "hospital_id=eq." +
+                            hospitalId
+                    },
+                    function () {
+
+                        loadEmergencyPatients()
+                            .catch(
+                                console.error
+                            );
+
+                    }
+                )
+
+                .on(
+                    "postgres_changes",
+                    {
+                        event: "*",
+                        schema: "public",
+                        table: "patient_vitals"
+                    },
+                    function () {
+
+                        loadEmergencyPatients()
+                            .catch(
+                                console.error
+                            );
+
+                    }
+                )
+
+                .subscribe();
+
+    }
+
+
+    /* =====================================================
+       LOGOUT
+    ===================================================== */
+
+    document.getElementById(
+        "logoutButton"
+    ).addEventListener(
+        "click",
+        async function () {
+
+            try {
+
+                await supabaseClient
+                    .auth
+                    .signOut();
+
+            } catch (error) {
+
+                console.error(
+                    error
+                );
+
+            } finally {
+
+                window.location.replace(
+                    "signin.html"
+                );
+
+            }
+
+        }
+    );
+
+
+    /* =====================================================
+       INITIALIZATION
+    ===================================================== */
+
+    async function initialize() {
+
+        try {
+
+            const id =
+                await loadHospital();
+
+
+            if (!id) {
+                return;
+            }
+
+
+            await loadEmergencyPatients();
+
+
+            startRealtime();
+
+
+        } catch (error) {
+
+            console.error(
+                "Emergency patient page error:",
+                error
+            );
+
+
+            patientGrid.innerHTML = `
+                <div class="empty">
+
+                    <div class="empty-icon">
+                        ⚠️
+                    </div>
+
+                    <h3>
+                        Unable to load emergency patients
+                    </h3>
+
+                    <p>
+                        ${escapeHtml(
+                            error.message ||
+                            "Please try again."
+                        )}
+                    </p>
+
+                </div>
+            `;
+
+        }
+
+    }
+
+
+    initialize();
+
+
+    window.addEventListener(
+        "beforeunload",
+        function () {
+
+            if (realtimeChannel) {
+
+                supabaseClient
+                    .removeChannel(
+                        realtimeChannel
+                    );
+
+            }
+
+        }
+    );
+
+})();
+
+</script>
+
+</body>
+</html>
