@@ -336,6 +336,110 @@
       }
 
       /* =========================
+           MANUAL LOCATION DASHBOARD
+        ========================== */
+
+      .manual-location-panel {
+        display: none;
+        margin-top: 16px;
+        padding: 20px;
+        background: #ffffff;
+        border: 1px solid #dce2ea;
+        border-radius: 12px;
+      }
+
+      .manual-location-panel.active {
+        display: block;
+      }
+
+      .manual-location-title {
+        font-size: 14px;
+        font-weight: 800;
+        color: #172033;
+        margin-bottom: 5px;
+      }
+
+      .manual-location-subtitle {
+        font-size: 11px;
+        color: #818b9b;
+        line-height: 1.5;
+        margin-bottom: 16px;
+      }
+
+      .manual-location-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+      }
+
+      .manual-location-grid .full {
+        grid-column: 1 / -1;
+      }
+
+      .manual-location-panel input {
+        height: 46px;
+      }
+
+      .manual-location-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 16px;
+      }
+
+      .manual-location-save {
+        height: 44px;
+        padding: 0 18px;
+        border: none;
+        border-radius: 9px;
+        background: #172033;
+        color: white;
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      .manual-location-save:hover {
+        background: #263149;
+      }
+
+      .manual-location-cancel {
+        height: 44px;
+        padding: 0 18px;
+        border: 1px solid #dce2ea;
+        border-radius: 9px;
+        background: white;
+        color: #364152;
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      .manual-location-cancel:hover {
+        border-color: #e63946;
+        color: #e63946;
+      }
+
+      @media (max-width: 600px) {
+        .manual-location-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .manual-location-grid .full {
+          grid-column: auto;
+        }
+
+        .manual-location-actions {
+          flex-direction: column;
+        }
+
+        .manual-location-save,
+        .manual-location-cancel {
+          width: 100%;
+        }
+      }
+
+      /* =========================
            PRIORITY
         ========================== */
 
@@ -885,6 +989,109 @@
                 </button>
               </div>
 
+              <!-- MANUAL LOCATION DASHBOARD -->
+
+              <div class="manual-location-panel" id="manualLocationPanel">
+                <div class="manual-location-title">
+                  Enter Emergency Location
+                </div>
+
+                <div class="manual-location-subtitle">
+                  Enter the patient's current location manually. Provide as much
+                  detail as possible so the emergency team can locate the
+                  patient.
+                </div>
+
+                <div class="manual-location-grid">
+                  <div class="form-group full">
+                    <label for="manualAddress">
+                      Address
+                      <span class="required">*</span>
+                    </label>
+
+                    <input
+                      type="text"
+                      id="manualAddress"
+                      placeholder="House / Street / Locality"
+                      autocomplete="street-address"
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label for="manualCity">
+                      City
+                      <span class="required">*</span>
+                    </label>
+
+                    <input
+                      type="text"
+                      id="manualCity"
+                      placeholder="Enter city"
+                      autocomplete="address-level2"
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label for="manualState">
+                      State
+                      <span class="required">*</span>
+                    </label>
+
+                    <input
+                      type="text"
+                      id="manualState"
+                      placeholder="Enter state"
+                      autocomplete="address-level1"
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label for="manualPincode">
+                      Pincode
+                      <span class="required">*</span>
+                    </label>
+
+                    <input
+                      type="text"
+                      id="manualPincode"
+                      placeholder="Enter 6-digit pincode"
+                      inputmode="numeric"
+                      maxlength="6"
+                      pattern="[0-9]{6}"
+                      autocomplete="postal-code"
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label for="manualLandmark"> Landmark </label>
+
+                    <input
+                      type="text"
+                      id="manualLandmark"
+                      placeholder="Nearby landmark (optional)"
+                    />
+                  </div>
+                </div>
+
+                <div class="manual-location-actions">
+                  <button
+                    type="button"
+                    class="manual-location-cancel"
+                    id="cancelManualLocation"
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    type="button"
+                    class="manual-location-save"
+                    id="saveManualLocation"
+                  >
+                    Save Location
+                  </button>
+                </div>
+              </div>
+
               <div class="coordinates" id="coordinates">
                 Coordinates will appear here.
               </div>
@@ -945,6 +1152,26 @@
 
       const manualLocation = document.getElementById("manualLocation");
 
+      const manualLocationPanel = document.getElementById(
+        "manualLocationPanel",
+      );
+
+      const cancelManualLocation = document.getElementById(
+        "cancelManualLocation",
+      );
+
+      const saveManualLocation = document.getElementById("saveManualLocation");
+
+      const manualAddress = document.getElementById("manualAddress");
+
+      const manualCity = document.getElementById("manualCity");
+
+      const manualState = document.getElementById("manualState");
+
+      const manualPincode = document.getElementById("manualPincode");
+
+      const manualLandmark = document.getElementById("manualLandmark");
+
       const locationStatus = document.getElementById("locationStatus");
 
       const locationDot = document.getElementById("locationDot");
@@ -996,6 +1223,8 @@
             latitudeInput.value = latitude;
 
             longitudeInput.value = longitude;
+
+            manualLocationPanel.classList.remove("active");
 
             locationStatus.textContent = "Location detected successfully";
 
@@ -1051,19 +1280,76 @@
         ========================== */
 
       manualLocation.addEventListener("click", function () {
-        const location = prompt("Enter the emergency location or address:");
+        manualLocationPanel.classList.add("active");
 
-        if (!location) {
+        manualLocation.scrollIntoView({
+          behavior: "smooth",
+          block: "nearest",
+        });
+
+        manualAddress.focus();
+      });
+
+      cancelManualLocation.addEventListener("click", function () {
+        manualLocationPanel.classList.remove("active");
+      });
+
+      saveManualLocation.addEventListener("click", function () {
+        const address = manualAddress.value.trim();
+
+        const city = manualCity.value.trim();
+
+        const state = manualState.value.trim();
+
+        const pincode = manualPincode.value.trim();
+
+        const landmark = manualLandmark.value.trim();
+
+        if (!address || !city || !state || !/^[0-9]{6}$/.test(pincode)) {
+          showMessage(
+            "Please enter the address, city, state and a valid 6-digit pincode.",
+            "error",
+          );
+
+          if (!address) {
+            manualAddress.focus();
+          } else if (!city) {
+            manualCity.focus();
+          } else if (!state) {
+            manualState.focus();
+          } else {
+            manualPincode.focus();
+          }
+
           return;
         }
 
-        coordinates.textContent = "Manual location: " + location;
+        let locationText =
+          address + ", " + city + ", " + state + " - " + pincode;
+
+        if (landmark) {
+          locationText += " | Landmark: " + landmark;
+        }
+
+        coordinates.textContent = "Manual location: " + locationText;
 
         coordinates.classList.add("active");
 
-        locationStatus.textContent = "Manual location entered";
+        locationStatus.textContent = "Manual location entered successfully";
 
         locationDot.classList.add("active");
+
+        // Clear automatically detected coordinates because
+        // the user has explicitly selected a manual location.
+        latitudeInput.value = "";
+        longitudeInput.value = "";
+
+        manualLocationPanel.classList.remove("active");
+      });
+
+      // Allow digits only in the pincode field.
+      manualPincode.addEventListener("input", function () {
+        this.value = this.value.replace(/\\D/g, "").slice(0, 6);
       });
 
       /* =========================

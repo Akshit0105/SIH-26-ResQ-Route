@@ -1,505 +1,807 @@
-/* =========================================================
-   ResQ-Route
-   Authentication & User Management
-   ========================================================= */
+(function () {
+    "use strict";
 
-/* =========================================================
-   PAGE CONFIGURATION
-   ========================================================= */
+    /* =========================================================
+       RESQ-ROUTE
+       AUTHENTICATION & USER MANAGEMENT
+       ========================================================= */
 
-const AUTH_PAGES = {
-    signin: "signin.html",
-    signup: "signup.html",
-    emergency: "emergency.html",
 
-    family: "family.html",
-    driver: "ambulance.html",
-    hospital: "hospital.html"
-};
+    /* =========================================================
+       PAGE CONFIGURATION
+       ========================================================= */
 
-const PROTECTED_PAGES = [
-    "family.html",
-    "ambulance.html",
-    "hospital.html"
-];
+    var AUTH_PAGES = {
+        signin: "signin.html",
+        signup: "signup.html",
+        emergency: "emergency.html",
+        family: "family.html",
+        driver: "ambulance.html",
+        hospital: "hospital.html"
+    };
 
-/* =========================================================
-   SUPABASE
-   ========================================================= */
-
-function getSupabase() {
-    if (
-        window.resqRoute &&
-        window.resqRoute.supabase
-    ) {
-        return window.resqRoute.supabase;
-    }
-
-    if (window.supabaseClient) {
-        return window.supabaseClient;
-    }
-
-    console.error("Supabase client not initialized.");
-    return null;
-}
-
-/* =========================================================
-   HELPERS
-   ========================================================= */
-
-function getValue(id) {
-    const element = document.getElementById(id);
-    return element ? element.value.trim() : "";
-}
-
-function getChecked(id) {
-    const element = document.getElementById(id);
-    return element ? element.checked : false;
-}
-
-function normalizeRole(role) {
-    if (!role) return "family";
-
-    const value = String(role)
-        .trim()
-        .toLowerCase();
-
-    if (
-        value === "driver" ||
-        value === "ambulance"
-    ) {
-        return "driver";
-    }
-
-    if (
-        value === "hospital" ||
-        value === "hospital_staff"
-    ) {
-        return "hospital";
-    }
-
-    if (
-        value === "family" ||
-        value === "citizen" ||
-        value === "user"
-    ) {
-        return "family";
-    }
-
-    return value;
-}
-
-function getDashboardForRole(role) {
-    const normalizedRole = normalizeRole(role);
-
-    if (normalizedRole === "driver") {
-        return AUTH_PAGES.driver;
-    }
-
-    if (normalizedRole === "hospital") {
-        return AUTH_PAGES.hospital;
-    }
-
-    return AUTH_PAGES.family;
-}
-
-function showMessage(message, type = "error") {
-    const possibleIds = [
-        "authMessage",
-        "formMessage",
-        "message",
-        "errorMessage"
+    var PROTECTED_PAGES = [
+        "family.html",
+        "ambulance.html",
+        "hospital.html"
     ];
 
-    let container = null;
 
-    for (const id of possibleIds) {
-        const element = document.getElementById(id);
+    /* =========================================================
+       SUPABASE
+       ========================================================= */
 
-        if (element) {
-            container = element;
-            break;
+    function getSupabase() {
+
+        if (
+            window.resqRoute &&
+            window.resqRoute.supabase
+        ) {
+            return window.resqRoute.supabase;
         }
+
+        if (window.supabaseClient) {
+            return window.supabaseClient;
+        }
+
+        console.error(
+            "ResQ-Route: Supabase client not initialized."
+        );
+
+        return null;
     }
 
-    if (!container) {
-        if (type === "error") {
-            console.error(message);
-        } else {
-            console.log(message);
+
+    /* =========================================================
+       HELPERS
+       ========================================================= */
+
+    function getValue(id) {
+
+        var element =
+            document.getElementById(id);
+
+        if (!element) {
+            return "";
         }
 
-        return;
+        return String(
+            element.value || ""
+        ).trim();
     }
 
-    container.textContent = message;
-    container.style.display = "block";
 
-    container.classList.remove(
-        "success",
-        "error",
-        "warning"
-    );
+    function getChecked(id) {
 
-    container.classList.add(type);
-}
+        var element =
+            document.getElementById(id);
 
-function clearMessage() {
-    const possibleIds = [
-        "authMessage",
-        "formMessage",
-        "message",
-        "errorMessage"
-    ];
-
-    possibleIds.forEach(id => {
-        const element = document.getElementById(id);
-
-        if (element) {
-            element.textContent = "";
-            element.style.display = "none";
-        }
-    });
-}
-
-function setLoading(button, loading, loadingText = "Please wait...") {
-    if (!button) return;
-
-    if (loading) {
-        button.dataset.originalText =
-            button.textContent;
-
-        button.disabled = true;
-        button.textContent = loadingText;
-    } else {
-        button.disabled = false;
-
-        if (button.dataset.originalText) {
-            button.textContent =
-                button.dataset.originalText;
-        }
-    }
-}
-
-function getCurrentPage() {
-    return window.location.pathname
-        .split("/")
-        .pop()
-        .toLowerCase();
-}
-
-/* =========================================================
-   EMAIL / PHONE / PASSWORD VALIDATION
-   ========================================================= */
-
-function validateEmail(email) {
-    if (!email) return false;
-
-    const pattern =
-        /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-    return pattern.test(email);
-}
-
-function normalizePhone(phone) {
-    if (!phone) return "";
-
-    return phone
-        .replace(/[^\d+]/g, "")
-        .trim();
-}
-
-function validatePhone(phone) {
-    const normalized =
-        normalizePhone(phone);
-
-    const digits =
-        normalized.replace(/\D/g, "");
-
-    return (
-        digits.length >= 10 &&
-        digits.length <= 15
-    );
-}
-
-function validatePassword(password) {
-    if (!password) return false;
-
-    return password.length >= 6;
-}
-
-function validateName(name) {
-    if (!name) return false;
-
-    return name.length >= 2;
-}
-
-/* =========================================================
-   PROFILE
-   ========================================================= */
-
-async function getUserProfile(userId = null) {
-    const supabase = getSupabase();
-
-    if (!supabase) {
-        throw new Error(
-            "Supabase is not initialized."
+        return !!(
+            element &&
+            element.checked
         );
     }
 
-    let id = userId;
 
-    if (!id) {
-        const {
-            data: {
-                user
-            },
-            error
-        } = await supabase.auth.getUser();
+    function getCurrentPage() {
 
-        if (error) throw error;
+        return window.location.pathname
+            .split("/")
+            .pop()
+            .toLowerCase();
+    }
 
-        if (!user) {
+
+    function normalizeRole(role) {
+
+        if (!role) {
+            return "";
+        }
+
+        var value =
+            String(role)
+                .trim()
+                .toLowerCase();
+
+        if (
+            value === "driver" ||
+            value === "ambulance"
+        ) {
+            return "driver";
+        }
+
+        if (
+            value === "hospital" ||
+            value === "hospital_staff"
+        ) {
+            return "hospital";
+        }
+
+        if (
+            value === "family" ||
+            value === "citizen" ||
+            value === "user"
+        ) {
+            return "family";
+        }
+
+        return value;
+    }
+
+
+    function getDashboardForRole(role) {
+
+        var normalized =
+            normalizeRole(role);
+
+        if (normalized === "driver") {
+            return AUTH_PAGES.driver;
+        }
+
+        if (normalized === "hospital") {
+            return AUTH_PAGES.hospital;
+        }
+
+        if (normalized === "family") {
+            return AUTH_PAGES.family;
+        }
+
+        return null;
+    }
+
+
+    /* =========================================================
+       MESSAGE
+       ========================================================= */
+
+    function showMessage(
+        message,
+        type
+    ) {
+
+        var ids = [
+            "statusMessage",
+            "authMessage",
+            "formMessage",
+            "message",
+            "errorMessage"
+        ];
+
+        var element = null;
+
+        for (
+            var i = 0;
+            i < ids.length;
+            i++
+        ) {
+
+            var found =
+                document.getElementById(
+                    ids[i]
+                );
+
+            if (found) {
+                element = found;
+                break;
+            }
+        }
+
+        if (!element) {
+
+            if (type === "error") {
+                console.error(message);
+            } else {
+                console.log(message);
+            }
+
+            return;
+        }
+
+        element.textContent =
+            message;
+
+        element.style.display =
+            "block";
+
+        element.classList.remove(
+            "success",
+            "error",
+            "warning",
+            "loading"
+        );
+
+        element.classList.add(
+            type || "error"
+        );
+    }
+
+
+    function clearMessage() {
+
+        var ids = [
+            "statusMessage",
+            "authMessage",
+            "formMessage",
+            "message",
+            "errorMessage"
+        ];
+
+        ids.forEach(
+            function (id) {
+
+                var element =
+                    document.getElementById(
+                        id
+                    );
+
+                if (!element) {
+                    return;
+                }
+
+                element.textContent =
+                    "";
+
+                element.style.display =
+                    "none";
+
+                element.classList.remove(
+                    "success",
+                    "error",
+                    "warning",
+                    "loading"
+                );
+            }
+        );
+    }
+
+
+    /* =========================================================
+       LOADING BUTTON
+       ========================================================= */
+
+    function setLoading(
+        button,
+        loading,
+        loadingText
+    ) {
+
+        if (!button) {
+            return;
+        }
+
+        if (loading) {
+
+            if (
+                !button.dataset.originalText
+            ) {
+                button.dataset.originalText =
+                    button.textContent;
+            }
+
+            button.disabled =
+                true;
+
+            button.textContent =
+                loadingText ||
+                "Please wait...";
+
+        } else {
+
+            button.disabled =
+                false;
+
+            if (
+                button.dataset.originalText
+            ) {
+
+                button.textContent =
+                    button.dataset.originalText;
+
+                delete button.dataset.originalText;
+            }
+        }
+    }
+
+
+    /* =========================================================
+       VALIDATION
+       ========================================================= */
+
+    function validateEmail(email) {
+
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+            .test(email);
+    }
+
+
+    function normalizePhone(phone) {
+
+        return String(
+            phone || ""
+        ).replace(
+            /[^\d+]/g,
+            ""
+        );
+    }
+
+
+    function validatePhone(phone) {
+
+        var normalized =
+            normalizePhone(phone);
+
+        var digits =
+            normalized.replace(
+                /\D/g,
+                ""
+            );
+
+        return (
+            digits.length >= 10 &&
+            digits.length <= 15
+        );
+    }
+
+
+    function validatePassword(password) {
+
+        return (
+            typeof password === "string" &&
+            password.length >= 6
+        );
+    }
+
+
+    function validateName(name) {
+
+        return (
+            typeof name === "string" &&
+            name.trim().length >= 2
+        );
+    }
+
+
+    function validateVehicleNumber(
+        vehicleNumber
+    ) {
+
+        if (!vehicleNumber) {
+            return false;
+        }
+
+        var value =
+            vehicleNumber
+                .trim()
+                .toUpperCase()
+                .replace(
+                    /[\s-]/g,
+                    ""
+                );
+
+        return (
+            value.length >= 5 &&
+            value.length <= 15 &&
+            /^[A-Z0-9]+$/.test(value)
+        );
+    }
+
+
+    function validateAmbulanceType(
+        type
+    ) {
+
+        if (!type) {
+            return false;
+        }
+
+        return String(type)
+            .trim()
+            .length > 0;
+    }
+
+
+    function validateIdentityDocument(
+        documentType,
+        documentNumber
+    ) {
+
+        if (
+            !documentType ||
+            !documentNumber
+        ) {
+            return false;
+        }
+
+        var type =
+            String(documentType)
+                .trim()
+                .toLowerCase();
+
+        var number =
+            String(documentNumber)
+                .trim()
+                .toUpperCase();
+
+        if (type === "aadhaar") {
+
+            return /^\d{12}$/
+                .test(number);
+        }
+
+        if (type === "pan") {
+
+            return /^[A-Z]{5}\d{4}[A-Z]$/
+                .test(number);
+        }
+
+        if (
+            type === "driving_license"
+        ) {
+
+            return number.length >= 3;
+        }
+
+        return number.length >= 3;
+    }
+
+
+    /* =========================================================
+       USER PROFILE
+       ========================================================= */
+
+    async function getUserProfile(
+        userId
+    ) {
+
+        var supabase =
+            getSupabase();
+
+        if (!supabase) {
             return null;
         }
 
-        id = user.id;
+        try {
+
+            var id =
+                userId;
+
+            if (!id) {
+
+                var userResult =
+                    await supabase.auth
+                        .getUser();
+
+                if (
+                    userResult.error ||
+                    !userResult.data.user
+                ) {
+                    return null;
+                }
+
+                id =
+                    userResult.data.user.id;
+            }
+
+            var result =
+                await supabase
+                    .from("profiles")
+                    .select(
+                        "id,name,email,phone,role"
+                    )
+                    .eq(
+                        "id",
+                        id
+                    )
+                    .maybeSingle();
+
+            if (result.error) {
+
+                console.error(
+                    "Profile fetch error:",
+                    result.error
+                );
+
+                return null;
+            }
+
+            return result.data || null;
+
+        } catch (error) {
+
+            console.error(
+                "Profile error:",
+                error
+            );
+
+            return null;
+        }
     }
 
-    const {
-        data,
-        error
-    } = await supabase
-        .from("profiles")
-        .select(
-            "id,name,email,phone,role"
-        )
-        .eq("id", id)
-        .maybeSingle();
 
-    if (error) {
-        console.error(
-            "Profile fetch error:",
-            error
-        );
+    /* =========================================================
+       CURRENT USER
+       ========================================================= */
 
-        throw error;
+    async function getCurrentUser() {
+
+        var supabase =
+            getSupabase();
+
+        if (!supabase) {
+            return null;
+        }
+
+        try {
+
+            var result =
+                await supabase.auth
+                    .getUser();
+
+            if (
+                result.error ||
+                !result.data
+            ) {
+                return null;
+            }
+
+            return result.data.user || null;
+
+        } catch (error) {
+
+            console.error(
+                "Current user error:",
+                error
+            );
+
+            return null;
+        }
     }
 
-    return data;
-}
 
-/* =========================================================
-   ROLE REDIRECTION
-   ========================================================= */
+    /* =========================================================
+       REDIRECT BY ROLE
+       ========================================================= */
 
-async function redirectUserByRole() {
-    try {
-        const supabase = getSupabase();
+    async function redirectUserByRole(
+        user
+    ) {
+
+        var supabase =
+            getSupabase();
 
         if (!supabase) {
             return false;
         }
 
-        const {
-            data: {
-                user
+        try {
+
+            if (!user) {
+
+                user =
+                    await getCurrentUser();
             }
-        } = await supabase.auth.getUser();
 
-        if (!user) {
-            return false;
-        }
+            if (!user) {
+                return false;
+            }
 
-        const profile =
-            await getUserProfile(user.id);
+            var profile =
+                await getUserProfile(
+                    user.id
+                );
 
-        if (!profile) {
-            console.warn(
-                "No profile found for user."
+            var role = "";
+
+            if (
+                profile &&
+                profile.role
+            ) {
+
+                role =
+                    profile.role;
+            }
+
+            if (
+                !role &&
+                user.user_metadata
+            ) {
+
+                role =
+                    user.user_metadata.role;
+            }
+
+            role =
+                normalizeRole(role);
+
+            var dashboard =
+                getDashboardForRole(
+                    role
+                );
+
+            if (!dashboard) {
+
+                console.error(
+                    "Invalid account role:",
+                    role
+                );
+
+                return false;
+            }
+
+            console.log(
+                "Redirecting:",
+                role,
+                "->",
+                dashboard
+            );
+
+            window.location.replace(
+                dashboard
+            );
+
+            return true;
+
+        } catch (error) {
+
+            console.error(
+                "Redirect error:",
+                error
             );
 
             return false;
         }
-
-        const role =
-            normalizeRole(profile.role);
-
-        const dashboard =
-            getDashboardForRole(role);
-
-        window.location.href = dashboard;
-
-        return true;
-    } catch (error) {
-        console.error(
-            "Role redirect error:",
-            error
-        );
-
-        return false;
     }
-}
 
-/* =========================================================
-   DRIVER VALIDATION
-   ========================================================= */
 
-function validateVehicleNumber(vehicleNumber) {
-    if (!vehicleNumber) return false;
+    /* =========================================================
+       FAMILY RECORD
+       ========================================================= */
 
-    const value =
-        vehicleNumber
-            .trim()
-            .toUpperCase();
-
-    return (
-        value.length >= 4 &&
-        value.length <= 20
-    );
-}
-
-function validateAmbulanceType(type) {
-    if (!type) return false;
-
-    const validTypes = [
-        "basic",
-        "advanced",
-        "icu",
-        "neonatal",
-        "cardiac",
-        "patient_transport",
-        "basic_life_support",
-        "advanced_life_support"
-    ];
-
-    return validTypes.includes(
-        String(type)
-            .trim()
-            .toLowerCase()
-    );
-}
-
-function validateIdentityDocument(
-    documentType,
-    documentNumber
-) {
-    if (!documentType) return false;
-    if (!documentNumber) return false;
-
-    return (
-        documentNumber.trim().length >= 3
-    );
-}
-
-/* =========================================================
-   FAMILY VALIDATION
-   ========================================================= */
-
-function validateFamilyData(formData) {
-    if (!formData) return false;
-
-    if (
-        formData.age !== undefined &&
-        formData.age !== null &&
-        formData.age !== ""
+    async function createFamilyRecords(
+        userId,
+        formData
     ) {
-        const age =
-            Number(formData.age);
 
-        if (
-            Number.isNaN(age) ||
-            age < 0 ||
-            age > 120
-        ) {
-            return false;
+        var supabase =
+            getSupabase();
+
+        if (!supabase) {
+            throw new Error(
+                "Supabase is not initialized."
+            );
         }
+
+        var record = {
+
+            user_id:
+                userId,
+
+            blood_group:
+                formData.bloodGroup ||
+                null,
+
+            allergies:
+                formData.allergies ||
+                null,
+
+            medical_conditions:
+                formData.medicalConditions ||
+                null,
+
+            emergency_contact:
+                formData.contactPhone ||
+                null,
+
+            emergency_contact_name:
+                formData.contactName ||
+                null
+        };
+
+        var result =
+            await supabase
+                .from("patients")
+                .insert(record)
+                .select()
+                .maybeSingle();
+
+        if (result.error) {
+
+            console.error(
+                "Family record error:",
+                result.error
+            );
+
+            throw result.error;
+        }
+
+        return result.data;
     }
 
-    return true;
-}
 
-/* =========================================================
-   DRIVER RECORD CREATION
-   ========================================================= */
+    /* =========================================================
+       DRIVER RECORD
+       ========================================================= */
 
-async function createDriverRecords(
-    userId,
-    formData
-) {
-    const supabase = getSupabase();
+    async function createDriverRecords(
+        userId,
+        formData
+    ) {
 
-    if (!supabase) {
-        throw new Error(
-            "Supabase is not initialized."
-        );
-    }
+        var supabase =
+            getSupabase();
 
-    const vehicleNumber =
-        formData.vehicleNumber
-            .trim()
-            .toUpperCase();
+        if (!supabase) {
+            throw new Error(
+                "Supabase is not initialized."
+            );
+        }
 
-    const ambulanceType =
-        formData.ambulanceType
-            .trim()
-            .toLowerCase();
+        var record = {
 
-    const {
-        data,
-        error
-    } = await supabase
-        .from("ambulances")
-        .insert({
             vehicle_number:
-                vehicleNumber,
+                String(
+                    formData.vehicleNumber ||
+                    ""
+                )
+                .trim()
+                .toUpperCase(),
 
             driver_id:
                 userId,
 
             ambulance_type:
-                ambulanceType,
+                String(
+                    formData.ambulanceType ||
+                    ""
+                )
+                .trim()
+                .toLowerCase(),
 
             status:
                 "available"
-        })
-        .select()
-        .single();
+        };
 
-    if (error) {
-        console.error(
-            "Driver record creation error:",
-            error
-        );
+        var result =
+            await supabase
+                .from("ambulances")
+                .insert(record)
+                .select()
+                .maybeSingle();
 
-        throw error;
+        if (result.error) {
+
+            console.error(
+                "Driver record error:",
+                result.error
+            );
+
+            throw result.error;
+        }
+
+        return result.data;
     }
 
-    return data;
-}
 
-/* =========================================================
-   HOSPITAL RECORD CREATION
-   ========================================================= */
+    /* =========================================================
+       HOSPITAL RECORD
+       ========================================================= */
 
-async function createHospitalRecords(
-    userId,
-    formData
-) {
-    const supabase = getSupabase();
+    async function createHospitalRecords(
+        userId,
+        formData
+    ) {
 
-    if (!supabase) {
-        throw new Error(
-            "Supabase is not initialized."
-        );
-    }
+        var supabase =
+            getSupabase();
 
-    const {
-        data,
-        error
-    } = await supabase
-        .from("hospital_staff")
-        .insert({
+        if (!supabase) {
+            throw new Error(
+                "Supabase is not initialized."
+            );
+        }
+
+        var record = {
+
             hospital_id:
                 formData.hospitalId,
 
@@ -507,645 +809,815 @@ async function createHospitalRecords(
                 userId,
 
             designation:
-                formData.designation
-        })
-        .select()
-        .single();
+                formData.designation,
 
-    if (error) {
-        console.error(
-            "Hospital staff creation error:",
-            error
-        );
+            hospital_staff_id:
+                formData.hospitalStaffId ||
+                null,
 
-        throw error;
-    }
+            hospital_department:
+                formData.hospitalDepartment ||
+                null,
 
-    return data;
-}
+            reception_name:
+                formData.receptionName ||
+                null,
 
-/* =========================================================
-   FAMILY RECORD CREATION
-   ========================================================= */
+            reception_phone:
+                formData.receptionPhone ||
+                null
+        };
 
-async function createFamilyRecords(
-    userId,
-    formData
-) {
-    const supabase = getSupabase();
+        var result =
+            await supabase
+                .from("hospital_staff")
+                .insert(record)
+                .select()
+                .maybeSingle();
 
-    if (!supabase) {
-        throw new Error(
-            "Supabase is not initialized."
-        );
-    }
+        if (result.error) {
 
-    const familyData = {
-        user_id: userId
-    };
-
-    if (formData.bloodGroup) {
-        familyData.blood_group =
-            formData.bloodGroup;
-    }
-
-    if (formData.allergies) {
-        familyData.allergies =
-            formData.allergies;
-    }
-
-    if (formData.medicalConditions) {
-        familyData.medical_conditions =
-            formData.medicalConditions;
-    }
-
-    if (formData.emergencyContact) {
-        familyData.emergency_contact =
-            formData.emergencyContact;
-    }
-
-    if (formData.emergencyContactName) {
-        familyData.emergency_contact_name =
-            formData.emergencyContactName;
-    }
-
-    const {
-        data,
-        error
-    } = await supabase
-        .from("patients")
-        .insert(familyData)
-        .select()
-        .single();
-
-    if (error) {
-        console.error(
-            "Family record creation error:",
-            error
-        );
-
-        throw error;
-    }
-
-    return data;
-}
-
-/* =========================================================
-   HOSPITAL LIST
-   ========================================================= */
-
-async function loadHospitalsForSignup() {
-    const supabase = getSupabase();
-
-    if (!supabase) {
-        console.error(
-            "Supabase is not initialized."
-        );
-
-        return [];
-    }
-
-    try {
-        const {
-            data,
-            error
-        } = await supabase
-            .from("hospitals")
-            .select("*")
-            .eq(
-                "emergency_available",
-                true
+            console.error(
+                "Hospital record error:",
+                result.error
             );
 
-        if (error) {
-            throw error;
+            throw result.error;
         }
 
-        const hospitalSelect =
+        return result.data;
+    }
+
+
+    /* =========================================================
+       LOAD HOSPITALS
+       ========================================================= */
+
+    async function loadHospitalsForSignup() {
+
+        var supabase =
+            getSupabase();
+
+        if (!supabase) {
+            return;
+        }
+
+        var select =
             document.getElementById(
                 "hospitalId"
             );
 
-        if (!hospitalSelect) {
-            return data || [];
+        if (!select) {
+            return;
         }
 
-        const currentValue =
-            hospitalSelect.value;
+        try {
 
-        hospitalSelect.innerHTML =
-            '<option value="">Select Hospital</option>';
+            var result =
+                await supabase
+                    .from("hospitals")
+                    .select(
+                        "id,name"
+                    )
+                    .eq(
+                        "emergency_available",
+                        true
+                    )
+                    .order(
+                        "name",
+                        {
+                            ascending: true
+                        }
+                    );
 
-        (data || []).forEach(hospital => {
-            const option =
-                document.createElement(
-                    "option"
+            if (result.error) {
+
+                console.error(
+                    "Hospital loading error:",
+                    result.error
                 );
 
-            option.value =
-                hospital.id;
-
-            option.textContent =
-                hospital.name ||
-                hospital.hospital_name ||
-                `Hospital ${hospital.id}`;
-
-            hospitalSelect.appendChild(
-                option
-            );
-        });
-
-        if (currentValue) {
-            hospitalSelect.value =
-                currentValue;
-        }
-
-        return data || [];
-    } catch (error) {
-        console.error(
-            "Hospital loading error:",
-            error
-        );
-
-        return [];
-    }
-}
-
-/* =========================================================
-   REGISTER USER
-   ========================================================= */
-
-async function registerUser(formData) {
-    clearMessage();
-
-    const supabase = getSupabase();
-
-    if (!supabase) {
-        return {
-            success: false,
-            error:
-                "Supabase is not initialized."
-        };
-    }
-
-    try {
-        if (!formData) {
-            throw new Error(
-                "Registration data is missing."
-            );
-        }
-
-        const name =
-            String(
-                formData.name || ""
-            ).trim();
-
-        const email =
-            String(
-                formData.email || ""
-            ).trim()
-            .toLowerCase();
-
-        const phone =
-            normalizePhone(
-                formData.phone || ""
-            );
-
-        const password =
-            String(
-                formData.password || ""
-            );
-
-        const role =
-            normalizeRole(
-                formData.role || "family"
-            );
-
-        if (!validateName(name)) {
-            throw new Error(
-                "Please enter a valid name."
-            );
-        }
-
-        if (!validateEmail(email)) {
-            throw new Error(
-                "Please enter a valid email address."
-            );
-        }
-
-        if (!validatePhone(phone)) {
-            throw new Error(
-                "Please enter a valid phone number."
-            );
-        }
-
-        if (!validatePassword(password)) {
-            throw new Error(
-                "Password must be at least 6 characters."
-            );
-        }
-
-        if (!role) {
-            throw new Error(
-                "Please select a valid role."
-            );
-        }
-
-        if (
-            formData.termsAccepted === false
-        ) {
-            throw new Error(
-                "Please accept the terms and conditions."
-            );
-        }
-
-        /* -------------------------------------------------
-           FAMILY VALIDATION
-           ------------------------------------------------- */
-
-        if (role === "family") {
-            if (!validateFamilyData(formData)) {
-                throw new Error(
-                    "Please enter valid family information."
-                );
-            }
-        }
-
-        /* -------------------------------------------------
-           DRIVER VALIDATION
-           ------------------------------------------------- */
-
-        if (role === "driver") {
-            if (
-                !validateVehicleNumber(
-                    formData.vehicleNumber
-                )
-            ) {
-                throw new Error(
-                    "Please enter a valid vehicle number."
-                );
+                return;
             }
 
-            if (
-                !validateAmbulanceType(
-                    formData.ambulanceType
-                )
-            ) {
-                throw new Error(
-                    "Please select a valid ambulance type."
-                );
-            }
+            select.innerHTML =
+                '<option value="">Select Hospital</option>';
 
-            if (
-                !validateIdentityDocument(
-                    formData.identityDocumentType,
-                    formData.identityDocumentNumber
-                )
-            ) {
-                throw new Error(
-                    "Please provide valid identity document details."
-                );
-            }
-        }
+            (
+                result.data || []
+            ).forEach(
+                function (hospital) {
 
-        /* -------------------------------------------------
-           HOSPITAL VALIDATION
-           ------------------------------------------------- */
+                    var option =
+                        document.createElement(
+                            "option"
+                        );
 
-        if (role === "hospital") {
-            if (!formData.hospitalId) {
-                throw new Error(
-                    "Please select a hospital."
-                );
-            }
+                    option.value =
+                        hospital.id;
 
-            if (!formData.designation) {
-                throw new Error(
-                    "Please enter your designation."
-                );
-            }
+                    option.textContent =
+                        hospital.name;
 
-            if (!formData.hospitalStaffId) {
-                throw new Error(
-                    "Please enter your hospital staff ID."
-                );
-            }
+                    select.appendChild(
+                        option
+                    );
+                }
+            );
 
-            if (!formData.hospitalDepartment) {
-                throw new Error(
-                    "Please enter your hospital department."
-                );
-            }
+        } catch (error) {
 
-            if (!formData.receptionName) {
-                throw new Error(
-                    "Please enter reception/contact name."
-                );
-            }
-
-            if (
-                !validatePhone(
-                    formData.receptionPhone
-                )
-            ) {
-                throw new Error(
-                    "Please enter a valid reception phone number."
-                );
-            }
-        }
-
-        /* -------------------------------------------------
-           AUTH METADATA
-           ------------------------------------------------- */
-
-        const metadata = {
-            name: name,
-            phone: phone,
-            role: role
-        };
-
-        if (role === "family") {
-            metadata.age =
-                formData.age || null;
-
-            metadata.blood_group =
-                formData.bloodGroup || null;
-
-            metadata.allergies =
-                formData.allergies || null;
-
-            metadata.medical_conditions =
-                formData.medicalConditions || null;
-
-            metadata.emergency_contact =
-                formData.emergencyContact || null;
-
-            metadata.emergency_contact_name =
-                formData.emergencyContactName || null;
-        }
-
-        if (role === "driver") {
-            metadata.vehicle_number =
-                formData.vehicleNumber
-                    .trim()
-                    .toUpperCase();
-
-            metadata.ambulance_type =
-                formData.ambulanceType
-                    .trim()
-                    .toLowerCase();
-
-            metadata.identity_document_type =
-                formData.identityDocumentType;
-
-            metadata.identity_verified =
-                false;
-        }
-
-        if (role === "hospital") {
-            metadata.hospital_id =
-                formData.hospitalId;
-
-            metadata.designation =
-                formData.designation;
-
-            metadata.hospital_staff_id =
-                formData.hospitalStaffId;
-
-            metadata.hospital_department =
-                formData.hospitalDepartment;
-
-            metadata.reception_name =
-                formData.receptionName;
-
-            metadata.reception_phone =
-                formData.receptionPhone;
-        }
-
-        /* -------------------------------------------------
-           SUPABASE SIGNUP
-           ------------------------------------------------- */
-
-        const {
-            data,
-            error
-        } = await supabase.auth.signUp({
-            email: email,
-            password: password,
-
-            options: {
-                data: metadata
-            }
-        });
-
-        if (error) {
             console.error(
-                "Supabase signup error:",
+                "Hospital loading error:",
                 error
             );
-
-            throw error;
         }
+    }
 
-        if (!data || !data.user) {
-            throw new Error(
-                "Registration failed. User was not created."
-            );
-        }
 
-        const userId =
-            data.user.id;
+    /* =========================================================
+       REGISTER USER
+       ========================================================= */
 
-        /* -------------------------------------------------
-           EMAIL CONFIRMATION
-           ------------------------------------------------- */
+    async function registerUser(
+        formData
+    ) {
 
-        if (!data.session) {
+        var supabase =
+            getSupabase();
+
+        if (!supabase) {
+
             return {
-                success: true,
-                needsEmailConfirmation: true,
-                user: data.user,
-                message:
-                    "Account created. Please confirm your email before signing in."
+                success: false,
+                error:
+                    "Supabase is not initialized."
             };
         }
 
-        /* -------------------------------------------------
-           CREATE ROLE-SPECIFIC RECORD
-           ------------------------------------------------- */
-
         try {
-            if (role === "family") {
-                await createFamilyRecords(
-                    userId,
-                    formData
+
+            var name =
+                String(
+                    formData.name || ""
+                ).trim();
+
+            var email =
+                String(
+                    formData.email || ""
+                )
+                .trim()
+                .toLowerCase();
+
+            var phone =
+                normalizePhone(
+                    formData.phone
+                );
+
+            var password =
+                String(
+                    formData.password || ""
+                );
+
+            var role =
+                normalizeRole(
+                    formData.role
+                );
+
+
+            /* =============================================
+               BASIC VALIDATION
+               ============================================= */
+
+            if (!validateName(name)) {
+
+                throw new Error(
+                    "Please enter your full name."
                 );
             }
 
-            if (role === "driver") {
-                await createDriverRecords(
-                    userId,
-                    formData
+            if (!validateEmail(email)) {
+
+                throw new Error(
+                    "Please enter a valid email address."
                 );
             }
 
-            if (role === "hospital") {
-                await createHospitalRecords(
-                    userId,
-                    formData
+            if (!validatePhone(phone)) {
+
+                throw new Error(
+                    "Please enter a valid mobile number."
                 );
             }
-        } catch (recordError) {
-            console.error(
-                "Role record creation error:",
-                recordError
-            );
-        }
 
-        return {
-            success: true,
-            needsEmailConfirmation: false,
-            user: data.user,
-            session: data.session,
-            role: role,
-            redirect:
-                getDashboardForRole(role)
-        };
-    } catch (error) {
-        console.error(
-            "Registration error:",
-            error
-        );
+            if (!validatePassword(password)) {
 
-        return {
-            success: false,
-            error:
-                error.message ||
-                "Registration failed."
-        };
-    }
-}
-
-/* =========================================================
-   COMPLETE ROLE SETUP
-   ========================================================= */
-
-async function completeRoleSetup(
-    user,
-    profile = null
-) {
-    const supabase = getSupabase();
-
-    if (!supabase || !user) {
-        return false;
-    }
-
-    try {
-        const metadata =
-            user.user_metadata || {};
-
-        const role =
-            normalizeRole(
-                metadata.role ||
-                (profile && profile.role)
-            );
-
-        if (role === "driver") {
-            const vehicleNumber =
-                metadata.vehicle_number;
-
-            const ambulanceType =
-                metadata.ambulance_type;
+                throw new Error(
+                    "Password must be at least 6 characters."
+                );
+            }
 
             if (
-                vehicleNumber &&
-                ambulanceType
+                ![
+                    "family",
+                    "driver",
+                    "hospital"
+                ].includes(role)
             ) {
-                const {
-                    data: existingAmbulance,
-                    error: checkError
-                } = await supabase
-                    .from("ambulances")
-                    .select("id")
-                    .eq(
-                        "driver_id",
-                        user.id
-                    )
-                    .maybeSingle();
 
-                if (checkError) {
-                    console.error(
-                        "Ambulance lookup error:",
-                        checkError
+                throw new Error(
+                    "Please select a valid account role."
+                );
+            }
+
+            if (!formData.termsAccepted) {
+
+                throw new Error(
+                    "Please accept the Terms and Conditions."
+                );
+            }
+
+
+            /* =============================================
+               PASSWORD MATCH
+               ============================================= */
+
+            if (
+                password !==
+                String(
+                    formData.confirmPassword ||
+                    ""
+                )
+            ) {
+
+                throw new Error(
+                    "Passwords do not match."
+                );
+            }
+
+
+            /* =============================================
+               FAMILY
+               ============================================= */
+
+            if (
+                role === "family"
+            ) {
+
+                if (
+                    !formData.contactName
+                ) {
+
+                    throw new Error(
+                        "Please enter emergency contact name."
                     );
                 }
 
-                if (!existingAmbulance) {
-                    try {
+                if (
+                    !formData.contactRelationship
+                ) {
+
+                    throw new Error(
+                        "Please enter emergency contact relationship."
+                    );
+                }
+
+                if (
+                    !validatePhone(
+                        formData.contactPhone
+                    )
+                ) {
+
+                    throw new Error(
+                        "Please enter a valid emergency contact phone number."
+                    );
+                }
+
+                if (
+                    !formData.medicalConsent
+                ) {
+
+                    throw new Error(
+                        "Please provide medical information consent."
+                    );
+                }
+
+                if (
+                    !formData.emergencyContactConsent
+                ) {
+
+                    throw new Error(
+                        "Please provide emergency contact consent."
+                    );
+                }
+            }
+
+
+            /* =============================================
+               DRIVER
+               ============================================= */
+
+            if (
+                role === "driver"
+            ) {
+
+                if (
+                    !validateVehicleNumber(
+                        formData.vehicleNumber
+                    )
+                ) {
+
+                    throw new Error(
+                        "Please enter a valid vehicle number."
+                    );
+                }
+
+                if (
+                    !validateAmbulanceType(
+                        formData.ambulanceType
+                    )
+                ) {
+
+                    throw new Error(
+                        "Please select an ambulance type."
+                    );
+                }
+
+                if (
+                    !validateIdentityDocument(
+                        formData.identityDocumentType,
+                        formData.identityDocumentNumber
+                    )
+                ) {
+
+                    throw new Error(
+                        "Please enter valid identity document details."
+                    );
+                }
+            }
+
+
+            /* =============================================
+               HOSPITAL
+               ============================================= */
+
+            if (
+                role === "hospital"
+            ) {
+
+                if (
+                    !formData.hospitalId
+                ) {
+
+                    throw new Error(
+                        "Please select a hospital."
+                    );
+                }
+
+                if (
+                    !formData.designation
+                ) {
+
+                    throw new Error(
+                        "Please enter your designation."
+                    );
+                }
+
+                if (
+                    !formData.hospitalStaffId
+                ) {
+
+                    throw new Error(
+                        "Please enter your hospital staff ID."
+                    );
+                }
+
+                if (
+                    !formData.hospitalDepartment
+                ) {
+
+                    throw new Error(
+                        "Please enter your hospital department."
+                    );
+                }
+
+                if (
+                    !formData.receptionName
+                ) {
+
+                    throw new Error(
+                        "Please enter reception/contact name."
+                    );
+                }
+
+                if (
+                    !validatePhone(
+                        formData.receptionPhone
+                    )
+                ) {
+
+                    throw new Error(
+                        "Please enter a valid reception phone number."
+                    );
+                }
+            }
+
+
+            /* =============================================
+               USER METADATA
+               ============================================= */
+
+            var metadata = {
+
+                name:
+                    name,
+
+                full_name:
+                    name,
+
+                phone:
+                    phone,
+
+                role:
+                    role
+            };
+
+
+            if (
+                role === "family"
+            ) {
+
+                metadata.age =
+                    formData.age ||
+                    null;
+
+                metadata.blood_group =
+                    formData.bloodGroup ||
+                    null;
+
+                metadata.allergies =
+                    formData.allergies ||
+                    null;
+
+                metadata.medical_conditions =
+                    formData.medicalConditions ||
+                    null;
+
+                metadata.emergency_contact_name =
+                    formData.contactName ||
+                    null;
+
+                metadata.emergency_contact_relationship =
+                    formData.contactRelationship ||
+                    null;
+
+                metadata.emergency_contact =
+                    formData.contactPhone ||
+                    null;
+            }
+
+
+            if (
+                role === "driver"
+            ) {
+
+                metadata.vehicle_number =
+                    String(
+                        formData.vehicleNumber ||
+                        ""
+                    )
+                    .trim()
+                    .toUpperCase();
+
+                metadata.ambulance_type =
+                    String(
+                        formData.ambulanceType ||
+                        ""
+                    )
+                    .trim()
+                    .toLowerCase();
+
+                metadata.identity_document_type =
+                    formData.identityDocumentType ||
+                    "";
+
+                metadata.identity_document_number =
+                    formData.identityDocumentNumber ||
+                    "";
+            }
+
+
+            if (
+                role === "hospital"
+            ) {
+
+                metadata.hospital_id =
+                    formData.hospitalId;
+
+                metadata.designation =
+                    formData.designation;
+
+                metadata.hospital_staff_id =
+                    formData.hospitalStaffId;
+
+                metadata.hospital_department =
+                    formData.hospitalDepartment;
+
+                metadata.reception_name =
+                    formData.receptionName;
+
+                metadata.reception_phone =
+                    formData.receptionPhone;
+            }
+
+
+            /* =============================================
+               SUPABASE SIGN UP
+               ============================================= */
+
+            console.log(
+                "Creating Supabase account..."
+            );
+
+            var result =
+                await supabase.auth.signUp({
+
+                    email:
+                        email,
+
+                    password:
+                        password,
+
+                    options: {
+
+                        data:
+                            metadata
+                    }
+                });
+
+
+            if (result.error) {
+
+                console.error(
+                    "Supabase signup error:",
+                    result.error
+                );
+
+                throw result.error;
+            }
+
+
+            var user =
+                result.data &&
+                result.data.user;
+
+            var session =
+                result.data &&
+                result.data.session;
+
+
+            if (!user) {
+
+                throw new Error(
+                    "Account could not be created."
+                );
+            }
+
+
+            /* =============================================
+               EMAIL CONFIRMATION
+               ============================================= */
+
+            if (!session) {
+
+                return {
+
+                    success:
+                        true,
+
+                    needsEmailConfirmation:
+                        true,
+
+                    user:
+                        user,
+
+                    role:
+                        role,
+
+                    message:
+                        "Account created successfully. Please verify your email before signing in."
+                };
+            }
+
+
+            /* =============================================
+               ROLE RECORD
+               ============================================= */
+
+            try {
+
+                if (
+                    role === "family"
+                ) {
+
+                    await createFamilyRecords(
+                        user.id,
+                        formData
+                    );
+                }
+
+                if (
+                    role === "driver"
+                ) {
+
+                    await createDriverRecords(
+                        user.id,
+                        formData
+                    );
+                }
+
+                if (
+                    role === "hospital"
+                ) {
+
+                    await createHospitalRecords(
+                        user.id,
+                        formData
+                    );
+                }
+
+            } catch (recordError) {
+
+                console.error(
+                    "Role record creation error:",
+                    recordError
+                );
+
+                /*
+                 * Account creation succeeded.
+                 * Do not stop navigation because
+                 * a secondary table failed.
+                 */
+            }
+
+
+            return {
+
+                success:
+                    true,
+
+                needsEmailConfirmation:
+                    false,
+
+                user:
+                    user,
+
+                session:
+                    session,
+
+                role:
+                    role,
+
+                redirect:
+                    getDashboardForRole(
+                        role
+                    )
+            };
+
+        } catch (error) {
+
+            console.error(
+                "Registration error:",
+                error
+            );
+
+            return {
+
+                success:
+                    false,
+
+                error:
+                    error.message ||
+                    "Registration failed."
+            };
+        }
+    }
+
+
+    /* =========================================================
+       COMPLETE ROLE SETUP
+       ========================================================= */
+
+    async function completeRoleSetup(
+        user
+    ) {
+
+        if (!user) {
+            return false;
+        }
+
+        var supabase =
+            getSupabase();
+
+        if (!supabase) {
+            return false;
+        }
+
+        try {
+
+            var metadata =
+                user.user_metadata ||
+                {};
+
+            var role =
+                normalizeRole(
+                    metadata.role
+                );
+
+
+            if (
+                role === "driver"
+            ) {
+
+                var vehicleNumber =
+                    metadata.vehicle_number;
+
+                var ambulanceType =
+                    metadata.ambulance_type;
+
+                if (
+                    vehicleNumber &&
+                    ambulanceType
+                ) {
+
+                    var existingDriver =
+                        await supabase
+                            .from("ambulances")
+                            .select("id")
+                            .eq(
+                                "driver_id",
+                                user.id
+                            )
+                            .maybeSingle();
+
+                    if (
+                        !existingDriver.data
+                    ) {
+
                         await supabase
                             .from("ambulances")
                             .insert({
+
                                 vehicle_number:
-                                    vehicleNumber
-                                        .trim()
-                                        .toUpperCase(),
+                                    vehicleNumber,
 
                                 driver_id:
                                     user.id,
 
                                 ambulance_type:
-                                    ambulanceType
-                                        .trim()
-                                        .toLowerCase(),
+                                    ambulanceType,
 
                                 status:
                                     "available"
                             });
-                    } catch (error) {
-                        console.error(
-                            "Ambulance setup error:",
-                            error
-                        );
                     }
                 }
             }
-        }
 
-        if (role === "hospital") {
-            const hospitalId =
-                metadata.hospital_id;
-
-            const designation =
-                metadata.designation;
 
             if (
-                hospitalId &&
-                designation
+                role === "hospital"
             ) {
-                const {
-                    data: existingStaff,
-                    error: checkError
-                } = await supabase
-                    .from("hospital_staff")
-                    .select("id")
-                    .eq(
-                        "user_id",
-                        user.id
-                    )
-                    .maybeSingle();
 
-                if (checkError) {
-                    console.error(
-                        "Hospital staff lookup error:",
-                        checkError
-                    );
-                }
+                var hospitalId =
+                    metadata.hospital_id;
 
-                if (!existingStaff) {
-                    try {
+                var designation =
+                    metadata.designation;
+
+                if (
+                    hospitalId &&
+                    designation
+                ) {
+
+                    var existingStaff =
+                        await supabase
+                            .from("hospital_staff")
+                            .select("id")
+                            .eq(
+                                "user_id",
+                                user.id
+                            )
+                            .maybeSingle();
+
+                    if (
+                        !existingStaff.data
+                    ) {
+
                         await supabase
                             .from("hospital_staff")
                             .insert({
+
                                 hospital_id:
                                     hospitalId,
 
@@ -1153,1009 +1625,1334 @@ async function completeRoleSetup(
                                     user.id,
 
                                 designation:
-                                    designation
+                                    designation,
+
+                                hospital_staff_id:
+                                    metadata.hospital_staff_id ||
+                                    null,
+
+                                hospital_department:
+                                    metadata.hospital_department ||
+                                    null,
+
+                                reception_name:
+                                    metadata.reception_name ||
+                                    null,
+
+                                reception_phone:
+                                    metadata.reception_phone ||
+                                    null
                             });
-                    } catch (error) {
-                        console.error(
-                            "Hospital setup error:",
-                            error
-                        );
                     }
                 }
             }
+
+            return true;
+
+        } catch (error) {
+
+            console.error(
+                "Role setup error:",
+                error
+            );
+
+            return false;
+        }
+    }
+
+
+    /* =========================================================
+       LOGIN
+       ========================================================= */
+
+    async function loginUser(
+        email,
+        password
+    ) {
+
+        var supabase =
+            getSupabase();
+
+        if (!supabase) {
+
+            return {
+                success: false,
+                error:
+                    "Supabase is not initialized."
+            };
         }
 
-        return true;
-    } catch (error) {
-        console.error(
-            "Role setup error:",
-            error
-        );
+        try {
 
-        return false;
-    }
-}
-
-/* =========================================================
-   LOGIN
-   ========================================================= */
-
-async function loginUser(
-    email,
-    password
-) {
-    clearMessage();
-
-    const supabase = getSupabase();
-
-    if (!supabase) {
-        return {
-            success: false,
-            error:
-                "Supabase is not initialized."
-        };
-    }
-
-    try {
-        const normalizedEmail =
-            String(email || "")
+            var normalizedEmail =
+                String(
+                    email || ""
+                )
                 .trim()
                 .toLowerCase();
 
-        if (
-            !validateEmail(
-                normalizedEmail
-            )
-        ) {
-            throw new Error(
-                "Please enter a valid email address."
-            );
-        }
+            if (
+                !validateEmail(
+                    normalizedEmail
+                )
+            ) {
 
-        if (!password) {
-            throw new Error(
-                "Please enter your password."
-            );
-        }
-
-        const {
-            data,
-            error
-        } = await supabase.auth.signInWithPassword({
-            email:
-                normalizedEmail,
-
-            password:
-                password
-        });
-
-        if (error) {
-            throw error;
-        }
-
-        if (!data || !data.user) {
-            throw new Error(
-                "Login failed."
-            );
-        }
-
-        let profile = null;
-
-        try {
-            profile =
-                await getUserProfile(
-                    data.user.id
+                throw new Error(
+                    "Please enter a valid email address."
                 );
-        } catch (profileError) {
-            console.error(
-                "Profile loading error:",
-                profileError
-            );
-        }
+            }
 
-        await completeRoleSetup(
-            data.user,
-            profile
-        );
+            if (!password) {
 
-        const role =
-            normalizeRole(
+                throw new Error(
+                    "Please enter your password."
+                );
+            }
+
+            var result =
+                await supabase.auth
+                    .signInWithPassword({
+
+                        email:
+                            normalizedEmail,
+
+                        password:
+                            password
+                    });
+
+            if (result.error) {
+                throw result.error;
+            }
+
+            if (
+                !result.data ||
+                !result.data.user
+            ) {
+
+                throw new Error(
+                    "Login failed."
+                );
+            }
+
+            var profile =
+                await getUserProfile(
+                    result.data.user.id
+                );
+
+            var role =
                 profile &&
                 profile.role
                     ? profile.role
-                    : data.user.user_metadata &&
-                      data.user.user_metadata.role
+                    : (
+                        result.data.user
+                            .user_metadata &&
+                        result.data.user
+                            .user_metadata.role
+                    );
+
+            role =
+                normalizeRole(role);
+
+            return {
+
+                success:
+                    true,
+
+                user:
+                    result.data.user,
+
+                session:
+                    result.data.session,
+
+                profile:
+                    profile,
+
+                role:
+                    role,
+
+                redirect:
+                    getDashboardForRole(
+                        role
+                    )
+            };
+
+        } catch (error) {
+
+            console.error(
+                "Login error:",
+                error
             );
 
-        const redirect =
-            getDashboardForRole(role);
+            return {
 
-        return {
-            success: true,
-            user: data.user,
-            session: data.session,
-            profile: profile,
-            role: role,
-            redirect: redirect
-        };
-    } catch (error) {
-        console.error(
-            "Login error:",
-            error
-        );
+                success:
+                    false,
 
-        return {
-            success: false,
-            error:
-                error.message ||
-                "Login failed."
-        };
-    }
-}
-
-/* =========================================================
-   PASSWORD RESET
-   ========================================================= */
-
-async function resetPassword(
-    email
-) {
-    const supabase = getSupabase();
-
-    if (!supabase) {
-        return {
-            success: false,
-            error:
-                "Supabase is not initialized."
-        };
+                error:
+                    error.message ||
+                    "Login failed."
+            };
+        }
     }
 
-    try {
-        const normalizedEmail =
-            String(email || "")
+
+    /* =========================================================
+       PASSWORD RESET
+       ========================================================= */
+
+    async function resetPassword(
+        email
+    ) {
+
+        var supabase =
+            getSupabase();
+
+        if (!supabase) {
+
+            return {
+
+                success:
+                    false,
+
+                error:
+                    "Supabase is not initialized."
+            };
+        }
+
+        try {
+
+            var normalizedEmail =
+                String(
+                    email || ""
+                )
                 .trim()
                 .toLowerCase();
 
-        if (
-            !validateEmail(
-                normalizedEmail
-            )
-        ) {
-            throw new Error(
-                "Please enter a valid email address."
+            if (
+                !validateEmail(
+                    normalizedEmail
+                )
+            ) {
+
+                throw new Error(
+                    "Please enter a valid email address."
+                );
+            }
+
+            var result =
+                await supabase.auth
+                    .resetPasswordForEmail(
+                        normalizedEmail,
+                        {
+                            redirectTo:
+                                window.location.origin +
+                                "/reset-password.html"
+                        }
+                    );
+
+            if (result.error) {
+                throw result.error;
+            }
+
+            return {
+
+                success:
+                    true,
+
+                message:
+                    "Password reset email sent successfully."
+            };
+
+        } catch (error) {
+
+            return {
+
+                success:
+                    false,
+
+                error:
+                    error.message ||
+                    "Unable to send password reset email."
+            };
+        }
+    }
+
+
+    /* =========================================================
+       LOGOUT
+       ========================================================= */
+
+    async function logoutUser() {
+
+        var supabase =
+            getSupabase();
+
+        try {
+
+            if (supabase) {
+
+                await supabase.auth
+                    .signOut();
+            }
+
+        } catch (error) {
+
+            console.error(
+                "Logout error:",
+                error
             );
         }
 
-        const redirectUrl =
-            `${window.location.origin}/reset-password.html`;
-
-        const {
-            error
-        } = await supabase.auth.resetPasswordForEmail(
-            normalizedEmail,
-            {
-                redirectTo:
-                    redirectUrl
-            }
-        );
-
-        if (error) {
-            throw error;
-        }
-
-        return {
-            success: true,
-            message:
-                "Password reset email sent."
-        };
-    } catch (error) {
-        console.error(
-            "Password reset error:",
-            error
-        );
-
-        return {
-            success: false,
-            error:
-                error.message ||
-                "Unable to send password reset email."
-        };
-    }
-}
-
-/* =========================================================
-   LOGOUT
-   ========================================================= */
-
-async function logoutUser() {
-    const supabase = getSupabase();
-
-    if (!supabase) {
-        window.location.href =
-            AUTH_PAGES.signin;
-
-        return;
-    }
-
-    try {
-        const {
-            error
-        } = await supabase.auth.signOut();
-
-        if (error) {
-            throw error;
-        }
-    } catch (error) {
-        console.error(
-            "Logout error:",
-            error
+        window.location.replace(
+            AUTH_PAGES.signin
         );
     }
 
-    window.location.href =
-        AUTH_PAGES.signin;
-}
 
-/* =========================================================
-   AUTH STATE
-   ========================================================= */
+    /* =========================================================
+       REQUIRE AUTH
+       ========================================================= */
 
-async function getCurrentUser() {
-    const supabase = getSupabase();
+    async function requireAuth() {
 
-    if (!supabase) {
-        return null;
-    }
+        var user =
+            await getCurrentUser();
 
-    try {
-        const {
-            data: {
-                user
-            },
-            error
-        } = await supabase.auth.getUser();
+        if (!user) {
 
-        if (error) {
-            console.error(
-                "Get current user error:",
-                error
+            window.location.replace(
+                AUTH_PAGES.signin
             );
 
             return null;
         }
 
-        return user || null;
-    } catch (error) {
-        console.error(
-            "Current user error:",
-            error
-        );
-
-        return null;
+        return user;
     }
-}
 
-/* =========================================================
-   AUTH GUARDS
-   ========================================================= */
 
-async function requireAuth() {
-    const user =
-        await getCurrentUser();
+    /* =========================================================
+       PROTECT DASHBOARD
+       ========================================================= */
 
-    if (!user) {
-        const currentPage =
+    async function protectDashboard() {
+
+        var currentPage =
             getCurrentPage();
 
-        const encoded =
-            encodeURIComponent(
+        if (
+            !PROTECTED_PAGES.includes(
                 currentPage
+            )
+        ) {
+            return true;
+        }
+
+        var user =
+            await getCurrentUser();
+
+        if (!user) {
+
+            window.location.replace(
+                AUTH_PAGES.signin
             );
-
-        window.location.href =
-            `${AUTH_PAGES.signin}?redirect=${encoded}`;
-
-        return null;
-    }
-
-    return user;
-}
-
-async function protectDashboard() {
-    const user =
-        await requireAuth();
-
-    if (!user) {
-        return false;
-    }
-
-    try {
-        const profile =
-            await getUserProfile(
-                user.id
-            );
-
-        if (!profile) {
-            window.location.href =
-                AUTH_PAGES.signin;
 
             return false;
         }
 
-        const currentPage =
-            getCurrentPage();
+        var profile =
+            await getUserProfile(
+                user.id
+            );
 
-        const expectedPage =
+        var role =
+            profile &&
+            profile.role
+                ? profile.role
+                : (
+                    user.user_metadata &&
+                    user.user_metadata.role
+                );
+
+        role =
+            normalizeRole(role);
+
+        var expectedPage =
             getDashboardForRole(
-                profile.role
-            ).toLowerCase();
+                role
+            );
 
         if (
-            currentPage &&
-            currentPage !== expectedPage
+            expectedPage &&
+            expectedPage !== currentPage
         ) {
-            window.location.href =
-                expectedPage;
+
+            window.location.replace(
+                expectedPage
+            );
 
             return false;
         }
 
         return true;
-    } catch (error) {
-        console.error(
-            "Dashboard protection error:",
-            error
+    }
+
+
+    /* =========================================================
+       REDIRECT IF AUTHENTICATED
+       ========================================================= */
+
+    async function redirectIfAuthenticated() {
+
+        var currentPage =
+            getCurrentPage();
+
+        if (
+            currentPage !==
+                AUTH_PAGES.signin &&
+            currentPage !==
+                AUTH_PAGES.signup
+        ) {
+            return false;
+        }
+
+        var user =
+            await getCurrentUser();
+
+        if (!user) {
+            return false;
+        }
+
+        return await redirectUserByRole(
+            user
         );
-
-        return false;
-    }
-}
-
-/* =========================================================
-   REDIRECT IF ALREADY LOGGED IN
-   ========================================================= */
-
-async function redirectIfAuthenticated() {
-    const currentPage =
-        getCurrentPage();
-
-    const authPages = [
-        "signin.html",
-        "signup.html"
-    ];
-
-    if (
-        !authPages.includes(
-            currentPage
-        )
-    ) {
-        return false;
     }
 
-    const user =
-        await getCurrentUser();
 
-    if (!user) {
-        return false;
-    }
+    /* =========================================================
+       SIGNUP FORM
+       ========================================================= */
 
-    return await redirectUserByRole();
-}
+    function setupSignupForm() {
 
-/* =========================================================
-   SIGNUP FORM
-   ========================================================= */
-
-function setupSignupForm() {
-    const form =
-        document.getElementById(
-            "signupForm"
-        );
-
-    if (!form) {
-        return;
-    }
-
-    if (
-        form.dataset.authBound === "true"
-    ) {
-        return;
-    }
-
-    form.dataset.authBound = "true";
-
-    form.addEventListener(
-        "submit",
-        async function(event) {
-            event.preventDefault();
-
-            clearMessage();
-
-            const submitButton =
-                form.querySelector(
-                    'button[type="submit"]'
-                );
-
-            setLoading(
-                submitButton,
-                true,
-                "Creating account..."
+        var form =
+            document.getElementById(
+                "signupForm"
             );
 
-            try {
-                const roleElement =
+        if (!form) {
+            return;
+        }
+
+        /*
+         * Prevent duplicate event handlers.
+         */
+
+        if (
+            form.dataset.authBound ===
+            "true"
+        ) {
+            return;
+        }
+
+        form.dataset.authBound =
+            "true";
+
+
+        form.addEventListener(
+            "submit",
+            async function(event) {
+
+                /*
+                 * STOP NORMAL HTML FORM SUBMISSION.
+                 *
+                 * This is what prevents the page
+                 * from reloading.
+                 */
+
+                event.preventDefault();
+
+                event.stopPropagation();
+
+                clearMessage();
+
+
+                var submitButton =
                     document.getElementById(
-                        "role"
-                    ) ||
-                    document.querySelector(
-                        'input[name="role"]:checked'
+                        "createAccountButton"
                     );
 
-                let role = "";
 
-                if (
-                    roleElement &&
-                    roleElement.type ===
-                        "radio"
-                ) {
-                    const checked =
+                setLoading(
+                    submitButton,
+                    true,
+                    "Creating Account..."
+                );
+
+
+                try {
+
+                    /* =========================================
+                       ROLE
+                       ========================================= */
+
+                    var selectedRole =
                         document.querySelector(
                             'input[name="role"]:checked'
                         );
 
-                    role =
-                        checked
-                            ? checked.value
-                            : "";
-                } else if (
-                    roleElement
-                ) {
-                    role =
-                        roleElement.value;
-                }
+                    if (!selectedRole) {
 
-                const formData = {
-                    name:
-                        getValue("name"),
+                        throw new Error(
+                            "Please select your account role."
+                        );
+                    }
 
-                    email:
-                        getValue("email"),
+                    var role =
+                        selectedRole.value;
 
-                    phone:
-                        getValue("phone"),
 
-                    password:
-                        getValue("password"),
+                    /* =========================================
+                       FORM DATA
+                       ========================================= */
 
-                    role:
-                        role,
+                    var formData = {
 
-                    termsAccepted:
-                        getChecked(
-                            "termsAccepted"
-                        ) ||
-                        getChecked("terms") ||
-                        true,
+                        name:
+                            getValue(
+                                "fullName"
+                            ),
 
-                    age:
-                        getValue("age"),
+                        email:
+                            getValue(
+                                "email"
+                            ),
 
-                    bloodGroup:
-                        getValue(
-                            "bloodGroup"
-                        ),
+                        phone:
+                            getValue(
+                                "phone"
+                            ),
 
-                    allergies:
-                        getValue(
-                            "allergies"
-                        ),
+                        password:
+                            getValue(
+                                "password"
+                            ),
 
-                    medicalConditions:
-                        getValue(
-                            "medicalConditions"
-                        ),
+                        confirmPassword:
+                            getValue(
+                                "confirmPassword"
+                            ),
 
-                    emergencyContact:
-                        getValue(
-                            "emergencyContact"
-                        ),
+                        role:
+                            role,
 
-                    emergencyContactName:
-                        getValue(
-                            "emergencyContactName"
-                        ),
 
-                    vehicleNumber:
-                        getValue(
-                            "vehicleNumber"
-                        ),
+                        /* FAMILY */
 
-                    ambulanceType:
-                        getValue(
-                            "ambulanceType"
-                        ),
+                        age:
+                            getValue(
+                                "age"
+                            ),
 
-                    identityDocumentType:
-                        getValue(
-                            "identityDocumentType"
-                        ),
+                        bloodGroup:
+                            getValue(
+                                "bloodGroup"
+                            ),
 
-                    identityDocumentNumber:
-                        getValue(
-                            "identityDocumentNumber"
-                        ),
+                        gender:
+                            getValue(
+                                "gender"
+                            ),
 
-                    hospitalId:
-                        getValue(
-                            "hospitalId"
-                        ),
+                        allergies:
+                            getValue(
+                                "allergies"
+                            ),
 
-                    designation:
-                        getValue(
-                            "designation"
-                        ),
+                        medicalConditions:
+                            getValue(
+                                "medicalConditions"
+                            ),
 
-                    hospitalStaffId:
-                        getValue(
-                            "hospitalStaffId"
-                        ),
+                        contactName:
+                            getValue(
+                                "contactName"
+                            ),
 
-                    hospitalDepartment:
-                        getValue(
-                            "hospitalDepartment"
-                        ),
+                        contactRelationship:
+                            getValue(
+                                "contactRelationship"
+                            ),
 
-                    receptionName:
-                        getValue(
-                            "receptionName"
-                        ),
+                        contactPhone:
+                            getValue(
+                                "contactPhone"
+                            ),
 
-                    receptionPhone:
-                        getValue(
-                            "receptionPhone"
-                        )
-                };
+                        contactEmail:
+                            getValue(
+                                "contactEmail"
+                            ),
 
-                const result =
-                    await registerUser(
-                        formData
+                        medicalConsent:
+                            getChecked(
+                                "medicalConsent"
+                            ),
+
+                        emergencyContactConsent:
+                            getChecked(
+                                "emergencyContactConsent"
+                            ),
+
+
+                        /* DRIVER */
+
+                        vehicleNumber:
+                            getValue(
+                                "vehicleNumber"
+                            ),
+
+                        ambulanceType:
+                            getValue(
+                                "ambulanceType"
+                            ),
+
+                        identityDocumentType:
+                            getValue(
+                                "identityDocumentType"
+                            ),
+
+                        identityDocumentNumber:
+                            getValue(
+                                "identityDocumentNumber"
+                            ),
+
+
+                        /* HOSPITAL */
+
+                        hospitalId:
+                            getValue(
+                                "hospitalId"
+                            ),
+
+                        designation:
+                            getValue(
+                                "designation"
+                            ),
+
+                        hospitalStaffId:
+                            getValue(
+                                "hospitalStaffId"
+                            ),
+
+                        hospitalDepartment:
+                            getValue(
+                                "hospitalDepartment"
+                            ),
+
+                        receptionName:
+                            getValue(
+                                "receptionName"
+                            ),
+
+                        receptionPhone:
+                            getValue(
+                                "receptionPhone"
+                            ),
+
+
+                        /* TERMS */
+
+                        termsAccepted:
+                            getChecked(
+                                "termsConsent"
+                            )
+                    };
+
+
+                    /* =========================================
+                       PASSWORD MATCH
+                       ========================================= */
+
+                    if (
+                        formData.password !==
+                        formData.confirmPassword
+                    ) {
+
+                        throw new Error(
+                            "Passwords do not match."
+                        );
+                    }
+
+
+                    /* =========================================
+                       IMPORTANT
+                       =========================================
+
+                       DO NOT USE:
+
+                       form.checkValidity()
+
+                       here.
+
+                       signup.html contains role-dependent
+                       required fields.
+
+                       registerUser() performs validation.
+                       ========================================= */
+
+
+                    /* =========================================
+                       REGISTER
+                       ========================================= */
+
+                    var result =
+                        await registerUser(
+                            formData
+                        );
+
+
+                    if (!result.success) {
+
+                        showMessage(
+                            result.error ||
+                            "Registration failed.",
+                            "error"
+                        );
+
+                        return;
+                    }
+
+
+                    /* =========================================
+                       EMAIL CONFIRMATION
+                       ========================================= */
+
+                    if (
+                        result.needsEmailConfirmation
+                    ) {
+
+                        showMessage(
+                            result.message ||
+                            "Account created successfully. Please verify your email.",
+                            "success"
+                        );
+
+                        setTimeout(
+                            function() {
+
+                                window.location.replace(
+                                    AUTH_PAGES.signin
+                                );
+
+                            },
+                            1500
+                        );
+
+                        return;
+                    }
+
+
+                    /* =========================================
+                       DIRECT DASHBOARD REDIRECT
+                       ========================================= */
+
+                    var redirectPage =
+                        result.redirect ||
+                        getDashboardForRole(
+                            result.role
+                        );
+
+
+                    if (!redirectPage) {
+
+                        throw new Error(
+                            "Account created, but the account role could not be determined."
+                        );
+                    }
+
+
+                    showMessage(
+                        "Account created successfully. Redirecting...",
+                        "success"
                     );
 
-                if (!result.success) {
+
+                    console.log(
+                        "Signup successful."
+                    );
+
+                    console.log(
+                        "Role:",
+                        result.role
+                    );
+
+                    console.log(
+                        "Redirecting to:",
+                        redirectPage
+                    );
+
+
+                    /*
+                     * IMPORTANT:
+                     * Use location.replace so the browser
+                     * does not return to signup.html.
+                     */
+
+                    setTimeout(
+                        function() {
+
+                            window.location.replace(
+                                redirectPage
+                            );
+
+                        },
+                        500
+                    );
+
+                } catch (error) {
+
+                    console.error(
+                        "Signup error:",
+                        error
+                    );
+
                     showMessage(
-                        result.error ||
+                        error.message ||
                         "Registration failed.",
                         "error"
                     );
 
-                    return;
-                }
+                } finally {
 
-                if (
-                    result.needsEmailConfirmation
-                ) {
+                    setLoading(
+                        submitButton,
+                        false
+                    );
+                }
+            }
+        );
+    }
+
+
+    /* =========================================================
+       SIGN IN FORM
+       ========================================================= */
+
+    function setupSigninForm() {
+
+        var form =
+            document.getElementById(
+                "signinForm"
+            );
+
+        if (!form) {
+            return;
+        }
+
+        if (
+            form.dataset.authBound ===
+            "true"
+        ) {
+            return;
+        }
+
+        form.dataset.authBound =
+            "true";
+
+
+        form.addEventListener(
+            "submit",
+            async function(event) {
+
+                event.preventDefault();
+
+                event.stopPropagation();
+
+                clearMessage();
+
+
+                var button =
+                    form.querySelector(
+                        'button[type="submit"]'
+                    );
+
+
+                setLoading(
+                    button,
+                    true,
+                    "Signing in..."
+                );
+
+
+                try {
+
+                    var email =
+                        getValue(
+                            "email"
+                        );
+
+                    var password =
+                        getValue(
+                            "password"
+                        );
+
+
+                    var result =
+                        await loginUser(
+                            email,
+                            password
+                        );
+
+
+                    if (!result.success) {
+
+                        showMessage(
+                            result.error ||
+                            "Login failed.",
+                            "error"
+                        );
+
+                        return;
+                    }
+
+
+                    var redirect =
+                        result.redirect ||
+                        getDashboardForRole(
+                            result.role
+                        );
+
+
+                    if (!redirect) {
+
+                        throw new Error(
+                            "Your account role is missing."
+                        );
+                    }
+
+
                     showMessage(
-                        result.message ||
-                        "Account created. Please confirm your email.",
+                        "Login successful. Redirecting...",
                         "success"
                     );
 
+
                     setTimeout(
-                        () => {
-                            window.location.href =
-                                AUTH_PAGES.signin;
-                        },
-                        2000
-                    );
+                        function() {
 
-                    return;
-                }
-
-                showMessage(
-                    "Account created successfully. Redirecting...",
-                    "success"
-                );
-
-                setTimeout(
-                    () => {
-                        window.location.href =
-                            result.redirect ||
-                            getDashboardForRole(
-                                result.role
+                            window.location.replace(
+                                redirect
                             );
-                    },
-                    500
-                );
-            } catch (error) {
-                console.error(
-                    "Signup form error:",
-                    error
-                );
 
-                showMessage(
-                    error.message ||
-                    "Registration failed.",
-                    "error"
-                );
-            } finally {
-                setLoading(
-                    submitButton,
-                    false
-                );
-            }
-        }
-    );
-}
-
-/* =========================================================
-   SIGNIN FORM
-   ========================================================= */
-
-function setupSigninForm() {
-    const form =
-        document.getElementById(
-            "signinForm"
-        );
-
-    if (!form) {
-        return;
-    }
-
-    if (
-        form.dataset.authBound === "true"
-    ) {
-        return;
-    }
-
-    form.dataset.authBound = "true";
-
-    form.addEventListener(
-        "submit",
-        async function(event) {
-            event.preventDefault();
-
-            clearMessage();
-
-            const submitButton =
-                form.querySelector(
-                    'button[type="submit"]'
-                );
-
-            setLoading(
-                submitButton,
-                true,
-                "Signing in..."
-            );
-
-            try {
-                const email =
-                    getValue("email");
-
-                const password =
-                    getValue("password");
-
-                const result =
-                    await loginUser(
-                        email,
-                        password
+                        },
+                        300
                     );
 
-                if (!result.success) {
+                } catch (error) {
+
+                    console.error(
+                        "Signin error:",
+                        error
+                    );
+
                     showMessage(
-                        result.error ||
+                        error.message ||
                         "Login failed.",
                         "error"
                     );
 
-                    return;
-                }
+                } finally {
 
-                showMessage(
-                    "Login successful. Redirecting...",
-                    "success"
-                );
-
-                const redirect =
-                    result.redirect ||
-                    getDashboardForRole(
-                        result.role
+                    setLoading(
+                        button,
+                        false
                     );
-
-                setTimeout(
-                    () => {
-                        window.location.href =
-                            redirect;
-                    },
-                    300
-                );
-            } catch (error) {
-                console.error(
-                    "Signin form error:",
-                    error
-                );
-
-                showMessage(
-                    error.message ||
-                    "Login failed.",
-                    "error"
-                );
-            } finally {
-                setLoading(
-                    submitButton,
-                    false
-                );
-            }
-        }
-    );
-}
-
-/* =========================================================
-   LOGOUT BUTTONS
-   ========================================================= */
-
-function setupLogoutButtons() {
-    const selectors = [
-        "#logoutBtn",
-        "#logoutButton",
-        '[data-action="logout"]'
-    ];
-
-    selectors.forEach(selector => {
-        document
-            .querySelectorAll(selector)
-            .forEach(button => {
-                if (
-                    button.dataset.authBound ===
-                    "true"
-                ) {
-                    return;
                 }
-
-                button.dataset.authBound =
-                    "true";
-
-                button.addEventListener(
-                    "click",
-                    async function(event) {
-                        event.preventDefault();
-
-                        await logoutUser();
-                    }
-                );
-            });
-    });
-}
-
-/* =========================================================
-   PASSWORD RESET FORM
-   ========================================================= */
-
-function setupPasswordResetForm() {
-    const form =
-        document.getElementById(
-            "resetPasswordForm"
+            }
         );
-
-    if (!form) {
-        return;
     }
 
-    if (
-        form.dataset.authBound === "true"
-    ) {
-        return;
+
+    /* =========================================================
+       LOGOUT BUTTONS
+       ========================================================= */
+
+    function setupLogoutButtons() {
+
+        var selectors = [
+            "#logoutBtn",
+            "#logoutButton",
+            '[data-action="logout"]'
+        ];
+
+
+        selectors.forEach(
+            function(selector) {
+
+                document
+                    .querySelectorAll(
+                        selector
+                    )
+                    .forEach(
+                        function(button) {
+
+                            if (
+                                button.dataset.authBound ===
+                                "true"
+                            ) {
+                                return;
+                            }
+
+                            button.dataset.authBound =
+                                "true";
+
+
+                            button.addEventListener(
+                                "click",
+                                async function(event) {
+
+                                    event.preventDefault();
+
+                                    await logoutUser();
+                                }
+                            );
+                        }
+                    );
+            }
+        );
     }
 
-    form.dataset.authBound = "true";
 
-    form.addEventListener(
-        "submit",
-        async function(event) {
-            event.preventDefault();
+    /* =========================================================
+       PASSWORD RESET
+       ========================================================= */
 
-            clearMessage();
+    function setupPasswordResetForm() {
 
-            const email =
-                getValue("email");
-
-            const button =
-                form.querySelector(
-                    'button[type="submit"]'
-                );
-
-            setLoading(
-                button,
-                true,
-                "Sending..."
+        var form =
+            document.getElementById(
+                "resetPasswordForm"
             );
 
-            try {
-                const result =
-                    await resetPassword(
-                        email
+        if (!form) {
+            return;
+        }
+
+        if (
+            form.dataset.authBound ===
+            "true"
+        ) {
+            return;
+        }
+
+        form.dataset.authBound =
+            "true";
+
+
+        form.addEventListener(
+            "submit",
+            async function(event) {
+
+                event.preventDefault();
+
+                event.stopPropagation();
+
+                clearMessage();
+
+
+                var email =
+                    getValue(
+                        "email"
                     );
 
-                if (!result.success) {
+
+                var button =
+                    form.querySelector(
+                        'button[type="submit"]'
+                    );
+
+
+                setLoading(
+                    button,
+                    true,
+                    "Sending..."
+                );
+
+
+                try {
+
+                    var result =
+                        await resetPassword(
+                            email
+                        );
+
+
+                    if (!result.success) {
+
+                        showMessage(
+                            result.error,
+                            "error"
+                        );
+
+                        return;
+                    }
+
+
                     showMessage(
-                        result.error,
+                        result.message,
+                        "success"
+                    );
+
+                } catch (error) {
+
+                    console.error(
+                        "Password reset error:",
+                        error
+                    );
+
+                    showMessage(
+                        error.message ||
+                        "Unable to reset password.",
                         "error"
                     );
 
-                    return;
-                }
+                } finally {
 
-                showMessage(
-                    result.message,
-                    "success"
-                );
-            } catch (error) {
-                console.error(
-                    "Reset form error:",
-                    error
-                );
-
-                showMessage(
-                    error.message ||
-                    "Unable to reset password.",
-                    "error"
-                );
-            } finally {
-                setLoading(
-                    button,
-                    false
-                );
-            }
-        }
-    );
-}
-
-/* =========================================================
-   AUTH STATE LISTENER
-   ========================================================= */
-
-function setupAuthStateListener() {
-    const supabase =
-        getSupabase();
-
-    if (!supabase) {
-        return;
-    }
-
-    if (
-        window.__resqAuthStateListenerSet
-    ) {
-        return;
-    }
-
-    window.__resqAuthStateListenerSet =
-        true;
-
-    supabase.auth.onAuthStateChange(
-        async (event, session) => {
-            console.log(
-                "Auth state:",
-                event
-            );
-
-            if (
-                event ===
-                    "SIGNED_OUT"
-            ) {
-                return;
-            }
-
-            if (
-                event ===
-                    "SIGNED_IN" &&
-                session &&
-                session.user
-            ) {
-                try {
-                    await completeRoleSetup(
-                        session.user
-                    );
-                } catch (error) {
-                    console.error(
-                        "Auth state role setup error:",
-                        error
+                    setLoading(
+                        button,
+                        false
                     );
                 }
             }
-        }
-    );
-}
-
-/* =========================================================
-   INITIALIZATION
-   ========================================================= */
-
-async function initializeAuth() {
-    try {
-        setupAuthStateListener();
-
-        setupSignupForm();
-        setupSigninForm();
-        setupLogoutButtons();
-        setupPasswordResetForm();
-
-        const currentPage =
-            getCurrentPage();
-
-        if (
-            currentPage ===
-            "signup.html"
-        ) {
-            await loadHospitalsForSignup();
-        }
-
-        if (
-            currentPage ===
-                "signin.html" ||
-            currentPage ===
-                "signup.html"
-        ) {
-            await redirectIfAuthenticated();
-        }
-
-        if (
-            PROTECTED_PAGES.includes(
-                currentPage
-            )
-        ) {
-            await protectDashboard();
-        }
-    } catch (error) {
-        console.error(
-            "Auth initialization error:",
-            error
         );
     }
-}
 
-/* =========================================================
-   GLOBAL API
-   ========================================================= */
 
-window.resqAuth = {
-    registerUser,
-    loginUser,
-    logoutUser,
-    resetPassword,
+    /* =========================================================
+       AUTH STATE LISTENER
+       ========================================================= */
 
-    getCurrentUser,
-    getUserProfile,
+    function setupAuthStateListener() {
 
-    requireAuth,
-    protectDashboard,
+        var supabase =
+            getSupabase();
 
-    redirectUserByRole,
-    redirectByRole:
-        redirectUserByRole,
+        if (!supabase) {
+            return;
+        }
 
-    getDashboardForRole,
-    normalizeRole,
+        if (
+            window.__resqAuthStateListenerSet
+        ) {
+            return;
+        }
 
-    completeRoleSetup,
+        window.__resqAuthStateListenerSet =
+            true;
 
-    createDriverRecords,
-    createHospitalRecords,
-    createFamilyRecords,
 
-    loadHospitalsForSignup
-};
+        supabase.auth.onAuthStateChange(
+            async function(
+                event,
+                session
+            ) {
 
-/* =========================================================
-   DOM READY
-   ========================================================= */
+                console.log(
+                    "ResQ-Route auth state:",
+                    event
+                );
 
-if (
-    document.readyState ===
-    "loading"
-) {
-    document.addEventListener(
-        "DOMContentLoaded",
-        initializeAuth
-    );
-} else {
-    initializeAuth();
-}
+
+                if (
+                    event ===
+                    "SIGNED_IN" &&
+                    session &&
+                    session.user
+                ) {
+
+                    try {
+
+                        await completeRoleSetup(
+                            session.user
+                        );
+
+                    } catch (error) {
+
+                        console.error(
+                            "Role setup error:",
+                            error
+                        );
+                    }
+                }
+            }
+        );
+    }
+
+
+    /* =========================================================
+       INITIALIZATION
+       ========================================================= */
+
+    async function initializeAuth() {
+
+        try {
+
+            console.log(
+                "ResQ-Route authentication initializing..."
+            );
+
+
+            setupAuthStateListener();
+
+            setupSignupForm();
+
+            setupSigninForm();
+
+            setupLogoutButtons();
+
+            setupPasswordResetForm();
+
+
+            var currentPage =
+                getCurrentPage();
+
+
+            /*
+             * Load hospitals only on signup page.
+             */
+
+            if (
+                currentPage ===
+                AUTH_PAGES.signup
+            ) {
+
+                await loadHospitalsForSignup();
+            }
+
+
+            /*
+             * IMPORTANT:
+             * Do NOT redirect from signup.html
+             * just because a session exists.
+             *
+             * Signup itself performs the redirect
+             * after successful account creation.
+             */
+
+            if (
+                currentPage ===
+                AUTH_PAGES.signin
+            ) {
+
+                await redirectIfAuthenticated();
+            }
+
+
+            /*
+             * Protect dashboards.
+             */
+
+            if (
+                PROTECTED_PAGES.includes(
+                    currentPage
+                )
+            ) {
+
+                await protectDashboard();
+            }
+
+
+            console.log(
+                "ResQ-Route authentication initialized."
+            );
+
+        } catch (error) {
+
+            console.error(
+                "Authentication initialization error:",
+                error
+            );
+        }
+    }
+
+
+    /* =========================================================
+       GLOBAL API
+       ========================================================= */
+
+    window.resqAuth = {
+
+        registerUser:
+            registerUser,
+
+        loginUser:
+            loginUser,
+
+        logoutUser:
+            logoutUser,
+
+        resetPassword:
+            resetPassword,
+
+        getCurrentUser:
+            getCurrentUser,
+
+        getUserProfile:
+            getUserProfile,
+
+        requireAuth:
+            requireAuth,
+
+        protectDashboard:
+            protectDashboard,
+
+        redirectUserByRole:
+            redirectUserByRole,
+
+        redirectByRole:
+            redirectUserByRole,
+
+        getDashboardForRole:
+            getDashboardForRole,
+
+        normalizeRole:
+            normalizeRole,
+
+        completeRoleSetup:
+            completeRoleSetup,
+
+        createDriverRecords:
+            createDriverRecords,
+
+        createHospitalRecords:
+            createHospitalRecords,
+
+        createFamilyRecords:
+            createFamilyRecords,
+
+        loadHospitalsForSignup:
+            loadHospitalsForSignup
+    };
+
+
+    /* =========================================================
+       START
+       ========================================================= */
+
+    if (
+        document.readyState ===
+        "loading"
+    ) {
+
+        document.addEventListener(
+            "DOMContentLoaded",
+            initializeAuth
+        );
+
+    } else {
+
+        initializeAuth();
+    }
+
+})();

@@ -9,6 +9,13 @@
 
     <title>Ambulance Dashboard | ResQ-Route</title>
 
+    <!-- Leaflet 1.9.4 -->
+    <!-- SRI is intentionally omitted here so browser/CDN hash mismatches do not block the map CSS. -->
+    <link
+        rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    >
+
     <style>
         * {
             margin: 0;
@@ -162,6 +169,11 @@
 
         .side-item.active {
             border-left: 3px solid #e63946;
+        }
+
+        /* Locked sections remain clickable so they can redirect to requests. */
+        .side-item.locked {
+            color: #7f8a9b;
         }
 
         /* =========================
@@ -345,175 +357,115 @@
            MAP
         ========================== */
 
-        .map-container {
-            height: 390px;
+        #navigationSection {
+            display: flex;
+            flex-direction: column;
+            min-height: 390px;
+        }
+
+        #navigationSection .map-container {
+            flex: 1;
+            min-height: 390px;
+            height: auto;
             position: relative;
             overflow: hidden;
-            background:
-                linear-gradient(
-                    135deg,
-                    #edf2f6 25%,
-                    #e6ebf0 25%,
-                    #e6ebf0 50%,
-                    #edf2f6 50%,
-                    #edf2f6 75%,
-                    #e6ebf0 75%
-                );
-            background-size: 80px 80px;
+            background: #e9eef3;
+            border-radius: 0 0 15px 15px;
         }
 
-        .road {
+        #leafletMap {
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .leaflet-map-note {
             position: absolute;
-            height: 13px;
-            width: 130%;
-            left: -15%;
-            background: white;
-            transform: rotate(-18deg);
-            top: 48%;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            left: 15px;
+            bottom: 15px;
+            z-index: 500;
+            background: rgba(255,255,255,0.96);
+            border-radius: 9px;
+            padding: 10px 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.12);
+            font-size: 10px;
+            pointer-events: none;
         }
 
-        .road.two {
-            transform: rotate(29deg);
-            top: 61%;
+        .leaflet-map-note strong {
+            display: block;
+            margin-bottom: 3px;
         }
 
-        .road.three {
-            transform: rotate(82deg);
-            top: 20%;
+        .leaflet-map-note span {
+            color: #16834a;
+            font-weight: 700;
         }
 
-        .road.four {
-            transform: rotate(-62deg);
-            top: 25%;
-        }
-
-        .route-line {
-            position: absolute;
-            width: 72%;
-            height: 5px;
-            background: #e63946;
-            border-radius: 5px;
-            left: 12%;
-            top: 54%;
-            transform: rotate(-18deg);
-            box-shadow: 0 0 8px rgba(230,57,70,0.35);
-        }
-
-        .route-line.secondary {
-            width: 32%;
-            left: 50%;
-            top: 44%;
-            transform: rotate(29deg);
-        }
-
-        .marker {
-            position: absolute;
-            width: 37px;
-            height: 37px;
-            border-radius: 50% 50% 50% 0;
-            transform: rotate(-45deg);
+        .custom-map-marker {
             display: flex;
             align-items: center;
             justify-content: center;
-            z-index: 3;
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            border: 3px solid white;
+            box-shadow: 0 3px 12px rgba(0,0,0,0.25);
+            font-size: 18px;
         }
 
-        .marker span {
-            transform: rotate(45deg);
+        .ambulance-map-marker {
+            background: #e63946;
+        }
+
+        .patient-map-marker {
+            background: #f1a92f;
+            color: white;
+            font-weight: 800;
+            font-size: 20px;
+        }
+
+        .hospital-map-marker {
+            background: #172033;
             color: white;
             font-weight: 800;
             font-size: 14px;
         }
 
-        .ambulance-marker {
-            background: #e63946;
-            left: 39%;
-            top: 42%;
-            box-shadow: 0 0 0 7px rgba(230,57,70,0.12);
+        .leaflet-routing-line {
+            filter: drop-shadow(0 2px 4px rgba(230,57,70,0.35));
         }
 
-        .patient-marker {
-            background: #f1a92f;
-            left: 15%;
-            bottom: 15%;
-        }
-
-        .hospital-marker {
-            background: #172033;
-            right: 15%;
-            top: 17%;
-        }
-
-        .map-label {
+        .map-error {
             position: absolute;
-            background: white;
-            border-radius: 8px;
-            padding: 8px 10px;
-            box-shadow: 0 3px 12px rgba(0,0,0,0.12);
-            font-size: 10px;
-            z-index: 5;
+            inset: 0;
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background: rgba(244,247,251,0.96);
+            text-align: center;
         }
 
-        .map-label strong {
-            display: block;
-            margin-bottom: 3px;
+        .map-error-box {
+            max-width: 420px;
+            background: #ffffff;
+            border: 1px solid #e3e8ef;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.10);
         }
 
-        .map-label span {
-            color: #7a8494;
+        .map-error-box h3 {
+            margin-bottom: 8px;
+            font-size: 15px;
         }
 
-        .patient-label {
-            left: 9%;
-            bottom: 29%;
-        }
-
-        .hospital-label {
-            right: 8%;
-            top: 30%;
-        }
-
-        .map-controls {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-            z-index: 5;
-        }
-
-        .map-control {
-            width: 34px;
-            height: 34px;
-            border: 1px solid #dce2ea;
-            background: white;
-            border-radius: 7px;
-            cursor: pointer;
-            font-weight: 800;
-            color: #4d596b;
-        }
-
-        .map-bottom {
-            position: absolute;
-            left: 15px;
-            bottom: 15px;
-            background: white;
-            border-radius: 9px;
-            padding: 11px 13px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.12);
-            font-size: 10px;
-        }
-
-        .map-bottom strong {
-            display: block;
-            margin-bottom: 4px;
-        }
-
-        .traffic-good {
-            color: #16834a;
-            font-weight: 700;
+        .map-error-box p {
+            color: #6e7889;
+            font-size: 11px;
+            line-height: 1.5;
         }
 
         /* =========================
@@ -546,6 +498,91 @@
         .patient-header p {
             font-size: 11px;
             color: #7b8595;
+        }
+
+        /* Only the patient's name is visible until the ambulance engages. */
+        #patientSection.patient-not-engaged .patient-sensitive {
+            display: none !important;
+        }
+
+        #patientSection.patient-not-engaged .patient-header {
+            margin-bottom: 0;
+        }
+
+        /* Keep the name visible and centered in the otherwise empty panel. */
+        #patientSection.patient-not-engaged .patient-header > div:not(.patient-sensitive) {
+            display: block;
+        }
+
+        .pre-arrival-info {
+            margin-top: 24px;
+            padding: 16px;
+            border: 1px solid #e4e9ef;
+            border-radius: 10px;
+            background: #f8fafc;
+        }
+
+        .pre-arrival-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 10px 0;
+        }
+
+        .pre-arrival-row + .pre-arrival-row {
+            border-top: 1px solid #e8edf2;
+        }
+
+        .pre-arrival-icon {
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            background: #eef2f7;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 15px;
+        }
+
+        .pre-arrival-content {
+            min-width: 0;
+            flex: 1;
+        }
+
+        .pre-arrival-label {
+            display: block;
+            color: #7b8595;
+            font-size: 9px;
+            font-weight: 800;
+            letter-spacing: .4px;
+            margin-bottom: 4px;
+        }
+
+        .pre-arrival-content strong {
+            display: block;
+            color: #263244;
+            font-size: 12px;
+            line-height: 1.5;
+            word-break: break-word;
+        }
+
+        .pre-arrival-condition {
+            margin-top: 8px;
+            padding-top: 10px;
+            border-top: 1px solid #e8edf2;
+            color: #76510c;
+            font-size: 9px;
+            font-weight: 800;
+        }
+
+        #patientSection.patient-not-engaged .pre-arrival-info {
+            display: block !important;
+        }
+
+        #patientSection.patient-not-engaged .pre-arrival-info + .vitals-grid,
+        #patientSection.patient-not-engaged .pre-arrival-info ~ .patient-sensitive {
+            display: none !important;
         }
 
         .condition-badge {
@@ -680,6 +717,11 @@
             grid-template-columns: 1fr 1fr;
             gap: 10px;
             margin-top: 20px;
+        }
+
+        .action-grid .action-btn {
+            grid-column: 1 / -1;
+            width: 100%;
         }
 
         .action-btn {
@@ -841,6 +883,184 @@
         }
 
         /* =========================
+           CURRENT REQUESTS
+        ========================== */
+
+        .requests-section {
+            scroll-margin-top: 90px;
+            background: white;
+            border: 1px solid #e3e8ef;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 22px;
+        }
+
+        .requests-section.trip-active {
+            display: none;
+        }
+
+        .requests-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+            margin-bottom: 16px;
+        }
+
+        .requests-header h2 {
+            font-size: 16px;
+            margin-bottom: 4px;
+        }
+
+        .requests-header p {
+            color: #7b8595;
+            font-size: 11px;
+        }
+
+        .request-count {
+            background: #fff4e3;
+            color: #9a6812;
+            border: 1px solid #f4d89f;
+            border-radius: 20px;
+            padding: 7px 11px;
+            font-size: 10px;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
+        .request-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .request-card {
+            border: 1px solid #e3e8ef;
+            border-radius: 11px;
+            padding: 14px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .request-card:hover {
+            border-color: #cfd7e2;
+            box-shadow: 0 4px 14px rgba(23,32,51,0.06);
+        }
+
+        .request-card.accepted {
+            border-color: #1fa463;
+            background: #f7fcf9;
+        }
+
+        .request-main {
+            display: flex;
+            align-items: center;
+            gap: 13px;
+        }
+
+        .request-patient-icon {
+            width: 45px;
+            height: 45px;
+            border-radius: 10px;
+            background: #eef2f7;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .request-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .request-title-row {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            margin-bottom: 7px;
+        }
+
+        .request-title-row h3 {
+            font-size: 13px;
+        }
+
+        .request-condition {
+            margin-left: 0;
+            padding: 4px 7px;
+            font-size: 8px;
+        }
+
+        .request-condition.critical {
+            background: #fff0f1;
+            color: #c72535;
+        }
+
+        .request-condition.urgent {
+            background: #fff4e3;
+            color: #9a6812;
+        }
+
+        .request-condition.stable {
+            background: #eefbf3;
+            color: #16834a;
+        }
+
+        .request-details {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px 18px;
+            color: #6f7a8a;
+            font-size: 10px;
+        }
+
+        .accept-request-btn {
+            border: none;
+            background: #e63946;
+            color: white;
+            border-radius: 8px;
+            padding: 10px 14px;
+            cursor: pointer;
+            font-size: 10px;
+            font-weight: 800;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .accept-request-btn:hover {
+            background: #cf2938;
+        }
+
+        .accept-request-btn:disabled {
+            background: #1fa463;
+            cursor: default;
+        }
+
+        @media (max-width: 650px) {
+            .requests-section {
+                padding: 15px;
+            }
+
+            .requests-header {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .request-main {
+                align-items: flex-start;
+                flex-wrap: wrap;
+            }
+
+            .request-info {
+                width: calc(100% - 58px);
+            }
+
+            .accept-request-btn {
+                width: 100%;
+            }
+        }
+
+        /* =========================
            RESPONSIVE
         ========================== */
 
@@ -896,8 +1116,10 @@
                 grid-template-columns: 1fr 1fr;
             }
 
-            .map-container {
+            #navigationSection .map-container {
+                min-height: 300px;
                 height: 300px;
+                flex: none;
             }
 
             .status-flow {
@@ -1041,42 +1263,73 @@
 
 
             <!-- =========================
-                 DISPATCH ALERT
+                 CURRENT EMERGENCY REQUESTS
             ========================== -->
 
-            <div
-                class="dispatch-alert"
-                id="dispatchAlert"
-            >
-
-                <div class="alert-content">
-
-                    <div class="alert-icon">
-                        !
-                    </div>
-
+            <div class="requests-section" id="requestsSection">
+                <div class="requests-header">
                     <div>
-
-                        <h3>
-                            New Emergency Dispatch
-                        </h3>
-
-                        <p>
-                            Emergency #RQ-2026-1048 • Patient pickup
-                            required • 3.4 km away
-                        </p>
-
+                        <h2>Current Emergency Requests</h2>
+                        <p>Available emergency requests near your ambulance.</p>
                     </div>
-
+                    <span class="request-count" id="requestCount">3 Active Requests</span>
                 </div>
 
-                <button
-                    class="accept-btn"
-                    id="acceptDispatch"
-                >
-                    ACCEPT DISPATCH
-                </button>
+                <div class="request-list" id="requestList">
+                    <div class="request-card" data-request-id="RQ-2026-1048">
+                        <div class="request-main">
+                            <div class="request-patient-icon">👤</div>
+                            <div class="request-info">
+                                <div class="request-title-row">
+                                    <h3>Rahul Sharma</h3>
+                                    <span class="condition-badge request-condition critical">CRITICAL</span>
+                                </div>
+                                <div class="request-details">
+                                    <span>📍 Sector 17, Chandigarh</span>
+                                    <span class="request-distance">🚑 3.4 km away</span>
+                                    <span>🩺 Road Accident</span>
+                                </div>
+                            </div>
+                            <button class="accept-request-btn" data-request="RQ-2026-1048" type="button">ACCEPT REQUEST</button>
+                        </div>
+                    </div>
 
+                    <div class="request-card" data-request-id="RQ-2026-1049">
+                        <div class="request-main">
+                            <div class="request-patient-icon">👤</div>
+                            <div class="request-info">
+                                <div class="request-title-row">
+                                    <h3>Simran Kaur</h3>
+                                    <span class="condition-badge request-condition urgent">URGENT</span>
+                                </div>
+                                <div class="request-details">
+                                    <span>📍 Zirakpur Main Road</span>
+                                    <span class="request-distance">🚑 5.8 km away</span>
+                                    <span>🩺 Chest Pain</span>
+                                </div>
+                            </div>
+                            <button class="accept-request-btn" data-request="RQ-2026-1049" type="button">ACCEPT REQUEST</button>
+                        </div>
+                    </div>
+
+                    <div class="request-card" data-request-id="RQ-2026-1050">
+                        <div class="request-main">
+                            <div class="request-patient-icon">👤</div>
+                            <div class="request-info">
+                                <div class="request-title-row">
+                                    <h3>Aman Verma</h3>
+                                    <span class="condition-badge request-condition stable">STABLE</span>
+                                </div>
+                                <div class="request-details">
+                                    <span>📍 Mohali Phase 8</span>
+                                    <span class="request-distance">🚑 7.2 km away</span>
+                                    <span>🩺 Fall Injury</span>
+                                </div>
+                            </div>
+                            <button class="accept-request-btn" data-request="RQ-2026-1050" type="button">ACCEPT REQUEST</button>
+                        </div>
+                    </div>
+                </div>
             </div>
 
 
@@ -1194,91 +1447,18 @@
 
                     <div class="map-container">
 
-                        <div class="road"></div>
-                        <div class="road two"></div>
-                        <div class="road three"></div>
-                        <div class="road four"></div>
+                        <div id="leafletMap" aria-label="Live ambulance navigation map"></div>
 
-                        <div class="route-line"></div>
-                        <div class="route-line secondary"></div>
-
-
-                        <!-- Ambulance -->
-
-                        <div class="marker ambulance-marker">
-                            <span>🚑</span>
+                        <div class="map-error" id="mapError">
+                            <div class="map-error-box">
+                                <h3>Map could not be loaded</h3>
+                                <p>Leaflet or the map tiles could not be reached. Check your internet connection and reload the page.</p>
+                            </div>
                         </div>
 
-
-                        <!-- Patient -->
-
-                        <div class="marker patient-marker">
-                            <span>+</span>
-                        </div>
-
-
-                        <!-- Hospital -->
-
-                        <div class="marker hospital-marker">
-                            <span>H</span>
-                        </div>
-
-
-                        <div class="map-label patient-label">
-
-                            <strong>
-                                Patient Pickup
-                            </strong>
-
-                            <span>
-                                3.4 km
-                            </span>
-
-                        </div>
-
-
-                        <div class="map-label hospital-label">
-
-                            <strong>
-                                City Emergency Hospital
-                            </strong>
-
-                            <span>
-                                Destination
-                            </span>
-
-                        </div>
-
-
-                        <div class="map-controls">
-
-                            <button
-                                class="map-control"
-                                id="zoomIn"
-                            >
-                                +
-                            </button>
-
-                            <button
-                                class="map-control"
-                                id="zoomOut"
-                            >
-                                −
-                            </button>
-
-                        </div>
-
-
-                        <div class="map-bottom">
-
-                            <strong>
-                                Fastest Route
-                            </strong>
-
-                            <span class="traffic-good">
-                                ● Low traffic • 08 min
-                            </span>
-
+                        <div class="leaflet-map-note" id="mapLocationStatus">
+                            <strong>Live GPS Location</strong>
+                            <span>Waiting for location permission...</span>
                         </div>
 
                     </div>
@@ -1291,7 +1471,7 @@
                 ========================== -->
 
                 <div
-                    class="card"
+                    class="card patient-not-engaged"
                     id="patientSection"
                 >
 
@@ -1311,7 +1491,7 @@
 
                         <div class="patient-header">
 
-                            <div class="patient-avatar">
+                            <div class="patient-avatar patient-sensitive">
                                 👤
                             </div>
 
@@ -1321,14 +1501,14 @@
                                     Patient Name
                                 </h3>
 
-                                <p>
+                                <p class="patient-sensitive">
                                     Emergency #RQ-2026-1048
                                 </p>
 
                             </div>
 
                             <div
-                                class="condition-badge"
+                                class="condition-badge patient-sensitive"
                                 id="conditionBadge"
                             >
                                 STABLE
@@ -1337,9 +1517,55 @@
                         </div>
 
 
+                        <!-- PRE-ARRIVAL PATIENT INFORMATION -->
+                        <!-- This information is visible after a request is accepted,
+                             but before the driver clicks ARRIVED AT PATIENT. -->
+                        <div class="pre-arrival-info" id="preArrivalInfo">
+
+                            <div class="pre-arrival-row">
+
+                                <div class="pre-arrival-icon">
+                                    ⚠
+                                </div>
+
+                                <div class="pre-arrival-content">
+                                    <span class="pre-arrival-label">
+                                        WHAT HAPPENED
+                                    </span>
+                                    <strong id="preArrivalEmergencyType">
+                                        Waiting for emergency request
+                                    </strong>
+                                </div>
+
+                            </div>
+
+                            <div class="pre-arrival-row">
+
+                                <div class="pre-arrival-icon">
+                                    📍
+                                </div>
+
+                                <div class="pre-arrival-content">
+                                    <span class="pre-arrival-label">
+                                        MANUAL ADDRESS
+                                    </span>
+                                    <strong id="preArrivalAddress">
+                                        Waiting for patient location
+                                    </strong>
+                                </div>
+
+                            </div>
+
+                            <div class="pre-arrival-condition" id="preArrivalCondition">
+                                CONDITION: --
+                            </div>
+
+                        </div>
+
+
                         <!-- VITALS -->
 
-                        <div class="vitals-grid">
+                        <div class="vitals-grid patient-sensitive">
 
                             <div class="vital-card">
 
@@ -1439,7 +1665,7 @@
 
                         <!-- DETAILS -->
 
-                        <div class="details-list">
+                        <div class="details-list patient-sensitive">
 
                             <div class="detail-row">
 
@@ -1693,30 +1919,9 @@
 
                         <button
                             class="action-btn primary"
-                            id="arrivedButton"
+                            id="patientActionButton"
                         >
                             ARRIVED AT PATIENT
-                        </button>
-
-                        <button
-                            class="action-btn dark"
-                            id="onboardButton"
-                        >
-                            PATIENT ONBOARD
-                        </button>
-
-                        <button
-                            class="action-btn"
-                            id="hospitalButton"
-                        >
-                            ARRIVED AT HOSPITAL
-                        </button>
-
-                        <button
-                            class="action-btn"
-                            id="callHospitalButton"
-                        >
-                            📞 CONTACT HOSPITAL
                         </button>
 
                     </div>
@@ -1787,6 +1992,11 @@
          js/realtime.js
     ========================== -->
 
+    <!-- Leaflet JavaScript -->
+    <script
+        src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    ></script>
+
     <script>
 
         /* =========================
@@ -1796,21 +2006,63 @@
         const sideItems =
             document.querySelectorAll(".side-item");
 
+        function redirectToRequests() {
+            sideItems.forEach(function(button) {
+                button.classList.remove("active");
+            });
+
+            const overviewButton = document.querySelector('.side-item[data-section="overview"]');
+            if (overviewButton) {
+                overviewButton.classList.add("active");
+            }
+
+            const requestsSection = document.getElementById("requestsSection");
+            if (requestsSection) {
+                requestsSection.scrollIntoView({
+                    behavior: "smooth",
+                    block: "start"
+                });
+            }
+
+            const firstRequestButton = document.querySelector(".accept-request-btn");
+            if (firstRequestButton) {
+                setTimeout(function() {
+                    firstRequestButton.focus();
+                }, 450);
+            }
+
+            updateMapStatus(
+                "Request Required",
+                "Accept an emergency request before opening this section."
+            );
+        }
+
+        function requireAcceptedRequest() {
+            if (!acceptedRequestId) {
+                redirectToRequests();
+                return false;
+            }
+            return true;
+        }
+
         sideItems.forEach(function(item) {
 
-            item.addEventListener("click", function() {
+            item.addEventListener("click", function(event) {
+
+                const section = item.dataset.section;
+
+                // These sections are locked until a request is accepted.
+                // Clicking one always redirects to the Current Emergency Requests list.
+                if (section !== "overview" && !requireAcceptedRequest()) {
+                    event.preventDefault();
+                    return;
+                }
 
                 sideItems.forEach(function(button) {
-
                     button.classList.remove("active");
-
                 });
 
                 item.classList.add("active");
-
-                const section =
-                    item.dataset.section;
-
 
                 if (section === "navigation") {
 
@@ -1820,6 +2072,10 @@
                             behavior: "smooth",
                             block: "center"
                         });
+
+                    setTimeout(function() {
+                        if (ambulanceMap) ambulanceMap.invalidateSize(true);
+                    }, 400);
 
                 }
 
@@ -1853,43 +2109,765 @@
 
 
         /* =========================
-           DISPATCH ACCEPT
+           EMERGENCY REQUESTS
         ========================== */
 
-        const acceptDispatch =
-            document.getElementById("acceptDispatch");
-
-        acceptDispatch.addEventListener(
-            "click",
-            function() {
-
-                acceptDispatch.textContent =
-                    "DISPATCH ACCEPTED";
-
-                acceptDispatch.disabled = true;
-
-                document
-                    .getElementById("ambulanceStatus")
-                    .textContent = "Dispatched";
-
-                document
-                    .getElementById("tripStatus")
-                    .textContent = "En Route";
-
-                document
-                    .getElementById("patientEta")
-                    .textContent = "08 min";
-
-
-                activateStep(2);
-
+        const emergencyRequests = {
+            "RQ-2026-1048": {
+                name: "Rahul Sharma",
+                location: "Sector 17, Chandigarh",
+                lat: 30.7415,
+                lng: 76.7821,
+                distance: "3.4 km",
+                condition: "CRITICAL",
+                emergencyType: "Road Accident",
+                eta: "08 min",
+                hospitalDistance: "7.8 km"
+            },
+            "RQ-2026-1049": {
+                name: "Simran Kaur",
+                location: "Zirakpur Main Road",
+                lat: 30.6425,
+                lng: 76.8173,
+                distance: "5.8 km",
+                condition: "URGENT",
+                emergencyType: "Chest Pain",
+                eta: "12 min",
+                hospitalDistance: "9.2 km"
+            },
+            "RQ-2026-1050": {
+                name: "Aman Verma",
+                location: "Mohali Phase 8",
+                lat: 30.7046,
+                lng: 76.7179,
+                distance: "7.2 km",
+                condition: "STABLE",
+                emergencyType: "Fall Injury",
+                eta: "15 min",
+                hospitalDistance: "10.4 km"
             }
-        );
+        };
+
+        let acceptedRequestId = null;
+        let pendingRequestId = null;
+
+        function updateSidebarAccess() {
+            sideItems.forEach(function(item) {
+                if (item.dataset.section === "overview") return;
+                item.classList.toggle("locked", !acceptedRequestId);
+            });
+        }
+
+        updateSidebarAccess();
+
+        /* =========================
+           LEAFLET LIVE MAP
+        ========================== */
+
+        let ambulanceMap = null;
+        let ambulanceMarker = null;
+        let patientMarker = null;
+        let hospitalMarker = null;
+        let routeLayer = null;
+        let driverPosition = null;
+        let locationWatchId = null;
+        let patientReached = false;
+        let hospitalRouteActive = false;
+        let routeRequestInProgress = false;
+
+        const PATIENT_ARRIVAL_RADIUS_METERS = 50;
+        const DEFAULT_DRIVER_LOCATION = [30.7333, 76.7794];
+        const HOSPITAL_LOCATION = [30.7260, 76.8010];
+
+        const ambulanceIcon = L.divIcon({
+            className: "",
+            html: '<div class="custom-map-marker ambulance-map-marker">🚑</div>',
+            iconSize: [38, 38],
+            iconAnchor: [19, 19],
+            popupAnchor: [0, -19]
+        });
+
+        const patientIcon = L.divIcon({
+            className: "",
+            html: '<div class="custom-map-marker patient-map-marker">+</div>',
+            iconSize: [38, 38],
+            iconAnchor: [19, 19],
+            popupAnchor: [0, -19]
+        });
+
+        const hospitalIcon = L.divIcon({
+            className: "",
+            html: '<div class="custom-map-marker hospital-map-marker">H</div>',
+            iconSize: [38, 38],
+            iconAnchor: [19, 19],
+            popupAnchor: [0, -19]
+        });
+
+        function initLeafletMap() {
+            const mapElement = document.getElementById("leafletMap");
+            const mapError = document.getElementById("mapError");
+
+            if (!mapElement) return;
+
+            if (typeof L === "undefined") {
+                if (mapError) mapError.style.display = "flex";
+                updateMapStatus("Map Unavailable", "Leaflet failed to load.");
+                return;
+            }
+
+            try {
+                ambulanceMap = L.map(mapElement, {
+                    zoomControl: true,
+                    attributionControl: true,
+                    preferCanvas: true
+                }).setView(DEFAULT_DRIVER_LOCATION, 13);
+
+                L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+                    maxZoom: 19,
+                    minZoom: 3,
+                    attribution: "&copy; OpenStreetMap contributors",
+                    crossOrigin: true
+                }).addTo(ambulanceMap);
+
+                ambulanceMarker = L.marker(DEFAULT_DRIVER_LOCATION, {
+                    icon: ambulanceIcon,
+                    title: "Ambulance current location"
+                }).addTo(ambulanceMap);
+
+                ambulanceMarker.bindPopup(
+                    "<strong>Ambulance</strong><br>Waiting for live GPS location."
+                );
+
+                hospitalMarker = L.marker(HOSPITAL_LOCATION, {
+                    icon: hospitalIcon,
+                    title: "City Emergency Hospital"
+                }).addTo(ambulanceMap);
+
+                hospitalMarker.bindPopup(
+                    "<strong>City Emergency Hospital</strong><br>Emergency Department"
+                );
+
+                // Initial map state: show the ambulance-to-hospital route.
+                drawInitialHospitalRoute();
+
+                if (mapError) mapError.style.display = "none";
+
+                updateMapStatus(
+                    "Map Ready",
+                    "Waiting for precise GPS location..."
+                );
+
+                startLiveLocation();
+
+                // Leaflet needs a size recalculation after the dashboard/card is painted.
+                [100, 300, 700].forEach(function(delay) {
+                    setTimeout(function() {
+                        if (ambulanceMap) ambulanceMap.invalidateSize(true);
+                    }, delay);
+                });
+
+            } catch (error) {
+                console.error("Leaflet initialization error:", error);
+                if (mapError) mapError.style.display = "flex";
+                updateMapStatus("Map Error", "Unable to initialize the map.");
+            }
+        }
+
+        async function drawInitialHospitalRoute() {
+            if (!ambulanceMap || !driverPosition) return;
+
+            const startLat = driverPosition.lat;
+            const startLng = driverPosition.lng;
+            const endLat = HOSPITAL_LOCATION[0];
+            const endLng = HOSPITAL_LOCATION[1];
+
+            const routeUrl =
+                "https://router.project-osrm.org/route/v1/driving/" +
+                startLng + "," + startLat + ";" +
+                endLng + "," + endLat +
+                "?overview=full&geometries=geojson";
+
+            try {
+                const response = await fetch(routeUrl);
+                if (!response.ok) throw new Error("Routing service unavailable");
+
+                const data = await response.json();
+                if (!data.routes || !data.routes.length) throw new Error("No route found");
+
+                const route = data.routes[0];
+                const coordinates = route.geometry.coordinates.map(function(point) {
+                    return [point[1], point[0]];
+                });
+
+                clearMapRoute();
+                routeLayer = L.polyline(coordinates, {
+                    color: "#172033",
+                    weight: 6,
+                    opacity: 0.9
+                }).addTo(ambulanceMap);
+
+                const distance = (route.distance / 1000).toFixed(1) + " km";
+                const eta = Math.max(1, Math.round(route.duration / 60)) + " min";
+
+                document.getElementById("hospitalDistance").textContent = distance;
+                document.getElementById("patientEta").textContent = eta;
+                document.getElementById("pickupDistance").textContent = "Awaiting request";
+                document.getElementById("patientDistance").textContent = "Awaiting request";
+
+                const etaLabel = document.querySelector("#patientEta").parentElement.querySelector(".stat-label");
+                const etaSub = document.querySelector("#patientEta").parentElement.querySelector(".stat-sub");
+                if (etaLabel) etaLabel.textContent = "ETA TO HOSPITAL";
+                if (etaSub) etaSub.textContent = "Current route";
+
+                updateMapStatus("Hospital Route", "Ambulance → hospital • " + distance + " • ETA " + eta);
+                ambulanceMap.fitBounds(routeLayer.getBounds(), { padding: [45, 45] });
+            } catch (error) {
+                console.error("Initial hospital routing error:", error);
+                updateMapStatus("GPS Connected", "Hospital route will appear after GPS update.");
+            }
+        }
+
+        function updateMapStatus(title, message) {
+            const status = document.getElementById("mapLocationStatus");
+            if (!status) return;
+            status.innerHTML = "<strong>" + title + "</strong><span>" + message + "</span>";
+        }
+
+        function startLiveLocation() {
+            if (!navigator.geolocation) {
+                updateMapStatus("GPS Unavailable", "Browser geolocation is not supported.");
+                driverPosition = { lat: DEFAULT_DRIVER_LOCATION[0], lng: DEFAULT_DRIVER_LOCATION[1] };
+                return;
+            }
+
+            updateMapStatus("Live GPS Location", "Requesting precise location...");
+
+            locationWatchId = navigator.geolocation.watchPosition(
+                function(position) {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    const accuracy = Math.round(position.coords.accuracy);
+
+                    driverPosition = { lat: lat, lng: lng, accuracy: accuracy };
+
+                    ambulanceMarker.setLatLng([lat, lng]);
+                    ambulanceMarker.bindPopup(
+                        "<strong>Ambulance</strong><br>GPS accuracy: " + accuracy + " m"
+                    );
+
+                    ambulanceMap.setView([lat, lng], Math.max(15, ambulanceMap.getZoom()), {
+                        animate: true
+                    });
+
+                    updateMapStatus(
+                        "GPS Connected",
+                        "Accuracy ±" + accuracy + " m"
+                    );
+
+                    updateRequestDistances();
+
+                    if (acceptedRequestId) {
+                        checkPatientArrival();
+
+                        if (!patientReached) {
+                            drawRouteToAcceptedPatient();
+                        } else if (hospitalRouteActive) {
+                            drawRouteToHospital();
+                        }
+                    } else {
+                        drawInitialHospitalRoute();
+                    }
+                },
+                function(error) {
+                    driverPosition = {
+                        lat: DEFAULT_DRIVER_LOCATION[0],
+                        lng: DEFAULT_DRIVER_LOCATION[1]
+                    };
+
+                    const messages = {
+                        1: "Location permission was denied.",
+                        2: "Your location could not be determined.",
+                        3: "Location request timed out."
+                    };
+
+                    updateMapStatus(
+                        "Demo GPS Location",
+                        messages[error.code] || "Using demo coordinates."
+                    );
+                },
+                {
+                    enableHighAccuracy: true,
+                    maximumAge: 5000,
+                    timeout: 15000
+                }
+            );
+        }
+
+        function haversineKm(lat1, lng1, lat2, lng2) {
+            const earthRadius = 6371;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLng = (lng2 - lng1) * Math.PI / 180;
+            const a =
+                Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(lat1 * Math.PI / 180) *
+                Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLng / 2) * Math.sin(dLng / 2);
+
+            return earthRadius * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        }
+
+        function updateRequestDistances() {
+            if (!driverPosition) return;
+
+            Object.keys(emergencyRequests).forEach(function(requestId) {
+                const request = emergencyRequests[requestId];
+                const distanceKm = haversineKm(
+                    driverPosition.lat,
+                    driverPosition.lng,
+                    request.lat,
+                    request.lng
+                );
+
+                request.distance = distanceKm.toFixed(1) + " km";
+
+                const card = document.querySelector(
+                    '.request-card[data-request-id="' + requestId + '"]'
+                );
+
+                if (card) {
+                    const distanceElement = card.querySelector(".request-distance");
+                    if (distanceElement) {
+                        distanceElement.textContent = "🚑 " + request.distance + " away";
+                    }
+                }
+            });
+
+            if (acceptedRequestId) {
+                const request = emergencyRequests[acceptedRequestId];
+
+                if (patientReached) {
+                    document.getElementById("patientDistance").textContent = "Reached";
+                    document.getElementById("pickupDistance").textContent = "Reached";
+                } else {
+                    document.getElementById("patientDistance").textContent = request.distance;
+                    document.getElementById("pickupDistance").textContent = request.distance;
+                }
+            }
+        }
+
+        async function drawRouteToAcceptedPatient() {
+            if (!ambulanceMap || !driverPosition || !acceptedRequestId) return;
+
+            const request = emergencyRequests[acceptedRequestId];
+            if (!request) return;
+
+            const startLat = driverPosition.lat;
+            const startLng = driverPosition.lng;
+            const endLat = request.lat;
+            const endLng = request.lng;
+
+            if (patientMarker) {
+                patientMarker.setLatLng([endLat, endLng]);
+            } else {
+                patientMarker = L.marker([endLat, endLng], {
+                    icon: patientIcon,
+                    title: "Patient pickup location"
+                }).addTo(ambulanceMap);
+            }
+
+            patientMarker.bindPopup(
+                "<strong>" + request.name + "</strong><br>" +
+                request.location + "<br>" +
+                request.condition
+            );
+
+            const routeUrl =
+                "https://router.project-osrm.org/route/v1/driving/" +
+                startLng + "," + startLat + ";" +
+                endLng + "," + endLat +
+                "?overview=full&geometries=geojson&steps=true";
+
+            try {
+                const response = await fetch(routeUrl);
+                if (!response.ok) throw new Error("Routing service unavailable");
+
+                const data = await response.json();
+                if (!data.routes || !data.routes.length) throw new Error("No route found");
+
+                const route = data.routes[0];
+                const routeCoordinates = route.geometry.coordinates.map(function(point) {
+                    return [point[1], point[0]];
+                });
+
+                if (routeLayer) {
+                    ambulanceMap.removeLayer(routeLayer);
+                }
+
+                routeLayer = L.polyline(routeCoordinates, {
+                    color: "#e63946",
+                    weight: 6,
+                    opacity: 0.9,
+                    className: "leaflet-routing-line"
+                }).addTo(ambulanceMap);
+
+                const routeDistance = (route.distance / 1000).toFixed(1) + " km";
+                const routeEta = Math.max(1, Math.round(route.duration / 60)) + " min";
+
+                request.distance = routeDistance;
+                request.eta = routeEta;
+
+                if (!patientReached) {
+                    document.getElementById("patientDistance").textContent = routeDistance;
+                    document.getElementById("patientEta").textContent = routeEta;
+                    document.getElementById("pickupDistance").textContent = routeDistance;
+                }
+
+                const mapUpdate = document.getElementById("mapUpdate");
+                if (mapUpdate) mapUpdate.textContent = "Live route calculated";
+
+                const routeNote = document.querySelector("#mapLocationStatus span");
+                if (routeNote) routeNote.textContent = routeDistance + " • ETA " + routeEta;
+
+                ambulanceMap.fitBounds(routeLayer.getBounds(), {
+                    padding: [45, 45]
+                });
+            } catch (error) {
+                console.error("Routing error:", error);
+                updateMapStatus("GPS Connected", "Live location active • route service unavailable");
+            }
+        }
+
+        function checkPatientArrival() {
+            if (!acceptedRequestId || !driverPosition || patientReached) return;
+
+            const request = emergencyRequests[acceptedRequestId];
+            if (!request) return;
+
+            const distanceMeters = haversineKm(
+                driverPosition.lat,
+                driverPosition.lng,
+                request.lat,
+                request.lng
+            ) * 1000;
+
+            // Automatically engage the patient when the ambulance is within 50 m.
+            if (distanceMeters <= PATIENT_ARRIVAL_RADIUS_METERS) {
+                patientReached = true;
+
+                // Engagement is detected automatically within 50 m.
+                // Medical information is intentionally kept hidden until
+                // the driver confirms ARRIVED AT PATIENT.
+                // The map remains on Ambulance → Patient until that action.
+                hospitalRouteActive = false;
+
+                const ambulanceStatus = document.getElementById("ambulanceStatus");
+                const ambulanceStatusSub = ambulanceStatus
+                    ? ambulanceStatus.parentElement.querySelector(".stat-sub")
+                    : null;
+                const patientEtaLabel = document.querySelector("#patientEta")
+                    ? document.querySelector("#patientEta").parentElement.querySelector(".stat-label")
+                    : null;
+                const patientEtaSub = document.getElementById("patientEta")
+                    ? document.getElementById("patientEta").parentElement.querySelector(".stat-sub")
+                    : null;
+                const tripStatus = document.getElementById("tripStatus");
+                const tripStatusSub = tripStatus
+                    ? tripStatus.parentElement.querySelector(".stat-sub")
+                    : null;
+
+                if (ambulanceStatus) ambulanceStatus.textContent = "Engaged";
+                if (ambulanceStatusSub) ambulanceStatusSub.textContent = "Patient reached • within 50 m";
+
+                if (patientEtaLabel) patientEtaLabel.textContent = "ETA TO HOSPITAL";
+                if (patientEtaSub) patientEtaSub.textContent = "Current route to hospital";
+
+                if (tripStatus) tripStatus.textContent = "To Hospital";
+                if (tripStatusSub) tripStatusSub.textContent = "Patient reached • hospital destination active";
+
+                const patientDistance = document.getElementById("patientDistance");
+                if (patientDistance) patientDistance.textContent = "Reached";
+
+                const pickupDistance = document.getElementById("pickupDistance");
+                if (pickupDistance) pickupDistance.textContent = "Reached";
+
+                const pickupInfo = document.querySelector(".route-summary .route-row:first-child .route-info span");
+                if (pickupInfo) pickupInfo.textContent = "Ambulance within 50 m • patient engaged";
+
+                const mapUpdate = document.getElementById("mapUpdate");
+                if (mapUpdate) mapUpdate.textContent = "Patient reached • hospital route active";
+
+                updateMapStatus("Patient Engaged", "Within 50 m • confirm arrival to start hospital route");
+
+                activateStep(4);
+                // Do not switch the map yet. The driver must confirm arrival.
+                drawRouteToAcceptedPatient();
+            }
+        }
+
+        async function drawRouteToHospital() {
+            if (!ambulanceMap || !driverPosition || !hospitalRouteActive) return;
+            if (routeRequestInProgress) return;
+
+            routeRequestInProgress = true;
+
+            const startLat = driverPosition.lat;
+            const startLng = driverPosition.lng;
+            const endLat = HOSPITAL_LOCATION[0];
+            const endLng = HOSPITAL_LOCATION[1];
+
+            const routeUrl =
+                "https://router.project-osrm.org/route/v1/driving/" +
+                startLng + "," + startLat + ";" +
+                endLng + "," + endLat +
+                "?overview=full&geometries=geojson&steps=true";
+
+            try {
+                const response = await fetch(routeUrl);
+                if (!response.ok) throw new Error("Routing service unavailable");
+
+                const data = await response.json();
+                if (!data.routes || !data.routes.length) throw new Error("No hospital route found");
+
+                const route = data.routes[0];
+                const routeCoordinates = route.geometry.coordinates.map(function(point) {
+                    return [point[1], point[0]];
+                });
+
+                if (routeLayer) {
+                    ambulanceMap.removeLayer(routeLayer);
+                }
+
+                routeLayer = L.polyline(routeCoordinates, {
+                    color: "#172033",
+                    weight: 6,
+                    opacity: 0.9,
+                    className: "leaflet-routing-line"
+                }).addTo(ambulanceMap);
+
+                const hospitalDistance = (route.distance / 1000).toFixed(1) + " km";
+                const hospitalEta = Math.max(1, Math.round(route.duration / 60)) + " min";
+
+                // After arrival at the patient, the distance card now refers
+                // to the remaining distance from the ambulance to the hospital.
+                const distanceCard = document.getElementById("patientDistance");
+                const distanceLabel = distanceCard ? distanceCard.parentElement.querySelector(".stat-label") : null;
+                const distanceSub = distanceCard ? distanceCard.parentElement.querySelector(".stat-sub") : null;
+                if (distanceLabel) distanceLabel.textContent = "HOSPITAL DISTANCE";
+                if (distanceCard) distanceCard.textContent = hospitalDistance;
+                if (distanceSub) distanceSub.textContent = "Remaining road distance";
+
+                document.getElementById("patientEta").textContent = hospitalEta;
+                document.getElementById("hospitalDistance").textContent = hospitalDistance;
+
+                const routeNote = document.querySelector("#mapLocationStatus span");
+                if (routeNote) routeNote.textContent = hospitalDistance + " • ETA " + hospitalEta;
+
+                const mapUpdate = document.getElementById("mapUpdate");
+                if (mapUpdate) mapUpdate.textContent = "Live hospital route calculated";
+
+                ambulanceMap.fitBounds(routeLayer.getBounds(), {
+                    padding: [45, 45]
+                });
+            } catch (error) {
+                console.error("Hospital routing error:", error);
+                updateMapStatus("Patient Engaged", "Within 50 m • hospital route temporarily unavailable");
+            } finally {
+                routeRequestInProgress = false;
+            }
+        }
+
+        function centerOnAmbulance() {
+            if (!ambulanceMap || !ambulanceMarker) return;
+            const position = ambulanceMarker.getLatLng();
+            ambulanceMap.setView(position, 16, { animate: true });
+        }
+
+        function clearMapRoute() {
+            if (routeLayer && ambulanceMap) {
+                ambulanceMap.removeLayer(routeLayer);
+                routeLayer = null;
+            }
+        }
+
+        function hidePatientMedicalData() {
+            const patientSection = document.getElementById("patientSection");
+            if (!patientSection) return;
+
+            patientSection.classList.add("patient-not-engaged");
+
+            // Defensive inline hiding prevents stale classes/styles from exposing data.
+            patientSection.querySelectorAll(".patient-sensitive").forEach(function(element) {
+                element.style.display = "none";
+            });
+        }
+
+        function showPatientMedicalData() {
+            const patientSection = document.getElementById("patientSection");
+            if (!patientSection) return;
+
+            patientSection.classList.remove("patient-not-engaged");
+
+            patientSection.querySelectorAll(".patient-sensitive").forEach(function(element) {
+                element.style.display = "";
+            });
+        }
+
+        // Initial state: only the patient's name is visible. Medical data
+        // is revealed after the driver confirms ARRIVED AT PATIENT.
+        hidePatientMedicalData();
+
+        function acceptEmergencyRequest(requestId) {
+            const request = emergencyRequests[requestId];
+            if (!request) return;
+
+            acceptedRequestId = requestId;
+            updateSidebarAccess();
+            patientReached = false;
+            hospitalRouteActive = false;
+            routeRequestInProgress = false;
+
+            const patientEtaLabel = document.querySelector("#patientEta").parentElement.querySelector(".stat-label");
+            const patientEtaSub = document.querySelector("#patientEta").parentElement.querySelector(".stat-sub");
+            const tripStatusSub = document.querySelector("#tripStatus").parentElement.querySelector(".stat-sub");
+            if (patientEtaLabel) patientEtaLabel.textContent = "ETA TO PATIENT";
+            if (patientEtaSub) patientEtaSub.textContent = "Current traffic";
+            if (tripStatusSub) tripStatusSub.textContent = "Waiting for patient pickup";
+
+            document.querySelectorAll(".request-card").forEach(function(card) {
+                card.classList.remove("accepted");
+            });
+
+            document.querySelectorAll(".accept-request-btn").forEach(function(button) {
+                button.disabled = false;
+                button.textContent = "ACCEPT REQUEST";
+            });
+
+            const selectedCard = document.querySelector(
+                '.request-card[data-request-id="' + requestId + '"]'
+            );
+            const selectedButton = document.querySelector(
+                '.accept-request-btn[data-request="' + requestId + '"]'
+            );
+
+            if (selectedCard) selectedCard.classList.add("accepted");
+            if (selectedButton) {
+                selectedButton.disabled = true;
+                selectedButton.textContent = "REQUEST ACCEPTED";
+            }
+
+            patientActionButton.disabled = false;
+            patientActionButton.dataset.stage = "patient";
+            patientActionButton.textContent = "ARRIVED AT PATIENT";
+
+            document.getElementById("ambulanceStatus").textContent = "Dispatched";
+            const statusSub = document.querySelector("#ambulanceStatus").parentElement.querySelector(".stat-sub");
+            if (statusSub) statusSub.textContent = "Vehicle dispatched";
+
+            document.getElementById("tripStatus").textContent = "En Route";
+            const distanceCard = document.getElementById("patientDistance");
+            const distanceLabel = distanceCard ? distanceCard.parentElement.querySelector(".stat-label") : null;
+            const distanceSub = distanceCard ? distanceCard.parentElement.querySelector(".stat-sub") : null;
+            if (distanceLabel) distanceLabel.textContent = "PATIENT DISTANCE";
+            if (distanceSub) distanceSub.textContent = "Estimated road distance";
+            document.getElementById("patientDistance").textContent = request.distance;
+            document.getElementById("patientEta").textContent = request.eta;
+            document.getElementById("pickupDistance").textContent = request.distance;
+            document.getElementById("hospitalDistance").textContent = request.hospitalDistance;
+            document.getElementById("patientName").textContent = request.name;
+
+            // Show the incident summary and the manual patient address as soon
+            // as a request is accepted. Medical/vital information remains hidden
+            // until the driver confirms ARRIVED AT PATIENT.
+            const preArrivalEmergencyType = document.getElementById("preArrivalEmergencyType");
+            const preArrivalAddress = document.getElementById("preArrivalAddress");
+            const preArrivalCondition = document.getElementById("preArrivalCondition");
+
+            if (preArrivalEmergencyType) {
+                preArrivalEmergencyType.textContent = request.emergencyType;
+            }
+
+            if (preArrivalAddress) {
+                preArrivalAddress.textContent = request.location;
+            }
+
+            if (preArrivalCondition) {
+                preArrivalCondition.textContent = "CONDITION: " + request.condition;
+            }
+
+            // Hide all patient medical information until the ambulance
+            // automatically engages within 50 meters of the patient.
+            const patientSection = document.getElementById("patientSection");
+            hidePatientMedicalData();
+
+            document.getElementById("emergencyType").textContent = request.emergencyType;
+            document.getElementById("conditionBadge").textContent = request.condition;
+
+            const patientEmergencyText = document.querySelector("#patientSection .patient-header p");
+            if (patientEmergencyText) {
+                patientEmergencyText.textContent = "Emergency #" + requestId;
+            }
+
+            const pickupLabel = document.querySelector(".patient-label span");
+            if (pickupLabel) pickupLabel.textContent = request.distance;
+
+            const pickupInfo = document.querySelector(".route-summary .route-row:first-child .route-info span");
+            if (pickupInfo) pickupInfo.textContent = request.location;
+
+            activateStep(2);
+
+            if (ambulanceMap) {
+                drawRouteToAcceptedPatient();
+            }
+
+            document.getElementById("navigationSection").scrollIntoView({
+                behavior: "smooth",
+                block: "center"
+            });
+        }
+
+        document.querySelectorAll(".accept-request-btn").forEach(function(button) {
+            button.addEventListener("click", function() {
+                const requestId = button.dataset.request;
+                const request = emergencyRequests[requestId];
+                if (!request || acceptedRequestId) return;
+
+                pendingRequestId = requestId;
+
+                openActionModal(
+                    "Confirm Emergency Request",
+                    "Accept the emergency request for " + request.name + " at " + request.location + "? Once accepted, the request list will be hidden for the rest of this trip.",
+                    function() {
+                        if (!pendingRequestId) return;
+
+                        const selectedRequestId = pendingRequestId;
+                        pendingRequestId = null;
+                        acceptEmergencyRequest(selectedRequestId);
+
+                        const requestsSection = document.getElementById("requestsSection");
+                        if (requestsSection) {
+                            requestsSection.classList.add("trip-active");
+                        }
+                    }
+                );
+            });
+        });
 
 
         /* =========================
            STATUS FLOW
         ========================== */
+
+        function resetStatusFlow() {
+            for (let i = 1; i <= 5; i++) {
+                const circle = document.getElementById("step" + i);
+                if (circle) circle.classList.toggle("active", i === 1);
+            }
+
+            for (let i = 1; i <= 4; i++) {
+                const line = document.getElementById("line" + i);
+                if (line) line.classList.remove("active");
+            }
+        }
 
         function activateStep(step) {
 
@@ -1979,6 +2957,7 @@
                     modal.classList.remove("active");
 
                     pendingAction = null;
+                    pendingRequestId = null;
 
                 }
             );
@@ -1999,278 +2978,248 @@
                     modal.classList.remove("active");
 
                     pendingAction = null;
+                    pendingRequestId = null;
 
                 }
             );
 
 
         /* =========================
-           ARRIVED AT PATIENT
+           PATIENT ARRIVAL / ONBOARD
+           Single driver action:
+           1. Confirm arrival at patient
+           2. Mark patient onboard
+           3. Continue toward hospital
         ========================== */
 
-        document
-            .getElementById("arrivedButton")
-            .addEventListener(
-                "click",
-                function() {
+        const patientActionButton =
+            document.getElementById("patientActionButton");
 
-                    openActionModal(
-                        "Confirm Patient Arrival",
-                        "Confirm that the ambulance has arrived at the patient's location.",
-                        function() {
+        patientActionButton.addEventListener(
+            "click",
+            function() {
 
-                            document
-                                .getElementById(
-                                    "tripStatus"
-                                )
-                                .textContent =
-                                "At Patient";
-
-                            document
-                                .getElementById(
-                                    "ambulanceStatus"
-                                )
-                                .textContent =
-                                "At Patient";
-
-                            activateStep(4);
-
-                        }
-                    );
-
+                // This button is only functional after a request has been accepted.
+                // If no request is active, send the driver to the request list.
+                if (!acceptedRequestId) {
+                    patientActionButton.disabled = true;
+                    redirectToRequests();
+                    return;
                 }
-            );
 
-
-        /* =========================
-           PATIENT ONBOARD
-        ========================== */
-
-        document
-            .getElementById("onboardButton")
-            .addEventListener(
-                "click",
-                function() {
-
-                    openActionModal(
-                        "Confirm Patient Onboard",
-                        "Confirm that the patient has been safely onboarded into the ambulance.",
-                        function() {
-
-                            document
-                                .getElementById(
-                                    "tripStatus"
-                                )
-                                .textContent =
-                                "To Hospital";
-
-                            document
-                                .getElementById(
-                                    "ambulanceStatus"
-                                )
-                                .textContent =
-                                "Transporting";
-
-                            activateStep(4);
-
-                            document
-                                .getElementById(
-                                    "patientEta"
-                                )
-                                .textContent =
-                                "12 min";
-
-                        }
-                    );
-
-                }
-            );
-
-
-        /* =========================
-           ARRIVED AT HOSPITAL
-        ========================== */
-
-        document
-            .getElementById("hospitalButton")
-            .addEventListener(
-                "click",
-                function() {
-
+                if (patientActionButton.dataset.stage === "hospital") {
                     openActionModal(
                         "Confirm Hospital Arrival",
                         "Confirm that the ambulance and patient have arrived at the destination hospital.",
                         function() {
 
-                            document
-                                .getElementById(
-                                    "tripStatus"
-                                )
-                                .textContent =
-                                "Completed";
+                            document.getElementById("tripStatus").textContent = "Standby";
+                            document.getElementById("ambulanceStatus").textContent = "Available";
+                            const resetStatusSub = document.querySelector("#ambulanceStatus").parentElement.querySelector(".stat-sub");
+                            if (resetStatusSub) resetStatusSub.textContent = "Vehicle ready";
+                            const resetDistanceCard = document.getElementById("patientDistance");
+                            const resetDistanceLabel = resetDistanceCard ? resetDistanceCard.parentElement.querySelector(".stat-label") : null;
+                            const resetDistanceSub = resetDistanceCard ? resetDistanceCard.parentElement.querySelector(".stat-sub") : null;
+                            if (resetDistanceLabel) resetDistanceLabel.textContent = "PATIENT DISTANCE";
+                            if (resetDistanceSub) resetDistanceSub.textContent = "Estimated road distance";
+                            document.getElementById("patientEta").textContent = "--";
+                            document.getElementById("patientDistance").textContent = "--";
+                            document.getElementById("pickupDistance").textContent = "--";
+                            document.getElementById("hospitalDistance").textContent = "--";
 
-                            document
-                                .getElementById(
-                                    "ambulanceStatus"
-                                )
-                                .textContent =
-                                "Available";
+                            const etaLabel = document.querySelector("#patientEta").parentElement.querySelector(".stat-label");
+                            const etaSub = document.querySelector("#patientEta").parentElement.querySelector(".stat-sub");
+                            const tripSub = document.querySelector("#tripStatus").parentElement.querySelector(".stat-sub");
+                            if (etaLabel) etaLabel.textContent = "ETA TO PATIENT";
+                            if (etaSub) etaSub.textContent = "Waiting for request";
+                            if (tripSub) tripSub.textContent = "Waiting for dispatch";
 
-                            activateStep(5);
+                            acceptedRequestId = null;
+                            updateSidebarAccess();
+                            patientReached = false;
+                            hospitalRouteActive = false;
+                            routeRequestInProgress = false;
+
+                            clearMapRoute();
+                            if (patientMarker && ambulanceMap) {
+                                ambulanceMap.removeLayer(patientMarker);
+                                patientMarker = null;
+                            }
+
+                            document.getElementById("patientName").textContent = "Patient Name";
+
+                            const resetPreArrivalEmergencyType = document.getElementById("preArrivalEmergencyType");
+                            const resetPreArrivalAddress = document.getElementById("preArrivalAddress");
+                            const resetPreArrivalCondition = document.getElementById("preArrivalCondition");
+                            if (resetPreArrivalEmergencyType) resetPreArrivalEmergencyType.textContent = "Waiting for emergency request";
+                            if (resetPreArrivalAddress) resetPreArrivalAddress.textContent = "Waiting for patient location";
+                            if (resetPreArrivalCondition) resetPreArrivalCondition.textContent = "CONDITION: --";
+
+                            hidePatientMedicalData();
+
+                            document.querySelectorAll(".request-card").forEach(function(card) {
+                                card.classList.remove("accepted");
+                            });
+
+                            document.querySelectorAll(".accept-request-btn").forEach(function(button) {
+                                button.disabled = false;
+                                button.textContent = "ACCEPT REQUEST";
+                            });
+
+                            patientActionButton.textContent = "SELECT PATIENT REQUEST";
+                            patientActionButton.dataset.stage = "patient";
+                            patientActionButton.disabled = true;
+                            patientActionButton.classList.add("primary");
+
+                            resetStatusFlow();
+                            updateMapStatus("Ready for New Request", "Select an emergency request to begin.");
+
+                            const requestsSectionAfterTrip = document.getElementById("requestsSection");
+                            if (requestsSectionAfterTrip) {
+                                requestsSectionAfterTrip.classList.remove("trip-active");
+                            }
+
+                            // After completing a trip, return the driver to the top
+                            // of the dashboard so a new request can be selected.
+                            window.scrollTo({
+                                top: 0,
+                                behavior: "smooth"
+                            });
+
+                            setTimeout(function() {
+                                const requestsSection = document.getElementById("requestsSection");
+                                if (requestsSection) {
+                                    requestsSection.scrollIntoView({
+                                        behavior: "smooth",
+                                        block: "start"
+                                    });
+                                }
+                            }, 500);
+
+                            drawInitialHospitalRoute();
 
                         }
                     );
-
+                    return;
                 }
-            );
 
+                openActionModal(
+                    "Confirm Patient Onboard",
+                    "Confirm that you have arrived at the patient and the patient is safely onboard the ambulance.",
+                    function() {
 
-        /* =========================
-           CONTACT HOSPITAL
-        ========================== */
+                        // Driver has confirmed arrival at the patient.
+                        // Reveal the patient's medical information in the
+                        // panel beside the map and allow the live vitals
+                        // simulation to continue during transport.
+                        showPatientMedicalData();
+                        patientReached = true;
 
-        document
-            .getElementById("callHospitalButton")
-            .addEventListener(
-                "click",
-                function() {
+                        document.getElementById("tripStatus").textContent = "To Hospital";
+                        document.getElementById("ambulanceStatus").textContent = "Transporting";
 
-                    alert(
-                        "Hospital communication will be connected to the ResQ-Route communication system."
-                    );
+                        // Replace the old "Vehicle ready" text while the ambulance
+                        // is transporting the patient to the hospital.
+                        const statusSub = document.querySelector("#ambulanceStatus").parentElement.querySelector(".stat-sub");
+                        if (statusSub) statusSub.textContent = "Patient onboard • En route to hospital";
 
-                }
-            );
+                        const etaLabel = document.querySelector("#patientEta").parentElement.querySelector(".stat-label");
+                        const etaSub = document.querySelector("#patientEta").parentElement.querySelector(".stat-sub");
+                        if (etaLabel) etaLabel.textContent = "ETA TO HOSPITAL";
+                        if (etaSub) etaSub.textContent = "Current route to hospital";
+
+                        hospitalRouteActive = true;
+                        activateStep(4);
+
+                        // Now, and only now, switch the map from Ambulance → Patient
+                        // to Ambulance → Hospital and calculate the hospital distance.
+                        clearMapRoute();
+                        drawRouteToHospital();
+
+                        patientActionButton.textContent = "ARRIVED AT HOSPITAL";
+                        patientActionButton.dataset.stage = "hospital";
+
+                    }
+                );
+
+            }
+        );
 
 
         /* =========================
            MAP CONTROLS
         ========================== */
 
-        document
-            .getElementById("zoomIn")
-            .addEventListener(
-                "click",
-                function() {
+        function setupMapControls() {
+            const zoomIn = document.getElementById("zoomIn");
+            const zoomOut = document.getElementById("zoomOut");
 
-                    alert(
-                        "Interactive Leaflet map will be connected in the final implementation."
-                    );
+            if (zoomIn) {
+                zoomIn.addEventListener("click", function() {
+                    if (ambulanceMap) ambulanceMap.zoomIn();
+                });
+            }
 
-                }
-            );
+            if (zoomOut) {
+                zoomOut.addEventListener("click", function() {
+                    if (ambulanceMap) ambulanceMap.zoomOut();
+                });
+            }
+        }
 
-
-        document
-            .getElementById("zoomOut")
-            .addEventListener(
-                "click",
-                function() {
-
-                    alert(
-                        "Interactive Leaflet map will be connected in the final implementation."
-                    );
-
-                }
-            );
-
+        initLeafletMap();
+        setupMapControls();
 
         /* =========================
-           DEMO LIVE VITALS
+           LIVE PATIENT VITALS
         ========================== */
 
+        // Patient vitals remain unchanged while the ambulance is travelling
+        // to the patient. They start updating only after automatic engagement
+        // occurs within the 50 m patient-arrival radius.
         setInterval(function() {
 
+            if (!patientReached) {
+                return;
+            }
+
             const heartRate =
-                document.getElementById(
-                    "heartRate"
-                );
+                document.getElementById("heartRate");
 
             const spo2 =
-                document.getElementById(
-                    "spo2"
-                );
+                document.getElementById("spo2");
 
             const temperature =
-                document.getElementById(
-                    "temperature"
-                );
-
+                document.getElementById("temperature");
 
             if (heartRate) {
+                let value = parseInt(heartRate.textContent, 10);
 
-                let value =
-                    parseInt(
-                        heartRate.textContent
-                    );
-
-                value +=
-                    Math.floor(
-                        Math.random() * 5
-                    ) - 2;
-
-                value =
-                    Math.max(
-                        60,
-                        Math.min(
-                            110,
-                            value
-                        )
-                    );
-
-                heartRate.textContent =
-                    value;
-
+                if (!Number.isNaN(value)) {
+                    value += Math.floor(Math.random() * 5) - 2;
+                    value = Math.max(60, Math.min(110, value));
+                    heartRate.textContent = value;
+                }
             }
-
 
             if (spo2) {
+                let value = parseInt(spo2.textContent, 10);
 
-                let value =
-                    parseInt(
-                        spo2.textContent
-                    );
-
-                value +=
-                    Math.floor(
-                        Math.random() * 3
-                    ) - 1;
-
-                value =
-                    Math.max(
-                        94,
-                        Math.min(
-                            100,
-                            value
-                        )
-                    );
-
-                spo2.textContent =
-                    value;
-
+                if (!Number.isNaN(value)) {
+                    value += Math.floor(Math.random() * 3) - 1;
+                    value = Math.max(94, Math.min(100, value));
+                    spo2.textContent = value;
+                }
             }
-
 
             if (temperature) {
+                let value = parseFloat(temperature.textContent);
 
-                let value =
-                    parseFloat(
-                        temperature.textContent
-                    );
-
-                value +=
-                    (Math.random() * 0.2) - 0.1;
-
-                temperature.textContent =
-                    value.toFixed(1);
-
+                if (!Number.isNaN(value)) {
+                    value += (Math.random() * 0.2) - 0.1;
+                    temperature.textContent = value.toFixed(1);
+                }
             }
-
-
-            document
-                .getElementById("mapUpdate")
-                .textContent =
-                "GPS updated just now";
 
         }, 5000);
 
@@ -2298,6 +3247,12 @@
            LOGOUT
         ========================== */
 
+
+        window.addEventListener("beforeunload", function() {
+            if (locationWatchId !== null && navigator.geolocation) {
+                navigator.geolocation.clearWatch(locationWatchId);
+            }
+        });
 
     </script>
 

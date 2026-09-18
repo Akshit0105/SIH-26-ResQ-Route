@@ -42,6 +42,15 @@ try {
                 }
             );
 
+
+        /*
+         * Make the client available globally.
+         * auth.js can use either of these references.
+         */
+
+        window.supabaseClient = supabaseClient;
+
+
         console.log(
             "ResQ-Route: Supabase client initialized successfully."
         );
@@ -53,12 +62,9 @@ try {
         );
 
         console.error(
-            "Load Supabase before js/supabase.js:"
+            "Make sure Supabase CDN is loaded before js/supabase.js."
         );
 
-        console.error(
-            "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
-        );
     }
 
 } catch (error) {
@@ -67,6 +73,7 @@ try {
         "ResQ-Route: Supabase initialization error:",
         error
     );
+
 }
 
 
@@ -318,16 +325,14 @@ function clearLocalAuthData() {
 
 
             /*
-             * Supabase auth storage
+             * Supabase authentication storage
              */
 
             if (
                 key.startsWith("sb-")
             ) {
 
-                localKeys.push(
-                    key
-                );
+                localKeys.push(key);
 
                 continue;
             }
@@ -344,9 +349,7 @@ function clearLocalAuthData() {
                 )
             ) {
 
-                localKeys.push(
-                    key
-                );
+                localKeys.push(key);
             }
 
         }
@@ -375,7 +378,7 @@ function clearLocalAuthData() {
 
 
         /*
-         * Remove only ResQ authentication
+         * Remove only ResQ-Route authentication
          * data from sessionStorage.
          */
 
@@ -399,9 +402,7 @@ function clearLocalAuthData() {
                 )
             ) {
 
-                sessionKeys.push(
-                    key
-                );
+                sessionKeys.push(key);
             }
 
         }
@@ -484,10 +485,7 @@ async function signOutUser() {
         const {
             error
         } = await supabaseClient.auth.signOut({
-
-            scope:
-                "local"
-
+            scope: "local"
         });
 
 
@@ -601,12 +599,6 @@ function redirectToSignIn() {
         return;
     }
 
-
-    /*
-     * replace() prevents the protected
-     * page from becoming the immediate
-     * navigation target.
-     */
 
     window.location.replace(
         "signin.html"
@@ -797,11 +789,6 @@ async function protectDashboard(
 function preventDashboardCaching() {
 
     try {
-
-        /*
-         * Prevent normal browser cache.
-         * Authentication checks are still required.
-         */
 
         const metaCache =
             document.createElement(
@@ -1011,9 +998,8 @@ async function waitForAuthInitialization(
 
 
         /*
-         * If no session exists, give
-         * Supabase a short amount of time
-         * to restore one from storage.
+         * Give Supabase a short amount
+         * of time to restore the session.
          */
 
         await new Promise(
@@ -1125,9 +1111,8 @@ function setupPageRestoreProtection() {
 
 
             /*
-             * pageshow with persisted=true
-             * means browser restored page from
-             * back-forward cache.
+             * Browser restored the page
+             * through back/forward cache.
              */
 
             if (
@@ -1177,6 +1162,7 @@ function setupAuthStateListener() {
                 ) {
 
                     redirectToSignIn();
+
                 }
             }
 
@@ -1255,7 +1241,7 @@ document.addEventListener(
 
 
         /*
-         * Dashboard protection.
+         * Protect dashboard pages.
          */
 
         if (
@@ -1279,10 +1265,9 @@ document.addEventListener(
 );
 
 
-/*
- * Protect pages restored through browser
- * Back/Forward navigation.
- */
+/* =========================================================
+   BACK/FORWARD PROTECTION
+   ========================================================= */
 
 setupPageRestoreProtection();
 

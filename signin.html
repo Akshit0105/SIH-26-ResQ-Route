@@ -27,10 +27,6 @@
             min-height: 100vh;
         }
 
-        /* =========================
-           NAVBAR
-        ========================== */
-
         nav {
             height: 72px;
             background: #ffffff;
@@ -83,10 +79,6 @@
             color: #e63946;
         }
 
-        /* =========================
-           PAGE
-        ========================== */
-
         .page {
             min-height: calc(100vh - 72px);
             display: flex;
@@ -106,10 +98,6 @@
             grid-template-columns: 1fr 1fr;
             box-shadow: 0 20px 60px rgba(25, 42, 70, 0.10);
         }
-
-        /* =========================
-           LEFT PANEL
-        ========================== */
 
         .info-panel {
             background: linear-gradient(145deg, #e63946, #c92535);
@@ -201,10 +189,6 @@
             font-size: 13px;
         }
 
-        /* =========================
-           RIGHT PANEL
-        ========================== */
-
         .form-panel {
             padding: 55px;
             display: flex;
@@ -227,10 +211,6 @@
             font-size: 14px;
             line-height: 1.5;
         }
-
-        /* =========================
-           FORM
-        ========================== */
 
         .form-group {
             margin-bottom: 20px;
@@ -326,10 +306,6 @@
             text-decoration: underline;
         }
 
-        /* =========================
-           BUTTON
-        ========================== */
-
         .signin-btn {
             width: 100%;
             height: 50px;
@@ -354,10 +330,6 @@
             transform: none;
         }
 
-        /* =========================
-           STATUS MESSAGE
-        ========================== */
-
         .status-message {
             display: none;
             margin-bottom: 18px;
@@ -381,10 +353,6 @@
             border: 1px solid #c8efd7;
         }
 
-        /* =========================
-           SIGN UP
-        ========================== */
-
         .signup-text {
             text-align: center;
             margin-top: 25px;
@@ -401,10 +369,6 @@
         .signup-text a:hover {
             text-decoration: underline;
         }
-
-        /* =========================
-           EMERGENCY ACCESS
-        ========================== */
 
         .emergency-access {
             margin-top: 24px;
@@ -428,10 +392,6 @@
             font-size: 13px;
             font-weight: 700;
         }
-
-        /* =========================
-           LOADING
-        ========================== */
 
         .spinner {
             display: none;
@@ -459,10 +419,6 @@
             }
 
         }
-
-        /* =========================
-           RESPONSIVE
-        ========================== */
 
         @media (max-width: 850px) {
 
@@ -558,10 +514,6 @@
 <body>
 
 
-    <!-- =========================
-         NAVBAR
-    ========================== -->
-
     <nav>
 
         <a
@@ -590,18 +542,10 @@
     </nav>
 
 
-    <!-- =========================
-         MAIN
-    ========================== -->
-
     <main class="page">
 
         <div class="signin-container">
 
-
-            <!-- =========================
-                 INFORMATION PANEL
-            ========================== -->
 
             <section class="info-panel">
 
@@ -677,10 +621,6 @@
             </section>
 
 
-            <!-- =========================
-                 SIGN IN FORM
-            ========================== -->
-
             <section class="form-panel">
 
 
@@ -697,18 +637,17 @@
                 </div>
 
 
-                <!-- REAL AUTH MESSAGE -->
-
                 <div
                     id="statusMessage"
                     class="status-message"
                 ></div>
 
 
-                <form id="signinForm">
+                <form
+                    id="signinForm"
+                    novalidate
+                >
 
-
-                    <!-- EMAIL -->
 
                     <div class="form-group">
 
@@ -737,8 +676,6 @@
 
                     </div>
 
-
-                    <!-- PASSWORD -->
 
                     <div class="form-group">
 
@@ -777,8 +714,6 @@
                     </div>
 
 
-                    <!-- OPTIONS -->
-
                     <div class="form-options">
 
 
@@ -807,8 +742,6 @@
                     </div>
 
 
-                    <!-- SIGN IN -->
-
                     <button
                         type="submit"
                         class="signin-btn"
@@ -827,8 +760,6 @@
                 </form>
 
 
-                <!-- SIGN UP -->
-
                 <div class="signup-text">
 
                     Don't have an account?
@@ -839,8 +770,6 @@
 
                 </div>
 
-
-                <!-- EMERGENCY ACCESS -->
 
                 <div class="emergency-access">
 
@@ -863,187 +792,639 @@
 
 
     <!-- =====================================================
-         RESQ-ROUTE JAVASCRIPT
-         
-         IMPORTANT:
-         There is NO inline login handler here.
-         js/auth.js owns authentication.
-    ====================================================== -->
+         SUPABASE + AUTHENTICATION
+         ===================================================== -->
 
-    <!-- Supabase is the ONLY authentication dependency on this page.
-         auth.js is intentionally not loaded here so a duplicate/old
-         auth.js file cannot break the sign-in form. -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
     <script src="js/supabase.js"></script>
 
+
     <script>
+
         (function () {
+
             "use strict";
 
-            document.addEventListener("DOMContentLoaded", function () {
 
-                const form = document.getElementById("signinForm");
-                const emailInput = document.getElementById("email");
-                const passwordInput = document.getElementById("password");
-                const togglePassword = document.getElementById("togglePassword");
-                const button = document.getElementById("signinButton");
-                const status = document.getElementById("statusMessage");
-                const forgotPassword = document.getElementById("forgotPassword");
+            document.addEventListener(
+                "DOMContentLoaded",
+                function () {
 
-                function message(text, type) {
-                    if (!status) return;
-                    status.textContent = text;
-                    status.className = "status-message " + (type || "error");
-                    status.style.display = "block";
-                }
 
-                function getClient() {
-                    if (window.resqRoute && window.resqRoute.supabase) {
-                        return window.resqRoute.supabase;
-                    }
-                    message("Supabase could not be initialized. Check js/supabase.js.", "error");
-                    return null;
-                }
+                    const form =
+                        document.getElementById(
+                            "signinForm"
+                        );
 
-                function dashboardForRole(role) {
-                    const normalized = String(role || "").trim().toLowerCase();
 
-                    if (normalized === "family") return "family.html";
-                    if (normalized === "driver") return "ambulance.html";
-                    if (normalized === "hospital") return "hospital.html";
+                    const emailInput =
+                        document.getElementById(
+                            "email"
+                        );
 
-                    return null;
-                }
 
-                async function redirectByRole(supabase, user) {
-                    const { data, error } = await supabase
-                        .from("profiles")
-                        .select("role, name")
-                        .eq("id", user.id)
-                        .maybeSingle();
+                    const passwordInput =
+                        document.getElementById(
+                            "password"
+                        );
 
-                    if (error) {
-                        throw new Error("Unable to load your account profile: " + error.message);
-                    }
 
-                    let role = data && data.role;
+                    const togglePassword =
+                        document.getElementById(
+                            "togglePassword"
+                        );
 
-                    if (!role && user.user_metadata) {
-                        role = user.user_metadata.role;
-                    }
 
-                    const dashboard = dashboardForRole(role);
+                    const button =
+                        document.getElementById(
+                            "signinButton"
+                        );
 
-                    if (!dashboard) {
-                        throw new Error("Your account role is missing or invalid. Please contact the administrator.");
-                    }
 
-                    if (data && data.name) {
-                        localStorage.setItem("resq_user_name", data.name);
-                    }
+                    const status =
+                        document.getElementById(
+                            "statusMessage"
+                        );
 
-                    window.location.replace(dashboard);
-                }
 
-                async function login() {
-                    const supabase = getClient();
-                    if (!supabase) return;
+                    const forgotPassword =
+                        document.getElementById(
+                            "forgotPassword"
+                        );
 
-                    const email = emailInput ? emailInput.value.trim().toLowerCase() : "";
-                    const password = passwordInput ? passwordInput.value : "";
 
-                    if (!email || !password) {
-                        message("Please enter your email and password.", "error");
-                        return;
-                    }
+                    /* =========================
+                       SHOW MESSAGE
+                    ========================== */
 
-                    if (button) {
-                        button.disabled = true;
-                        button.classList.add("loading");
-                    }
+                    function message(
+                        text,
+                        type = "error"
+                    ) {
 
-                    try {
-                        const { data, error } = await supabase.auth.signInWithPassword({
-                            email: email,
-                            password: password
-                        });
-
-                        if (error) {
-                            throw new Error(error.message);
-                        }
-
-                        if (!data || !data.user) {
-                            throw new Error("Login failed. No user session was returned.");
-                        }
-
-                        message("Login successful. Opening your dashboard...", "success");
-
-                        await redirectByRole(supabase, data.user);
-
-                    } catch (error) {
-                        console.error("ResQ-Route sign-in error:", error);
-                        message(error.message || "Unable to sign in.", "error");
-                    } finally {
-                        if (button) {
-                            button.disabled = false;
-                            button.classList.remove("loading");
-                        }
-                    }
-                }
-
-                if (form) {
-                    form.setAttribute("method", "post");
-                    form.setAttribute("action", "signin.html");
-
-                    form.addEventListener("submit", function (event) {
-                        event.preventDefault();
-                        event.stopPropagation();
-                        login();
-                    });
-                }
-
-                if (togglePassword && passwordInput) {
-                    togglePassword.addEventListener("click", function () {
-                        const showing = passwordInput.type === "text";
-                        passwordInput.type = showing ? "password" : "text";
-                        togglePassword.textContent = showing ? "Show" : "Hide";
-                    });
-                }
-
-                if (forgotPassword) {
-                    forgotPassword.addEventListener("click", async function (event) {
-                        event.preventDefault();
-
-                        const supabase = getClient();
-                        if (!supabase) return;
-
-                        const email = emailInput ? emailInput.value.trim().toLowerCase() : "";
-
-                        if (!email) {
-                            message("Enter your email address first, then click Forgot password.", "error");
+                        if (!status) {
                             return;
                         }
 
-                        try {
-                            const redirectUrl = window.location.origin + "/signin.html";
 
-                            const { error } = await supabase.auth.resetPasswordForEmail(email, {
-                                redirectTo: redirectUrl
-                            });
+                        status.textContent =
+                            text;
 
-                            if (error) throw error;
 
-                            message("Password reset instructions have been sent to your email.", "success");
-                        } catch (error) {
-                            console.error("Password reset error:", error);
-                            message(error.message || "Unable to send password reset email.", "error");
+                        status.className =
+                            "status-message " +
+                            type;
+
+
+                        status.style.display =
+                            "block";
+                    }
+
+
+                    /* =========================
+                       GET SUPABASE CLIENT
+                    ========================== */
+
+                    function getClient() {
+
+                        if (
+                            window.supabaseClient
+                        ) {
+
+                            return window.supabaseClient;
                         }
-                    });
-                }
 
-                console.log("ResQ-Route: standalone sign-in handler loaded.");
-            });
+
+                        if (
+                            window.resqRoute &&
+                            window.resqRoute.supabase
+                        ) {
+
+                            return window.resqRoute.supabase;
+                        }
+
+
+                        message(
+                            "Supabase could not be initialized. Check js/supabase.js.",
+                            "error"
+                        );
+
+
+                        return null;
+                    }
+
+
+                    /* =========================
+                       GET DASHBOARD BY ROLE
+                    ========================== */
+
+                    function dashboardForRole(
+                        role
+                    ) {
+
+                        const normalized =
+                            String(
+                                role || ""
+                            )
+                            .trim()
+                            .toLowerCase();
+
+
+                        if (
+                            normalized ===
+                            "family"
+                        ) {
+
+                            return "family.html";
+                        }
+
+
+                        if (
+                            normalized ===
+                            "citizen"
+                        ) {
+
+                            return "family.html";
+                        }
+
+
+                        if (
+                            normalized ===
+                            "driver"
+                        ) {
+
+                            return "ambulance.html";
+                        }
+
+
+                        if (
+                            normalized ===
+                            "ambulance"
+                        ) {
+
+                            return "ambulance.html";
+                        }
+
+
+                        if (
+                            normalized ===
+                            "hospital"
+                        ) {
+
+                            return "hospital.html";
+                        }
+
+
+                        if (
+                            normalized ===
+                            "hospital_staff"
+                        ) {
+
+                            return "hospital.html";
+                        }
+
+
+                        return null;
+                    }
+
+
+                    /* =========================
+                       REDIRECT BY ROLE
+                    ========================== */
+
+                    async function redirectByRole(
+                        supabase,
+                        user
+                    ) {
+
+                        let profile = null;
+
+
+                        const {
+                            data,
+                            error
+                        } = await supabase
+                            .from("profiles")
+                            .select(
+                                "role, name"
+                            )
+                            .eq(
+                                "id",
+                                user.id
+                            )
+                            .maybeSingle();
+
+
+                        if (error) {
+
+                            console.error(
+                                "Profile lookup error:",
+                                error
+                            );
+
+                            /*
+                             * Do not immediately fail if
+                             * the profile query has an issue.
+                             * Try the role saved in user metadata.
+                             */
+
+                        } else {
+
+                            profile =
+                                data || null;
+                        }
+
+
+                        let role =
+                            profile &&
+                            profile.role;
+
+
+                        if (
+                            !role &&
+                            user.user_metadata
+                        ) {
+
+                            role =
+                                user.user_metadata.role;
+                        }
+
+
+                        const dashboard =
+                            dashboardForRole(
+                                role
+                            );
+
+
+                        if (!dashboard) {
+
+                            throw new Error(
+                                "Your account role is missing or invalid. Please contact the administrator."
+                            );
+                        }
+
+
+                        if (
+                            profile &&
+                            profile.name
+                        ) {
+
+                            localStorage.setItem(
+                                "resq_user_name",
+                                profile.name
+                            );
+                        }
+
+
+                        /*
+                         * Save basic login information
+                         * locally for the dashboard UI.
+                         */
+
+                        localStorage.setItem(
+                            "resq_user_id",
+                            user.id
+                        );
+
+
+                        localStorage.setItem(
+                            "resq_user_role",
+                            String(role)
+                        );
+
+
+                        /*
+                         * Direct dashboard navigation.
+                         */
+
+                        window.location.replace(
+                            dashboard
+                        );
+                    }
+
+
+                    /* =========================
+                       LOGIN
+                    ========================== */
+
+                    async function login() {
+
+                        const supabase =
+                            getClient();
+
+
+                        if (!supabase) {
+                            return;
+                        }
+
+
+                        const email =
+                            emailInput
+                                ? emailInput.value
+                                    .trim()
+                                    .toLowerCase()
+                                : "";
+
+
+                        const password =
+                            passwordInput
+                                ? passwordInput.value
+                                : "";
+
+
+                        if (
+                            !email ||
+                            !password
+                        ) {
+
+                            message(
+                                "Please enter your email and password.",
+                                "error"
+                            );
+
+                            return;
+                        }
+
+
+                        if (
+                            !emailInput.checkValidity()
+                        ) {
+
+                            message(
+                                "Please enter a valid email address.",
+                                "error"
+                            );
+
+                            return;
+                        }
+
+
+                        if (button) {
+
+                            button.disabled =
+                                true;
+
+                            button.classList.add(
+                                "loading"
+                            );
+                        }
+
+
+                        try {
+
+                            const {
+                                data,
+                                error
+                            } =
+                                await supabase
+                                    .auth
+                                    .signInWithPassword({
+                                        email:
+                                            email,
+                                        password:
+                                            password
+                                    });
+
+
+                            if (error) {
+
+                                throw new Error(
+                                    error.message
+                                );
+                            }
+
+
+                            if (
+                                !data ||
+                                !data.user
+                            ) {
+
+                                throw new Error(
+                                    "Login failed. No user session was returned."
+                                );
+                            }
+
+
+                            message(
+                                "Login successful. Opening your dashboard...",
+                                "success"
+                            );
+
+
+                            await redirectByRole(
+                                supabase,
+                                data.user
+                            );
+
+
+                        } catch (error) {
+
+                            console.error(
+                                "ResQ-Route sign-in error:",
+                                error
+                            );
+
+
+                            message(
+                                error.message ||
+                                "Unable to sign in.",
+                                "error"
+                            );
+
+
+                        } finally {
+
+                            if (button) {
+
+                                button.disabled =
+                                    false;
+
+                                button.classList.remove(
+                                    "loading"
+                                );
+                            }
+
+                        }
+
+                    }
+
+
+                    /* =========================
+                       FORM SUBMIT
+                    ========================== */
+
+                    if (form) {
+
+                        form.addEventListener(
+                            "submit",
+                            function (event) {
+
+                                event.preventDefault();
+
+                                event.stopPropagation();
+
+                                login();
+
+                            }
+                        );
+
+                    }
+
+
+                    /* =========================
+                       PASSWORD TOGGLE
+                    ========================== */
+
+                    if (
+                        togglePassword &&
+                        passwordInput
+                    ) {
+
+                        togglePassword.addEventListener(
+                            "click",
+                            function () {
+
+                                const showing =
+                                    passwordInput.type ===
+                                    "text";
+
+
+                                passwordInput.type =
+                                    showing
+                                        ? "password"
+                                        : "text";
+
+
+                                togglePassword.textContent =
+                                    showing
+                                        ? "Show"
+                                        : "Hide";
+
+                            }
+                        );
+
+                    }
+
+
+                    /* =========================
+                       FORGOT PASSWORD
+                    ========================== */
+
+                    if (forgotPassword) {
+
+                        forgotPassword.addEventListener(
+                            "click",
+                            async function (event) {
+
+                                event.preventDefault();
+
+
+                                const supabase =
+                                    getClient();
+
+
+                                if (!supabase) {
+                                    return;
+                                }
+
+
+                                const email =
+                                    emailInput
+                                        ? emailInput.value
+                                            .trim()
+                                            .toLowerCase()
+                                        : "";
+
+
+                                if (!email) {
+
+                                    message(
+                                        "Enter your email address first, then click Forgot password.",
+                                        "error"
+                                    );
+
+                                    return;
+                                }
+
+
+                                if (
+                                    !emailInput.checkValidity()
+                                ) {
+
+                                    message(
+                                        "Please enter a valid email address.",
+                                        "error"
+                                    );
+
+                                    return;
+                                }
+
+
+                                try {
+
+                                    const redirectUrl =
+                                        window.location.origin +
+                                        window.location.pathname;
+
+
+                                    const {
+                                        error
+                                    } =
+                                        await supabase
+                                            .auth
+                                            .resetPasswordForEmail(
+                                                email,
+                                                {
+                                                    redirectTo:
+                                                        redirectUrl
+                                                }
+                                            );
+
+
+                                    if (error) {
+
+                                        throw error;
+                                    }
+
+
+                                    message(
+                                        "Password reset instructions have been sent to your email.",
+                                        "success"
+                                    );
+
+
+                                } catch (error) {
+
+                                    console.error(
+                                        "Password reset error:",
+                                        error
+                                    );
+
+
+                                    message(
+                                        error.message ||
+                                        "Unable to send password reset email.",
+                                        "error"
+                                    );
+
+                                }
+
+                            }
+                        );
+
+                    }
+
+
+                    console.log(
+                        "ResQ-Route sign-in handler loaded successfully."
+                    );
+
+                }
+            );
+
         })();
+
     </script>
 
 
