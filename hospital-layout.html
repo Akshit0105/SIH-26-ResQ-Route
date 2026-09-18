@@ -1285,6 +1285,16 @@
 
         }
 
+        .bed.reserved {
+
+            background: #fff7ed;
+
+            border-color: #fdba74;
+
+            color: #b45309;
+
+        }
+
 
         .bed.maintenance {
 
@@ -3855,6 +3865,13 @@ function renderBeds() {
                 "occupied"
         ).length;
 
+    const reserved =
+        beds.filter(
+            b =>
+                b.status ===
+                "reserved"
+        ).length;
+
 
     document.getElementById(
         "roomHeader"
@@ -3906,6 +3923,18 @@ function renderBeds() {
 
             </div>
 
+
+            <div class="room-stat">
+
+                <strong>
+                    ${reserved}
+                </strong>
+
+                <span>
+                    RESERVED
+                </span>
+
+            </div>
 
             <div class="room-stat">
 
@@ -3999,6 +4028,19 @@ function renderBeds() {
                             `
 
                             : bed.status ===
+                              "reserved"
+
+                                ? `
+
+                                    <div class="bed-patient">
+
+                                        Automatically reserved
+
+                                    </div>
+
+                                `
+
+                                : bed.status ===
                               "available"
 
                                 ? `

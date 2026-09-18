@@ -676,6 +676,11 @@
             user_id:
                 userId,
 
+            name:
+                formData.patientName ||
+                formData.name ||
+                "Emergency Patient",
+
             blood_group:
                 formData.bloodGroup ||
                 null,
@@ -687,14 +692,6 @@
             medical_conditions:
                 formData.medicalConditions ||
                 null,
-
-            emergency_contact:
-                formData.contactPhone ||
-                null,
-
-            emergency_contact_name:
-                formData.contactName ||
-                null
         };
 
         var result =
@@ -811,11 +808,11 @@
             designation:
                 formData.designation,
 
-            hospital_staff_id:
+            staff_id:
                 formData.hospitalStaffId ||
                 null,
 
-            hospital_department:
+            department:
                 formData.hospitalDepartment ||
                 null,
 
@@ -1627,11 +1624,11 @@
                                 designation:
                                     designation,
 
-                                hospital_staff_id:
+                                staff_id:
                                     metadata.hospital_staff_id ||
                                     null,
 
-                                hospital_department:
+                                department:
                                     metadata.hospital_department ||
                                     null,
 

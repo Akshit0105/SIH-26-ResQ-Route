@@ -2107,6 +2107,20 @@
                 </div>
             </div>
 
+            <!-- AUTOMATIC BED ALLOCATION -->
+            <section class="auto-allocation-section" id="autoAllocationSection">
+                <div class="auto-allocation-header">
+                    <div>
+                        <h2>Automatic Bed Allocation</h2>
+                        <p>Suitable beds are reserved automatically. Staff have 90 seconds to confirm or reallocate.</p>
+                    </div>
+                    <div class="auto-allocation-live"><span></span><span id="autoAllocationCount">0</span> PENDING</div>
+                </div>
+                <div class="auto-allocation-list" id="autoAllocationList">
+                    <div class="auto-empty">Checking active emergency requests...</div>
+                </div>
+            </section>
+
             <!-- DASHBOARD -->
             <section class="operations-section active" id="overviewSection">
 
@@ -3272,12 +3286,21 @@
 
         if (
             [
-                "occupied",
+                "reserved",
                 "booked",
+                "assigned"
+            ].includes(value)
+        ) {
+
+            return "reserved";
+
+        }
+
+        if (
+            [
+                "occupied",
                 "used",
-                "in_use",
-                "assigned",
-                "reserved"
+                "in_use"
             ].includes(value)
         ) {
 
@@ -5969,6 +5992,119 @@ document.addEventListener("DOMContentLoaded", function () {
             background:#fffaf0; border:1px solid #f5d9a6; color:#7a5a20;
             font-size:10px; line-height:1.5;
         }
+        .auto-allocation-section {
+            background:#ffffff;
+            border:1px solid #e3e8ef;
+            border-radius:15px;
+            margin-bottom:22px;
+            overflow:hidden;
+        }
+        .auto-allocation-header {
+            padding:18px 20px;
+            border-bottom:1px solid #edf0f4;
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            gap:15px;
+        }
+        .auto-allocation-header h2 { font-size:15px; margin:0 0 4px; }
+        .auto-allocation-header p { font-size:10px; color:#7a8494; margin:0; }
+        .auto-allocation-live {
+            display:inline-flex;
+            align-items:center;
+            gap:6px;
+            padding:6px 9px;
+            border-radius:999px;
+            background:#eff6ff;
+            color:#1d4ed8;
+            font-size:9px;
+            font-weight:900;
+            white-space:nowrap;
+        }
+        .auto-allocation-live span {
+            width:7px;height:7px;border-radius:50%;background:#2563eb;
+        }
+        .auto-allocation-list {
+            padding:12px;
+            display:flex;
+            flex-direction:column;
+            gap:10px;
+        }
+        .auto-case {
+            border:1px solid #e2e8f0;
+            border-radius:11px;
+            padding:14px;
+            display:grid;
+            grid-template-columns:minmax(180px,1.1fr) minmax(170px,1fr) 150px auto;
+            align-items:center;
+            gap:14px;
+            background:#fbfdff;
+        }
+        .auto-case.urgent { border-color:#fecaca; background:#fffafa; }
+        .auto-case-patient strong { display:block; font-size:13px; }
+        .auto-case-patient small,.auto-case-bed small {
+            display:block; color:#7a8494; font-size:9px; margin-top:4px;
+        }
+        .auto-case-bed strong { display:block; font-size:12px; }
+        .auto-case-status { font-size:9px; font-weight:900; }
+        .auto-case-status.pending { color:#b45309; }
+        .auto-case-status.confirmed { color:#15803d; }
+        .auto-timer {
+            display:inline-flex;
+            align-items:center;
+            justify-content:center;
+            min-width:72px;
+            padding:8px 10px;
+            border-radius:8px;
+            background:#fff4e3;
+            color:#b45309;
+            font-size:15px;
+            font-weight:900;
+            font-variant-numeric:tabular-nums;
+        }
+        .auto-timer.expired { background:#ecfdf5; color:#15803d; }
+        .auto-actions { display:flex; gap:7px; flex-wrap:wrap; justify-content:flex-end; }
+        .auto-action-btn {
+            border:0; border-radius:7px; padding:8px 10px; cursor:pointer;
+            font-size:9px; font-weight:900;
+        }
+        .auto-confirm-btn { background:#172033; color:white; }
+        .auto-reallocate-btn { background:#eef2f7; color:#334155; }
+        .auto-action-btn:disabled { opacity:.55; cursor:not-allowed; }
+        .auto-empty { padding:24px; text-align:center; color:#7a8494; font-size:11px; }
+        .auto-modal {
+            position:fixed; inset:0; background:rgba(15,23,42,.45);
+            display:none; align-items:center; justify-content:center;
+            z-index:10000; padding:20px;
+        }
+        .auto-modal.active { display:flex; }
+        .auto-modal-card {
+            width:min(620px,100%); max-height:85vh; overflow:auto;
+            background:white; border-radius:14px; padding:20px;
+            box-shadow:0 20px 50px rgba(15,23,42,.2);
+        }
+        .auto-modal-card h3 { margin:0 0 5px; font-size:17px; }
+        .auto-modal-card p { margin:0 0 14px; color:#64748b; font-size:10px; }
+        .auto-current-bed {
+            padding:10px 12px; border-radius:9px; background:#f8fafc;
+            border:1px solid #e2e8f0; font-size:10px; margin-bottom:12px;
+        }
+        .auto-bed-option {
+            display:flex; align-items:center; gap:10px; padding:10px 12px;
+            border:1px solid #e2e8f0; border-radius:9px; margin-bottom:7px;
+            cursor:pointer;
+        }
+        .auto-bed-option:hover { border-color:#ef3340; background:#fffafa; }
+        .auto-bed-option strong { font-size:11px; }
+        .auto-bed-option small { display:block; color:#7a8494; font-size:9px; margin-top:2px; }
+        .auto-modal-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:15px; }
+        @media (max-width:900px) {
+            .auto-case { grid-template-columns:1fr 1fr; }
+            .auto-actions { justify-content:flex-start; }
+        }
+        @media (max-width:600px) {
+            .auto-case { grid-template-columns:1fr; }
+        }
     </style>
 
     <!-- =====================================================
@@ -6437,7 +6573,14 @@ document.addEventListener("DOMContentLoaded", function () {
     window.openPatientMonitoringDashboard = openPatientMonitoringDashboard;
     window.closePatientMonitoringDashboard = closePatientMonitoringDashboard;
 })();
+
 </script>
+
+<script src="js/supabase.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/emergency.js"></script>
+<script src="js/realtime.js"></script>
+<script src="js/bed-allocation.js"></script>
 
 </body>
 </html>
