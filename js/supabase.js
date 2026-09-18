@@ -1,3 +1,4 @@
+
 /* =========================================================
    ResQ-Route
    Supabase Client Configuration

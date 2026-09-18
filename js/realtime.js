@@ -1,3 +1,4 @@
+
 /* =========================================================
    ResQ-Route
    Realtime Dashboard Synchronization
@@ -56,10 +57,17 @@ const REALTIME_CONFIG = {
 
 function getRealtimeSupabase() {
 
-    if (
-        typeof window.resqRoute === "undefined" ||
-        !window.resqRoute.supabase
-    ) {
+    /*
+     * Use the shared ResQ-Route client when available.
+     * Fall back to the global client used by the dashboards.
+     */
+
+    const supabase =
+        window.resqRoute?.supabase ||
+        window.supabaseClient ||
+        window.supabase;
+
+    if (!supabase) {
 
         console.error(
             "Supabase client is not available."
@@ -68,7 +76,7 @@ function getRealtimeSupabase() {
         return null;
     }
 
-    return window.resqRoute.supabase;
+    return supabase;
 }
 
 
@@ -134,7 +142,6 @@ function registerRealtimeCallback(
         return;
     }
 
-
     realtimeCallbacks[type].push(
         callback
     );
@@ -149,7 +156,6 @@ function triggerRealtimeCallbacks(
     if (!realtimeCallbacks[type]) {
         return;
     }
-
 
     realtimeCallbacks[type].forEach(
         callback => {
@@ -185,24 +191,18 @@ function getActiveEmergencyId() {
                 window.location.search
             );
 
-
         const urlEmergencyId =
             params.get("emergency");
-
 
         if (urlEmergencyId) {
 
             localStorage.setItem(
-
                 REALTIME_CONFIG.emergencyStorageKey,
-
                 urlEmergencyId
-
             );
 
             return urlEmergencyId;
         }
-
 
         return localStorage.getItem(
             REALTIME_CONFIG.emergencyStorageKey
@@ -228,15 +228,11 @@ function setActiveEmergencyId(
         return;
     }
 
-
     try {
 
         localStorage.setItem(
-
             REALTIME_CONFIG.emergencyStorageKey,
-
             emergencyId
-
         );
 
         realtimeState.emergencyId =
@@ -268,7 +264,6 @@ function clearActiveEmergencyId() {
         );
     }
 
-
     realtimeState.emergencyId =
         null;
 }
@@ -285,21 +280,15 @@ function updateRealtimeConnection(
     realtimeState.connected =
         connected;
 
-
     triggerRealtimeCallbacks(
-
         "connection",
-
         connected
-
     );
-
 
     const indicators =
         document.querySelectorAll(
             "#realtimeStatus, [data-realtime-status]"
         );
-
 
     indicators.forEach(
         indicator => {
@@ -309,12 +298,10 @@ function updateRealtimeConnection(
                     ? "Live"
                     : "Offline";
 
-
             indicator.classList.toggle(
                 "badge-success",
                 connected
             );
-
 
             indicator.classList.toggle(
                 "badge-danger",
@@ -341,11 +328,9 @@ function updateElementsById(
             const element =
                 document.getElementById(id);
 
-
             if (!element) {
                 return;
             }
-
 
             if (
                 element.tagName === "INPUT" ||
@@ -380,7 +365,6 @@ function formatEmergencyStatus(
         return "-";
     }
 
-
     return String(status)
         .replaceAll(
             "_",
@@ -407,15 +391,12 @@ function formatCoordinate(
         return "-";
     }
 
-
     const value =
         Number(coordinate);
-
 
     if (!Number.isFinite(value)) {
         return "-";
     }
-
 
     return value.toFixed(6);
 }
@@ -428,7 +409,6 @@ function formatDateTime(
     if (!timestamp) {
         return "-";
     }
-
 
     try {
 
@@ -458,13 +438,37 @@ function handleEmergencyUpdate(
 ) {
 
     const emergency =
-        payload?.new;
-
+        payload?.new ||
+        payload?.old;
 
     if (!emergency) {
         return;
     }
 
+    /*
+     * DELETE events have no payload.new.
+     * Clear the active emergency only when the deleted
+     * row is the emergency currently being tracked.
+     */
+
+    if (
+        payload?.eventType === "DELETE" &&
+        emergency.id === realtimeState.emergencyId
+    ) {
+
+        clearActiveEmergencyId();
+
+        updateRealtimeConnection(
+            false
+        );
+
+        triggerRealtimeCallbacks(
+            "emergency",
+            payload
+        );
+
+        return;
+    }
 
     if (emergency.id) {
 
@@ -596,11 +600,8 @@ function handleEmergencyUpdate(
 
 
     triggerRealtimeCallbacks(
-
         "emergency",
-
         payload
-
     );
 }
 
@@ -616,11 +617,9 @@ function handleAmbulanceLocationUpdate(
     const location =
         payload?.new;
 
-
     if (!location) {
         return;
     }
-
 
     updateElementsById(
 
@@ -700,12 +699,10 @@ function handleAmbulanceLocationUpdate(
                 location.latitude
             );
 
-
         const longitude =
             Number(
                 location.longitude
             );
-
 
         if (
             Number.isFinite(latitude) &&
@@ -713,22 +710,17 @@ function handleAmbulanceLocationUpdate(
         ) {
 
             window.resqMapUpdateMarker(
-
                 latitude,
-
                 longitude
-
             );
+
         }
     }
 
 
     triggerRealtimeCallbacks(
-
         "ambulance",
-
         payload
-
     );
 }
 
@@ -743,7 +735,6 @@ function handleVitalsUpdate(
 
     const vitals =
         payload?.new;
-
 
     if (!vitals) {
         return;
@@ -868,11 +859,8 @@ function handleVitalsUpdate(
 
 
     triggerRealtimeCallbacks(
-
         "vitals",
-
         payload
-
     );
 }
 
@@ -888,23 +876,17 @@ function handleEmergencyEvent(
     const event =
         payload?.new;
 
-
     if (!event) {
         return;
     }
-
 
     addEventToTimeline(
         event
     );
 
-
     triggerRealtimeCallbacks(
-
         "event",
-
         payload
-
     );
 }
 
@@ -925,8 +907,25 @@ function addEventToTimeline(
             "timeline"
         );
 
-
     if (!target) {
+        return;
+    }
+
+    const eventId =
+        event.id;
+
+    /*
+     * Prevent duplicate events before creating
+     * the DOM element.
+     */
+
+    if (
+        eventId &&
+        target.querySelector(
+            `[data-event-id="${eventId}"]`
+        )
+    ) {
+
         return;
     }
 
@@ -936,7 +935,6 @@ function addEventToTimeline(
             "div"
         );
 
-
     item.className =
         "timeline-item active";
 
@@ -945,7 +943,6 @@ function addEventToTimeline(
         document.createElement(
             "div"
         );
-
 
     dot.className =
         "timeline-dot";
@@ -962,10 +959,8 @@ function addEventToTimeline(
             "div"
         );
 
-
     title.className =
         "timeline-title";
-
 
     title.textContent =
         formatEmergencyStatus(
@@ -978,10 +973,8 @@ function addEventToTimeline(
             "div"
         );
 
-
     description.className =
         "timeline-description";
-
 
     description.textContent =
         event.description ||
@@ -993,10 +986,8 @@ function addEventToTimeline(
             "div"
         );
 
-
     time.className =
         "timeline-time";
-
 
     time.textContent =
         event.created_at
@@ -1010,11 +1001,9 @@ function addEventToTimeline(
         title
     );
 
-
     content.appendChild(
         description
     );
-
 
     content.appendChild(
         time
@@ -1025,35 +1014,16 @@ function addEventToTimeline(
         dot
     );
 
-
     item.appendChild(
         content
     );
-
-
-    /*
-     * Prevent duplicate events.
-     */
-
-    const eventId =
-        event.id;
-
-
-    if (
-        eventId &&
-        target.querySelector(
-            `[data-event-id="${eventId}"]`
-        )
-    ) {
-
-        return;
-    }
 
 
     if (eventId) {
 
         item.dataset.eventId =
             eventId;
+
     }
 
 
@@ -1073,7 +1043,6 @@ function handleNotificationUpdate(
 
     const notification =
         payload?.new;
-
 
     if (!notification) {
         return;
@@ -1096,7 +1065,6 @@ function handleNotificationUpdate(
                         element.textContent
                     ) || 0;
 
-
                 element.textContent =
                     current + 1;
 
@@ -1105,11 +1073,8 @@ function handleNotificationUpdate(
 
 
     triggerRealtimeCallbacks(
-
         "notification",
-
         payload
-
     );
 }
 
@@ -1124,7 +1089,6 @@ async function subscribeToEmergency(
 
     const supabase =
         getRealtimeSupabase();
-
 
     if (
         !supabase ||
@@ -1155,8 +1119,8 @@ async function subscribeToEmergency(
                 "Previous emergency channel cleanup failed:",
                 error
             );
-        }
 
+        }
 
         realtimeState.emergencyChannel =
             null;
@@ -1316,6 +1280,7 @@ async function subscribeToEmergency(
                 );
 
                 scheduleReconnect();
+
             }
 
         }
@@ -1324,7 +1289,6 @@ async function subscribeToEmergency(
 
     realtimeState.emergencyChannel =
         channel;
-
 
     realtimeState.emergencyId =
         emergencyId;
@@ -1342,7 +1306,6 @@ async function subscribeToNotifications() {
 
     const supabase =
         getRealtimeSupabase();
-
 
     if (!supabase) {
         return null;
@@ -1365,6 +1328,7 @@ async function subscribeToNotifications() {
                 "Notification channel cleanup failed:",
                 error
             );
+
         }
     }
 
@@ -1468,7 +1432,6 @@ async function fetchInitialEmergency(
     const supabase =
         getRealtimeSupabase();
 
-
     if (
         !supabase ||
         !emergencyId
@@ -1540,7 +1503,6 @@ async function fetchLatestVitals(
 
     const supabase =
         getRealtimeSupabase();
-
 
     if (
         !supabase ||
@@ -1622,7 +1584,6 @@ async function fetchLatestAmbulanceLocation(
     const supabase =
         getRealtimeSupabase();
 
-
     if (
         !supabase ||
         !emergencyId
@@ -1702,7 +1663,6 @@ async function fetchEmergencyEvents(
 
     const supabase =
         getRealtimeSupabase();
-
 
     if (
         !supabase ||
@@ -1979,6 +1939,7 @@ async function stopRealtime() {
                 "Emergency channel removal failed:",
                 error
             );
+
         }
     }
 
@@ -1999,6 +1960,7 @@ async function stopRealtime() {
                 "Notification channel removal failed:",
                 error
             );
+
         }
     }
 
@@ -2106,21 +2068,23 @@ document.addEventListener(
                 .toLowerCase();
 
 
-        const dashboardPages = [
+        /*
+         * family.html uses this generic realtime module directly.
+         *
+         * ambulance.html and hospital.html now have their own
+         * page-specific emergency subscriptions:
+         *
+         * ambulance:
+         * available/assigned emergency requests
+         *
+         * hospital:
+         * incoming requests for that hospital
+         *
+         * Do not start another generic emergency subscription
+         * on those pages.
+         */
 
-            "family.html",
-
-            "ambulance.html",
-
-            "hospital.html"
-
-        ];
-
-
-        if (
-            !dashboardPages.includes(page)
-        ) {
-
+        if (page !== "family.html") {
             return;
         }
 

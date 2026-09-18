@@ -211,61 +211,203 @@
            ALERT
         ========================== */
 
-        .incoming-alert {
-            background: #fff4e3;
-            border: 1px solid #f4d89f;
-            border-radius: 13px;
-            padding: 17px 19px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 20px;
+        /* =========================
+           INCOMING PATIENT REQUESTS
+        ========================== */
+
+        .incoming-requests-card {
+            background: white;
+            border: 1px solid #e3e8ef;
+            border-radius: 15px;
+            overflow: hidden;
             margin-bottom: 22px;
         }
 
-        .alert-content {
+        .incoming-requests-header {
+            padding: 18px 20px;
+            border-bottom: 1px solid #edf0f4;
             display: flex;
             align-items: center;
-            gap: 13px;
+            justify-content: space-between;
+            gap: 15px;
         }
 
-        .alert-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 9px;
-            background: #f1a92f;
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 800;
-        }
-
-        .alert-content h3 {
-            font-size: 14px;
-            color: #76510c;
+        .incoming-requests-header h2 {
+            font-size: 15px;
             margin-bottom: 4px;
         }
 
-        .alert-content p {
-            color: #8b6a2b;
-            font-size: 11px;
+        .incoming-requests-header p {
+            color: #7a8494;
+            font-size: 10px;
         }
 
-        .prepare-btn {
-            border: none;
-            background: #172033;
-            color: white;
-            padding: 11px 18px;
-            border-radius: 8px;
-            font-size: 11px;
-            font-weight: 800;
+        .incoming-request-count {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 30px;
+            height: 28px;
+            padding: 0 9px;
+            border-radius: 16px;
+            background: #fff0f1;
+            color: #c72535;
+            font-size: 10px;
+            font-weight: 900;
+        }
+
+        .incoming-request-list {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .incoming-request-item {
+            display: flex;
+            align-items: center;
+            gap: 13px;
+            padding: 15px 20px;
+            border-bottom: 1px solid #edf0f4;
+        }
+
+        .incoming-request-item:last-child {
+            border-bottom: none;
+        }
+
+        .incoming-request-icon {
+            width: 42px;
+            height: 42px;
+            flex: 0 0 42px;
+            border-radius: 10px;
+            background: #fff4e3;
+            color: #b27612;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .incoming-request-icon.critical {
+            background: #fff0f1;
+            color: #c72535;
+        }
+
+        .incoming-request-info {
+            min-width: 0;
+            flex: 1;
+        }
+
+        .incoming-request-top {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 4px;
+        }
+
+        .incoming-request-name {
+            font-size: 12px;
+            font-weight: 900;
+            color: #172033;
+        }
+
+        .incoming-request-priority {
+            display: inline-flex;
+            padding: 4px 7px;
+            border-radius: 12px;
+            font-size: 8px;
+            font-weight: 900;
+            text-transform: uppercase;
+            background: #fff4e3;
+            color: #9b6813;
+        }
+
+        .incoming-request-priority.critical {
+            background: #fff0f1;
+            color: #c72535;
+        }
+
+        .incoming-request-priority.medium {
+            background: #edf9f2;
+            color: #16834a;
+        }
+
+        .incoming-request-meta {
+            color: #7a8494;
+            font-size: 9px;
+            line-height: 1.6;
+        }
+
+        .incoming-request-actions {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            flex: 0 0 auto;
+        }
+
+        .incoming-request-btn {
+            border: 1px solid #dce2ea;
+            background: white;
+            color: #364152;
+            border-radius: 7px;
+            padding: 8px 10px;
+            font-size: 8px;
+            font-weight: 900;
             cursor: pointer;
             white-space: nowrap;
         }
 
-        .prepare-btn:hover {
-            background: #29344a;
+        .incoming-request-btn:hover {
+            border-color: #e63946;
+            color: #e63946;
+        }
+
+        .incoming-request-btn.primary {
+            background: #e63946;
+            color: white;
+            border-color: #e63946;
+        }
+
+        .incoming-request-btn.primary:hover {
+            background: #cf2938;
+            color: white;
+        }
+
+        .incoming-request-empty {
+            padding: 32px 20px;
+            text-align: center;
+            color: #7a8494;
+            font-size: 10px;
+        }
+
+        .incoming-request-empty strong {
+            display: block;
+            color: #364152;
+            font-size: 13px;
+            margin-bottom: 5px;
+        }
+
+        @media (max-width: 650px) {
+            .incoming-requests-header {
+                align-items: flex-start;
+            }
+
+            .incoming-request-item {
+                align-items: flex-start;
+                flex-wrap: wrap;
+            }
+
+            .incoming-request-info {
+                flex: 1 1 calc(100% - 58px);
+            }
+
+            .incoming-request-actions {
+                width: 100%;
+                margin-left: 55px;
+            }
+
+            .incoming-request-btn {
+                flex: 1;
+            }
         }
 
         /* =========================
@@ -2124,15 +2266,20 @@
             <!-- DASHBOARD -->
             <section class="operations-section active" id="overviewSection">
 
-                <div class="incoming-alert" id="incomingAlert">
-                    <div class="alert-content">
-                        <div class="alert-icon">!</div>
+                <div class="incoming-requests-card" id="incomingRequestsCard">
+                    <div class="incoming-requests-header">
                         <div>
-                            <h3>Incoming Critical Patient</h3>
-                            <p>Emergency #RQ-2026-1048 • ETA 12 minutes • Trauma support recommended</p>
+                            <h2>Incoming Patient Requests</h2>
+                            <p>Requests are automatically sorted by condition severity: Critical → High → Medium → Low.</p>
+                        </div>
+                        <span class="incoming-request-count" id="incomingRequestCount">0</span>
+                    </div>
+
+                    <div class="incoming-request-list" id="incomingRequestList">
+                        <div class="incoming-request-empty">
+                            Loading incoming patient requests...
                         </div>
                     </div>
-                    <button class="prepare-btn" id="prepareButton" type="button">PREPARE ER</button>
                 </div>
 
                 <div class="operations-overview">
@@ -5245,42 +5392,395 @@
 
 
     /* =====================================================
-       PREPARE ER
+       INCOMING PATIENT REQUESTS
        ===================================================== */
 
-    const prepareButton =
-        document.getElementById(
-            "prepareButton"
-        );
+    let incomingRequestsTimer = null;
 
+    function incomingPriorityClass(priority) {
+        const value = String(priority || "").trim().toLowerCase();
 
-    if (
-        prepareButton
-    ) {
+        if (value === "critical") return "critical";
+        if (value === "medium" || value === "low") return "medium";
+        return "";
+    }
 
-        prepareButton.addEventListener(
-            "click",
-            function () {
+    function incomingPriorityIcon(priority) {
+        return String(priority || "").trim().toLowerCase() === "critical"
+            ? "🚨"
+            : "⚠️";
+    }
 
-                this.textContent =
-                    "ER PREPARED";
+    function incomingStatusLabel(status) {
+        return String(status || "REQUESTED")
+            .replace(/_/g, " ")
+            .toLowerCase()
+            .replace(/\b\w/g, c => c.toUpperCase());
+    }
 
+    /*
+     * Condition sorting:
+     * Critical -> High -> Medium -> Low
+     *
+     * If two patients have the same condition level, the request
+     * with the earlier ETA/older request is shown first.
+     */
+    function incomingConditionScore(priority) {
+        const value = String(priority || "medium").trim().toLowerCase();
 
-                this.style.background =
-                    "#16834a";
+        const scores = {
+            critical: 4,
+            high: 3,
+            medium: 2,
+            low: 1
+        };
 
+        return scores[value] || 2;
+    }
 
-                alert(
-                    "Emergency team has been notified and the ER preparation status has been updated."
-                );
+    function sortIncomingRequestsByCondition(requests) {
+        return [...requests].sort((a, b) => {
+            const priorityDifference =
+                incomingConditionScore(b.priority) -
+                incomingConditionScore(a.priority);
 
+            if (priorityDifference !== 0) {
+                return priorityDifference;
             }
+
+            const aCreated = new Date(a.created_at || 0).getTime();
+            const bCreated = new Date(b.created_at || 0).getTime();
+
+            return aCreated - bCreated;
+        });
+    }
+
+    function incomingEta(createdAt) {
+        if (!createdAt) return "ETA not available";
+
+        const created = new Date(createdAt);
+        if (Number.isNaN(created.getTime())) return "ETA not available";
+
+        const elapsedMinutes = Math.max(
+            0,
+            Math.floor((Date.now() - created.getTime()) / 60000)
         );
 
+        /*
+         * This is only a dashboard display estimate when the emergency
+         * record does not contain a dedicated ETA column.
+         */
+        const eta = Math.max(5, 20 - elapsedMinutes);
+
+        return `ETA ${eta} min`;
+    }
+
+    function renderIncomingRequests(requests) {
+        const list = document.getElementById("incomingRequestList");
+        const count = document.getElementById("incomingRequestCount");
+
+        if (!list) return;
+
+        if (count) {
+            count.textContent = String(requests.length).padStart(2, "0");
+        }
+
+        if (!requests.length) {
+            list.innerHTML = `
+                <div class="incoming-request-empty">
+                    <strong>No incoming patient requests</strong>
+                    There are currently no active emergency requests waiting for hospital review.
+                </div>
+            `;
+            return;
+        }
+
+        /*
+         * Always sort the displayed list by patient condition severity.
+         * The most critical patient is placed at the top.
+         */
+        const sortedRequests = sortIncomingRequestsByCondition(requests);
+
+        list.innerHTML = sortedRequests.map(emergency => {
+            const patient = emergency.patients || {};
+            const priority = String(emergency.priority || "medium").toLowerCase();
+            const priorityClass = incomingPriorityClass(priority);
+            const name = patient.name || "Unknown Patient";
+            const emergencyId = emergency.id || "Emergency";
+            const type = emergency.emergency_type || "Emergency";
+            const age = patient.age != null ? `${patient.age} yrs` : "Age not recorded";
+            const gender = patient.gender || "Gender not recorded";
+            const status = incomingStatusLabel(emergency.status);
+            const eta = incomingEta(emergency.created_at);
+
+            return `
+                <div class="incoming-request-item">
+                    <div class="incoming-request-icon ${priorityClass}">
+                        ${incomingPriorityIcon(priority)}
+                    </div>
+
+                    <div class="incoming-request-info">
+                        <div class="incoming-request-top">
+                            <span class="incoming-request-name">${escapeHtml(name)}</span>
+                            <span class="incoming-request-priority ${priorityClass}">
+                                ${escapeHtml(priority)}
+                            </span>
+                        </div>
+
+                        <div class="incoming-request-meta">
+                            ${escapeHtml(type)} • ${escapeHtml(gender)} • ${escapeHtml(age)}
+                            <br>
+                            Emergency #${escapeHtml(emergencyId)} • ${escapeHtml(status)} • ${escapeHtml(eta)}
+                        </div>
+                    </div>
+
+                    <div class="incoming-request-actions">
+                        <button
+                            class="incoming-request-btn"
+                            type="button"
+                            data-incoming-patient="${escapeHtml(name)}"
+                            data-incoming-request-id="${escapeHtml(emergencyId)}"
+                        >
+                            VIEW REQUEST
+                        </button>
+
+                        <button
+                            class="incoming-request-btn primary"
+                            type="button"
+                            data-incoming-patient="${escapeHtml(name)}"
+                            data-incoming-action="prepare"
+                        >
+                            PREPARE ER
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join("");
+
+        list.querySelectorAll("[data-incoming-patient]").forEach(button => {
+            button.addEventListener("click", function () {
+                const patientName = this.dataset.incomingPatient || "";
+
+                if (this.dataset.incomingAction === "prepare") {
+                    alert(
+                        `ER preparation started for ${patientName}.`
+                    );
+                    return;
+                }
+
+                /*
+                 * VIEW REQUEST opens the ambulance dashboard for the
+                 * selected emergency so hospital staff can see the trip
+                 * progress, route stage and current ambulance status.
+                 */
+                const requestId = this.dataset.incomingRequestId || "";
+
+                if (requestId) {
+                    window.location.href =
+                        "ambulance.html?request=" +
+                        encodeURIComponent(requestId) +
+                        "&patient=" +
+                        encodeURIComponent(patientName);
+                } else {
+                    window.location.href =
+                        "ambulance.html?patient=" +
+                        encodeURIComponent(patientName);
+                }
+            });
+        });
+    }
+
+    async function loadIncomingPatientRequests() {
+        const list = document.getElementById("incomingRequestList");
+
+        if (!list || !hospitalId || !supabaseClient) return;
+
+        try {
+            const response = await supabaseClient
+                .from("emergencies")
+                .select(`
+                    id,
+                    patient_id,
+                    requester_id,
+                    ambulance_id,
+                    hospital_id,
+                    emergency_type,
+                    priority,
+                    status,
+                    latitude,
+                    longitude,
+                    created_at,
+                    updated_at,
+                    patients (
+                        id,
+                        name,
+                        age,
+                        gender,
+                        blood_group,
+                        allergies,
+                        medical_conditions,
+                        consent_given
+                    ),
+                    ambulances (
+                        id,
+                        vehicle_number,
+                        status
+                    )
+                `)
+                .eq("hospital_id", hospitalId)
+                .in("status", [
+                    "DRIVER_ACCEPTED",
+                    "EN_ROUTE_TO_PATIENT",
+                    "ARRIVED_AT_PATIENT",
+                    "PATIENT_ONBOARD",
+                    "EN_ROUTE_TO_HOSPITAL",
+                    "ARRIVED_AT_HOSPITAL"
+                ])
+                .order("created_at", { ascending: false });
+
+            if (response.error) {
+                throw response.error;
+            }
+
+            const requests = response.data || [];
+
+            /*
+             * Render only real Supabase emergency records.
+             * No demo/fallback patients are generated here.
+             */
+            renderIncomingRequests(requests);
+
+        } catch (error) {
+            console.error("Incoming patient request loading error:", error);
+
+            /*
+             * Never replace a database failure with fake emergency
+             * requests. An empty list is safer than displaying a
+             * patient who does not actually exist.
+             */
+            renderIncomingRequests([]);
+        }
     }
 
 
     /* =====================================================
+       REALTIME EMERGENCY SYNCHRONIZATION
+       ===================================================== */
+
+    let emergencyRealtimeChannel = null;
+    let emergencyRefreshTimer = null;
+
+
+    function refreshIncomingRequestsRealtime() {
+
+        clearTimeout(emergencyRefreshTimer);
+
+        emergencyRefreshTimer = setTimeout(function () {
+            loadIncomingPatientRequests();
+        }, 200);
+    }
+
+
+    function startEmergencyRealtime() {
+
+        if (!supabaseClient || !hospitalId) {
+            console.error(
+                "Emergency realtime cannot start: Supabase client or hospitalId is missing."
+            );
+            return;
+        }
+
+        if (emergencyRealtimeChannel) {
+            supabaseClient.removeChannel(emergencyRealtimeChannel);
+            emergencyRealtimeChannel = null;
+        }
+
+        emergencyRealtimeChannel =
+            supabaseClient
+                .channel("hospital-emergency-realtime-" + hospitalId)
+
+                .on(
+                    "postgres_changes",
+                    {
+                        event: "INSERT",
+                        schema: "public",
+                        table: "emergencies",
+                        filter: "hospital_id=eq." + hospitalId
+                    },
+                    function (payload) {
+                        console.log(
+                            "New emergency received:",
+                            payload.new
+                        );
+                        refreshIncomingRequestsRealtime();
+                    }
+                )
+
+                .on(
+                    "postgres_changes",
+                    {
+                        event: "UPDATE",
+                        schema: "public",
+                        table: "emergencies",
+                        filter: "hospital_id=eq." + hospitalId
+                    },
+                    function (payload) {
+                        console.log(
+                            "Emergency status updated:",
+                            payload.new
+                        );
+                        refreshIncomingRequestsRealtime();
+                    }
+                )
+
+                .on(
+                    "postgres_changes",
+                    {
+                        event: "DELETE",
+                        schema: "public",
+                        table: "emergencies"
+                    },
+                    function (payload) {
+                        console.log(
+                            "Emergency deleted:",
+                            payload.old
+                        );
+                        refreshIncomingRequestsRealtime();
+                    }
+                )
+
+                .subscribe(function (status) {
+                    console.log(
+                        "Hospital emergency realtime:",
+                        status
+                    );
+
+                    if (status === "SUBSCRIBED") {
+                        console.log(
+                            "✓ Hospital emergency realtime connected."
+                        );
+
+                        /*
+                         * Make sure the list is synchronized immediately
+                         * after the realtime channel becomes active.
+                         */
+                        loadIncomingPatientRequests();
+                    }
+                });
+    }
+
+
+    function startIncomingRequestsRefresh() {
+
+        /*
+         * Initial database load + live Supabase Realtime.
+         * There is intentionally no 15-second polling loop.
+         */
+        loadIncomingPatientRequests();
+        startEmergencyRealtime();
+    }
+
+        /* =====================================================
        USER NAME
        ===================================================== */
 
@@ -5834,8 +6334,13 @@
                 return;
             }
 
-            await ensurePrototypeData();
+            /*
+             * Prototype bed setup is retained for the hospital resource
+             * board. Prototype patients/emergencies are NOT created.
+             */
+            await ensurePrototypeBeds();
             await loadBedInventory();
+            startIncomingRequestsRefresh();
 
 
             updateDashboardStats();
@@ -5884,6 +6389,19 @@
         }
 
     }
+
+
+    window.addEventListener("beforeunload", function () {
+
+        if (emergencyRealtimeChannel && supabaseClient) {
+            supabaseClient.removeChannel(emergencyRealtimeChannel);
+            emergencyRealtimeChannel = null;
+        }
+
+        if (emergencyRefreshTimer) {
+            clearTimeout(emergencyRefreshTimer);
+        }
+    });
 
 
     initializeHospitalDashboard();

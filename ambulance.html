@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1272,63 +1273,11 @@
                         <h2>Current Emergency Requests</h2>
                         <p>Available emergency requests near your ambulance.</p>
                     </div>
-                    <span class="request-count" id="requestCount">3 Active Requests</span>
+                    <span class="request-count" id="requestCount">Loading...</span>
                 </div>
 
                 <div class="request-list" id="requestList">
-                    <div class="request-card" data-request-id="RQ-2026-1048">
-                        <div class="request-main">
-                            <div class="request-patient-icon">👤</div>
-                            <div class="request-info">
-                                <div class="request-title-row">
-                                    <h3>Rahul Sharma</h3>
-                                    <span class="condition-badge request-condition critical">CRITICAL</span>
-                                </div>
-                                <div class="request-details">
-                                    <span>📍 Sector 17, Chandigarh</span>
-                                    <span class="request-distance">🚑 3.4 km away</span>
-                                    <span>🩺 Road Accident</span>
-                                </div>
-                            </div>
-                            <button class="accept-request-btn" data-request="RQ-2026-1048" type="button">ACCEPT REQUEST</button>
-                        </div>
-                    </div>
-
-                    <div class="request-card" data-request-id="RQ-2026-1049">
-                        <div class="request-main">
-                            <div class="request-patient-icon">👤</div>
-                            <div class="request-info">
-                                <div class="request-title-row">
-                                    <h3>Simran Kaur</h3>
-                                    <span class="condition-badge request-condition urgent">URGENT</span>
-                                </div>
-                                <div class="request-details">
-                                    <span>📍 Zirakpur Main Road</span>
-                                    <span class="request-distance">🚑 5.8 km away</span>
-                                    <span>🩺 Chest Pain</span>
-                                </div>
-                            </div>
-                            <button class="accept-request-btn" data-request="RQ-2026-1049" type="button">ACCEPT REQUEST</button>
-                        </div>
-                    </div>
-
-                    <div class="request-card" data-request-id="RQ-2026-1050">
-                        <div class="request-main">
-                            <div class="request-patient-icon">👤</div>
-                            <div class="request-info">
-                                <div class="request-title-row">
-                                    <h3>Aman Verma</h3>
-                                    <span class="condition-badge request-condition stable">STABLE</span>
-                                </div>
-                                <div class="request-details">
-                                    <span>📍 Mohali Phase 8</span>
-                                    <span class="request-distance">🚑 7.2 km away</span>
-                                    <span>🩺 Fall Injury</span>
-                                </div>
-                            </div>
-                            <button class="accept-request-btn" data-request="RQ-2026-1050" type="button">ACCEPT REQUEST</button>
-                        </div>
-                    </div>
+                    <div id="requestLoading" style="padding:18px;text-align:center;color:#7b8595;font-size:11px;">Loading emergency requests...</div>
                 </div>
             </div>
 
@@ -1997,6 +1946,13 @@
         src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
     ></script>
 
+    <!-- ResQ-Route dependencies -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/emergency.js"></script>
+    <script src="js/realtime.js"></script>
+
     <script>
 
         /* =========================
@@ -2112,44 +2068,255 @@
            EMERGENCY REQUESTS
         ========================== */
 
-        const emergencyRequests = {
-            "RQ-2026-1048": {
-                name: "Rahul Sharma",
-                location: "Sector 17, Chandigarh",
-                lat: 30.7415,
-                lng: 76.7821,
-                distance: "3.4 km",
-                condition: "CRITICAL",
-                emergencyType: "Road Accident",
-                eta: "08 min",
-                hospitalDistance: "7.8 km"
-            },
-            "RQ-2026-1049": {
-                name: "Simran Kaur",
-                location: "Zirakpur Main Road",
-                lat: 30.6425,
-                lng: 76.8173,
-                distance: "5.8 km",
-                condition: "URGENT",
-                emergencyType: "Chest Pain",
-                eta: "12 min",
-                hospitalDistance: "9.2 km"
-            },
-            "RQ-2026-1050": {
-                name: "Aman Verma",
-                location: "Mohali Phase 8",
-                lat: 30.7046,
-                lng: 76.7179,
-                distance: "7.2 km",
-                condition: "STABLE",
-                emergencyType: "Fall Injury",
-                eta: "15 min",
-                hospitalDistance: "10.4 km"
-            }
-        };
+        /* =========================
+           LIVE EMERGENCY REQUESTS
+        ========================== */
+
+        const emergencyRequests = {};
+        let driverUserId = null;
+        let driverAmbulanceId = null;
+        let emergencyRequestsLoading = false;
 
         let acceptedRequestId = null;
         let pendingRequestId = null;
+
+        const ACTIVE_TRIP_STORAGE_KEY = "resq_active_ambulance_trip";
+
+        function escapeHtml(value) {
+            return String(value == null ? "" : value)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        async function initializeDriverContext() {
+            const supabase = window.supabaseClient ||
+                (window.resqRoute && window.resqRoute.supabase);
+
+            if (!supabase) {
+                throw new Error("Supabase client is not available.");
+            }
+
+            const userResult = await supabase.auth.getUser();
+            if (userResult.error || !userResult.data || !userResult.data.user) {
+                throw new Error("Authenticated driver could not be identified.");
+            }
+
+            driverUserId = userResult.data.user.id;
+
+            const ambulanceResult = await supabase
+                .from("ambulances")
+                .select("id,vehicle_number,status,driver_id")
+                .eq("driver_id", driverUserId)
+                .maybeSingle();
+
+            if (ambulanceResult.error) throw ambulanceResult.error;
+            if (!ambulanceResult.data) {
+                throw new Error("No ambulance record is linked to this driver account.");
+            }
+
+            driverAmbulanceId = ambulanceResult.data.id;
+
+            const driverName = document.getElementById("driverName");
+            if (driverName) {
+                const profileResult = await supabase
+                    .from("profiles")
+                    .select("name")
+                    .eq("id", driverUserId)
+                    .maybeSingle();
+
+                if (!profileResult.error && profileResult.data && profileResult.data.name) {
+                    driverName.textContent = profileResult.data.name;
+                }
+            }
+        }
+
+        function buildLiveRequest(record) {
+            const patient = record && record.patients ? record.patients : {};
+            const lat = Number(record.latitude);
+            const lng = Number(record.longitude);
+            const priority = String(record.priority || "URGENT").toUpperCase();
+
+            return {
+                id: record.id,
+                name: patient.name || "Patient",
+                location: record.pickup_address || record.address || record.location ||
+                    (Number.isFinite(lat) && Number.isFinite(lng) ? lat.toFixed(5) + ", " + lng.toFixed(5) : "Patient location"),
+                lat: Number.isFinite(lat) ? lat : DEFAULT_DRIVER_LOCATION[0],
+                lng: Number.isFinite(lng) ? lng : DEFAULT_DRIVER_LOCATION[1],
+                distance: "--",
+                condition: priority,
+                emergencyType: record.emergency_type || "Emergency",
+                eta: "--",
+                hospitalDistance: "--",
+                status: record.status,
+                hospitalId: record.hospital_id,
+                ambulanceId: record.ambulance_id,
+                patientId: record.patient_id
+            };
+        }
+
+        function renderEmergencyRequests() {
+            const list = document.getElementById("requestList");
+            const count = document.getElementById("requestCount");
+            if (!list) return;
+
+            const requests = Object.values(emergencyRequests);
+
+            if (count) {
+                count.textContent = requests.length + (requests.length === 1 ? " Active Request" : " Active Requests");
+            }
+
+            if (!requests.length) {
+                list.innerHTML = '<div style="padding:20px;text-align:center;color:#7b8595;font-size:11px;">No active emergency requests available.</div>';
+                return;
+            }
+
+            list.innerHTML = requests.map(function(request) {
+                const conditionClass = String(request.condition || "urgent").toLowerCase();
+                const accepted = acceptedRequestId === request.id;
+                return '<div class="request-card' + (accepted ? ' accepted' : '') + '" data-request-id="' + escapeHtml(request.id) + '">' +
+                    '<div class="request-main">' +
+                    '<div class="request-patient-icon">👤</div>' +
+                    '<div class="request-info">' +
+                    '<div class="request-title-row"><h3>' + escapeHtml(request.name) + '</h3>' +
+                    '<span class="condition-badge request-condition ' + escapeHtml(conditionClass) + '">' + escapeHtml(request.condition) + '</span></div>' +
+                    '<div class="request-details">' +
+                    '<span>📍 ' + escapeHtml(request.location) + '</span>' +
+                    '<span class="request-distance">🚑 ' + escapeHtml(request.distance) + ' away</span>' +
+                    '<span>🩺 ' + escapeHtml(request.emergencyType) + '</span>' +
+                    '</div></div>' +
+                    '<button class="accept-request-btn" data-request="' + escapeHtml(request.id) + '" type="button"' + (accepted || acceptedRequestId ? ' disabled' : '') + '>' +
+                    (accepted ? 'REQUEST ACCEPTED' : (acceptedRequestId ? 'UNAVAILABLE' : 'ACCEPT REQUEST')) +
+                    '</button></div></div>';
+            }).join("");
+        }
+
+        async function loadEmergencyRequests() {
+            const supabase = window.supabaseClient ||
+                (window.resqRoute && window.resqRoute.supabase);
+            const list = document.getElementById("requestList");
+            if (!supabase || !list || emergencyRequestsLoading) return;
+
+            emergencyRequestsLoading = true;
+            try {
+                const response = await supabase
+                    .from("emergencies")
+                    .select(`
+                        id, patient_id, requester_id, ambulance_id, hospital_id,
+                        emergency_type, priority, status, latitude, longitude,
+                        created_at, updated_at,
+                        patients (id, name, age, gender, blood_group, allergies, medical_conditions, consent_given)
+                    `)
+                    .in("status", ["REPORTED", "DISPATCHING", "ASSIGNED"])
+                    .order("created_at", { ascending: false });
+
+                if (response.error) throw response.error;
+
+                Object.keys(emergencyRequests).forEach(function(key) {
+                    delete emergencyRequests[key];
+                });
+
+                (response.data || []).forEach(function(record) {
+                    // A request assigned to another ambulance is not offered here.
+                    if (record.ambulance_id && driverAmbulanceId && record.ambulance_id !== driverAmbulanceId) return;
+                    emergencyRequests[record.id] = buildLiveRequest(record);
+                });
+
+                renderEmergencyRequests();
+            } catch (error) {
+                console.error("Emergency request loading error:", error);
+
+                const errorMessage =
+                    error && error.message
+                        ? error.message
+                        : "Unknown Supabase error.";
+
+                list.innerHTML =
+                    '<div style="padding:20px;text-align:center;color:#c72535;font-size:11px;">' +
+                    'Unable to load emergency requests from Supabase.<br><br>' +
+                    '<span style="color:#7b8595;">' +
+                    escapeHtml(errorMessage) +
+                    '</span>' +
+                    '</div>';
+                const count = document.getElementById("requestCount");
+                if (count) count.textContent = "Unavailable";
+            } finally {
+                emergencyRequestsLoading = false;
+            }
+        }
+
+        let ambulanceEmergencyChannel = null;
+
+        function startAmbulanceEmergencyRealtime() {
+            const supabase = window.supabaseClient ||
+                (window.resqRoute && window.resqRoute.supabase);
+            if (!supabase) return;
+
+            if (ambulanceEmergencyChannel) {
+                supabase.removeChannel(ambulanceEmergencyChannel);
+            }
+
+            ambulanceEmergencyChannel = supabase
+                .channel("ambulance-emergency-realtime-" + driverUserId)
+                .on("postgres_changes", { event: "INSERT", schema: "public", table: "emergencies" }, function() {
+                    loadEmergencyRequests();
+                })
+                .on("postgres_changes", { event: "UPDATE", schema: "public", table: "emergencies" }, function(payload) {
+                    // If our active emergency changes, keep its local record synchronized.
+                    if (activeEmergencyRecord && payload.new && payload.new.id === activeEmergencyRecord.id) {
+                        activeEmergencyRecord.status = payload.new.status;
+                    }
+                    loadEmergencyRequests();
+                })
+                .on("postgres_changes", { event: "DELETE", schema: "public", table: "emergencies" }, function() {
+                    loadEmergencyRequests();
+                })
+                .subscribe(function(status) {
+                    console.log("Ambulance emergency realtime:", status);
+                    if (status === "SUBSCRIBED") loadEmergencyRequests();
+                });
+        }
+
+        function saveActiveTripState() {
+            if (!acceptedRequestId) {
+                localStorage.removeItem(ACTIVE_TRIP_STORAGE_KEY);
+                return;
+            }
+
+            const request = emergencyRequests[acceptedRequestId];
+
+            localStorage.setItem(
+                ACTIVE_TRIP_STORAGE_KEY,
+                JSON.stringify({
+                    requestId: acceptedRequestId,
+                    patientReached: !!patientReached,
+                    hospitalRouteActive: !!hospitalRouteActive,
+                    savedAt: Date.now(),
+                    patientName: request ? request.name : ""
+                })
+            );
+        }
+
+        function getSavedActiveTrip() {
+            try {
+                const raw = localStorage.getItem(ACTIVE_TRIP_STORAGE_KEY);
+                if (!raw) return null;
+
+                const saved = JSON.parse(raw);
+
+                if (!saved || !saved.requestId) {
+                    return null;
+                }
+
+                return saved;
+            } catch (error) {
+                console.error("Unable to restore ambulance trip:", error);
+                return null;
+            }
+        }
 
         function updateSidebarAccess() {
             sideItems.forEach(function(item) {
@@ -2791,9 +2958,365 @@
         // is revealed after the driver confirms ARRIVED AT PATIENT.
         hidePatientMedicalData();
 
-        function acceptEmergencyRequest(requestId) {
-            const request = emergencyRequests[requestId];
-            if (!request) return;
+        /* =========================
+           SUPABASE EMERGENCY SYNC
+        ========================== */
+
+        let activeEmergencyRecord = null;
+
+        function isUuid(value) {
+            return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value || ""));
+        }
+
+        function buildRequestFromEmergencyRecord(record, fallbackRequest, requestId) {
+            const patient = record && record.patients
+                ? record.patients
+                : {};
+
+            const latitude = Number(record && record.latitude);
+            const longitude = Number(record && record.longitude);
+            const fallback = fallbackRequest || {};
+
+            const location =
+                record && (
+                    record.pickup_address ||
+                    record.address ||
+                    record.location
+                )
+                    ? (
+                        record.pickup_address ||
+                        record.address ||
+                        record.location
+                    )
+                    : (
+                        Number.isFinite(latitude) &&
+                        Number.isFinite(longitude)
+                            ? latitude.toFixed(5) + ", " + longitude.toFixed(5)
+                            : (fallback.location || "Patient location")
+                    );
+
+            return {
+                id: requestId || (record && record.id) || fallback.id || null,
+                name: patient.name || fallback.name || "Patient",
+                location: location,
+                lat: Number.isFinite(latitude)
+                    ? latitude
+                    : Number(fallback.lat) || DEFAULT_DRIVER_LOCATION[0],
+                lng: Number.isFinite(longitude)
+                    ? longitude
+                    : Number(fallback.lng) || DEFAULT_DRIVER_LOCATION[1],
+                distance: fallback.distance || "--",
+                condition: String(
+                    record && record.priority
+                        ? record.priority
+                        : fallback.condition || "URGENT"
+                ).toUpperCase(),
+                emergencyType:
+                    record && record.emergency_type
+                        ? record.emergency_type
+                        : (fallback.emergencyType || "Emergency"),
+                eta: fallback.eta || "--",
+                hospitalDistance: fallback.hospitalDistance || "--"
+            };
+        }
+
+        async function resolveEmergencyRecord(requestId, request) {
+            /*
+             * A hospital VIEW REQUEST link can contain the real Supabase
+             * emergency UUID. In that case use it directly.
+             */
+            if (isUuid(requestId) && window.supabaseClient) {
+                const direct = await window.supabaseClient
+                    .from("emergencies")
+                    .select(`
+                        id,
+                        patient_id,
+                        requester_id,
+                        ambulance_id,
+                        hospital_id,
+                        emergency_type,
+                        priority,
+                        status,
+                        latitude,
+                        longitude,
+                        created_at,
+                        updated_at,
+                        patients (
+                            id,
+                            name,
+                            age,
+                            gender,
+                            blood_group,
+                            allergies,
+                            medical_conditions,
+                            consent_given
+                        )
+                    `)
+                    .eq("id", requestId)
+                    .maybeSingle();
+
+                if (direct.error) throw direct.error;
+                if (direct.data) return direct.data;
+            }
+
+            /*
+             * The older ambulance UI uses display IDs such as RQ-2026-1048.
+             * Those are not necessarily database UUIDs, so resolve the real
+             * emergency by the patient + emergency type + location.
+             */
+            if (!window.supabaseClient) {
+                throw new Error("Supabase client is not available.");
+            }
+
+            const response = await window.supabaseClient
+                .from("emergencies")
+                .select(`
+                    id,
+                    patient_id,
+                    requester_id,
+                    ambulance_id,
+                    hospital_id,
+                    emergency_type,
+                    priority,
+                    status,
+                    latitude,
+                    longitude,
+                    created_at,
+                    updated_at,
+                    patients (
+                        id,
+                        name,
+                        age,
+                        gender,
+                        blood_group,
+                        allergies,
+                        medical_conditions,
+                        consent_given
+                    )
+                `)
+                .in("status", [
+                    "REPORTED",
+                    "DISPATCHING",
+                    "ASSIGNED"
+                ])
+                .order("created_at", { ascending: false });
+
+            if (response.error) throw response.error;
+
+            const rows = response.data || [];
+
+            const normalizedName = String(request.name || "").trim().toLowerCase();
+            const normalizedType = String(request.emergencyType || "").trim().toLowerCase();
+            const normalizedLocation = String(request.location || "").trim().toLowerCase();
+
+            const matches = rows.filter(function(row) {
+                const patientName = row.patients && row.patients.name
+                    ? String(row.patients.name).trim().toLowerCase()
+                    : "";
+
+                const type = String(row.emergency_type || "").trim().toLowerCase();
+
+                /*
+                 * The emergencies table stores the verified pickup position
+                 * as latitude/longitude. Do not reference optional address
+                 * columns here because they may not exist in the schema.
+                 */
+                const rowCoordinates =
+                    Number.isFinite(Number(row.latitude)) &&
+                    Number.isFinite(Number(row.longitude))
+                        ? Number(row.latitude).toFixed(5) + ", " +
+                          Number(row.longitude).toFixed(5)
+                        : "";
+
+                const nameMatches = patientName === normalizedName;
+                const typeMatches = !normalizedType || type === normalizedType;
+
+                const locationMatches =
+                    !normalizedLocation ||
+                    !rowCoordinates ||
+                    rowCoordinates.includes(normalizedLocation);
+
+                return nameMatches && typeMatches && locationMatches;
+            });
+
+            if (matches.length === 0) {
+                throw new Error(
+                    "No matching emergency was found in Supabase for " + request.name + "."
+                );
+            }
+
+            if (matches.length > 1) {
+                console.warn(
+                    "Multiple matching emergencies found. Using the newest one.",
+                    matches
+                );
+            }
+
+            return matches[0];
+        }
+
+        async function assignEmergencyToDriver(emergencyId) {
+            const supabase = window.supabaseClient ||
+                (window.resqRoute && window.resqRoute.supabase);
+            if (!supabase || !emergencyId || !driverUserId || !driverAmbulanceId) {
+                throw new Error("Driver or ambulance identity is missing.");
+            }
+
+            const result = await supabase
+                .from("emergencies")
+                .update({
+                    driver_id: driverUserId,
+                    ambulance_id: driverAmbulanceId,
+                    updated_at: new Date().toISOString()
+                })
+                .eq("id", emergencyId)
+                .in("status", ["REPORTED", "DISPATCHING", "ASSIGNED"])
+                .select("id,driver_id,ambulance_id,status")
+                .maybeSingle();
+
+            if (result.error) throw result.error;
+            if (!result.data) {
+                throw new Error("Emergency is no longer available for this ambulance.");
+            }
+
+            if (result.data.driver_id !== driverUserId || result.data.ambulance_id !== driverAmbulanceId) {
+                throw new Error("Supabase did not confirm the ambulance assignment.");
+            }
+
+            return result.data;
+        }
+
+        async function syncEmergencyStatus(status) {
+            /*
+             * Prefer the real emergency record. The accepted request ID is
+             * populated from the Supabase UUID before this function is called.
+             */
+            if (!activeEmergencyRecord) {
+                if (!acceptedRequestId) {
+                    throw new Error("No ambulance emergency is currently selected.");
+                }
+
+                const request = emergencyRequests[acceptedRequestId];
+
+                activeEmergencyRecord =
+                    await resolveEmergencyRecord(
+                        acceptedRequestId,
+                        request || {}
+                    );
+            }
+
+            if (!acceptedRequestId && activeEmergencyRecord && activeEmergencyRecord.id) {
+                acceptedRequestId = activeEmergencyRecord.id;
+            }
+
+            if (!activeEmergencyRecord || !activeEmergencyRecord.id) {
+                throw new Error("The real emergency record could not be resolved.");
+            }
+
+            /*
+             * emergency.js owns the emergency status update. This keeps the
+             * ambulance dashboard and Supabase using one status flow.
+             */
+            if (
+                window.resqEmergency &&
+                typeof window.resqEmergency.updateStatus === "function"
+            ) {
+                const result =
+                    await window.resqEmergency.updateStatus(
+                        activeEmergencyRecord.id,
+                        status
+                    );
+
+                if (result === false) {
+                    throw new Error(
+                        "emergency.js could not update the emergency status."
+                    );
+                }
+            } else {
+                throw new Error(
+                    "emergency.js is not loaded or updateStatus is unavailable."
+                );
+            }
+
+            activeEmergencyRecord.status = status;
+
+            console.log(
+                "✓ Emergency synced:",
+                activeEmergencyRecord.id,
+                status
+            );
+
+            return activeEmergencyRecord;
+        }
+
+        async function syncEmergencyStatusSafely(status) {
+            try {
+                await syncEmergencyStatus(status);
+                return true;
+            } catch (error) {
+                console.error(
+                    "Emergency status synchronization failed:",
+                    status,
+                    error
+                );
+
+                alert(
+                    "Could not update the emergency status in Supabase.\n\n" +
+                    "Status: " + status + "\n" +
+                    "Please check your connection and try again."
+                );
+
+                return false;
+            }
+        }
+
+        async function acceptEmergencyRequest(requestId) {
+            let request = emergencyRequests[requestId] || null;
+
+            /*
+             * Resolve the REAL Supabase emergency before changing local UI.
+             * This also supports a UUID passed from the hospital dashboard.
+             */
+            let resolvedEmergency;
+            try {
+                resolvedEmergency =
+                    await resolveEmergencyRecord(
+                        requestId,
+                        request || {}
+                    );
+
+                if (!request) {
+                    request = buildRequestFromEmergencyRecord(
+                        resolvedEmergency,
+                        {},
+                        requestId
+                    );
+
+                    emergencyRequests[requestId] = request;
+                }
+
+                activeEmergencyRecord = resolvedEmergency;
+
+                /*
+                 * IMPORTANT:
+                 * Set the real Supabase emergency UUID before attempting
+                 * DRIVER_ACCEPTED. syncEmergencyStatus() requires this ID.
+                 */
+                acceptedRequestId = activeEmergencyRecord.id;
+
+                await assignEmergencyToDriver(activeEmergencyRecord.id);
+                await syncEmergencyStatus("DRIVER_ACCEPTED");
+            } catch (error) {
+                console.error("Unable to accept emergency:", error);
+
+                alert(
+                    "This emergency could not be accepted.\n\n" +
+                    "The request was not changed because Supabase could not " +
+                    "confirm DRIVER_ACCEPTED."
+                );
+
+                return false;
+            }
 
             acceptedRequestId = requestId;
             mapResetToEmpty = false;
@@ -2892,6 +3415,8 @@
 
             activateStep(2);
 
+            saveActiveTripState();
+
             if (ambulanceMap) {
                 // The map is intentionally empty after a completed trip, so
                 // recreate the ambulance marker when the next request starts.
@@ -2916,8 +3441,12 @@
             });
         }
 
-        document.querySelectorAll(".accept-request-btn").forEach(function(button) {
-            button.addEventListener("click", function() {
+        const requestListElement = document.getElementById("requestList");
+        if (requestListElement) {
+            requestListElement.addEventListener("click", function(event) {
+                const button = event.target.closest(".accept-request-btn");
+                if (!button) return;
+
                 const requestId = button.dataset.request;
                 const request = emergencyRequests[requestId];
                 if (!request || acceptedRequestId) return;
@@ -2927,21 +3456,21 @@
                 openActionModal(
                     "Confirm Emergency Request",
                     "Accept the emergency request for " + request.name + " at " + request.location + "? Once accepted, the request list will be hidden for the rest of this trip.",
-                    function() {
+                    async function() {
                         if (!pendingRequestId) return;
 
                         const selectedRequestId = pendingRequestId;
                         pendingRequestId = null;
-                        acceptEmergencyRequest(selectedRequestId);
+                        const accepted = await acceptEmergencyRequest(selectedRequestId);
+
+                        if (!accepted || !acceptedRequestId) return;
 
                         const requestsSection = document.getElementById("requestsSection");
-                        if (requestsSection) {
-                            requestsSection.classList.add("trip-active");
-                        }
+                        if (requestsSection) requestsSection.classList.add("trip-active");
                     }
                 );
             });
-        });
+        }
 
 
         /* =========================
@@ -3058,12 +3587,10 @@
             .getElementById("confirmModal")
             .addEventListener(
                 "click",
-                function() {
+                async function() {
 
                     if (pendingAction) {
-
-                        pendingAction();
-
+                        await pendingAction();
                     }
 
                     modal.classList.remove("active");
@@ -3102,7 +3629,23 @@
                     openActionModal(
                         "Confirm Hospital Arrival",
                         "Confirm that the ambulance and patient have arrived at the destination hospital.",
-                        function() {
+                        async function() {
+
+                            if (!(await syncEmergencyStatusSafely("ARRIVED_AT_HOSPITAL"))) {
+                                return;
+                            }
+
+                            /*
+                             * The dashboard treats hospital arrival as the
+                             * end of the ambulance trip. Mark it COMPLETED
+                             * after the arrival event has been written.
+                             * Hospital realtime therefore receives the real
+                             * arrival transition and then removes the trip
+                             * from the active incoming list.
+                             */
+                            if (!(await syncEmergencyStatusSafely("COMPLETED"))) {
+                                return;
+                            }
 
                             document.getElementById("tripStatus").textContent = "Standby";
                             document.getElementById("ambulanceStatus").textContent = "Available";
@@ -3126,6 +3669,8 @@
                             if (tripSub) tripSub.textContent = "Waiting for dispatch";
 
                             acceptedRequestId = null;
+                            activeEmergencyRecord = null;
+                            localStorage.removeItem(ACTIVE_TRIP_STORAGE_KEY);
                             routeGeneration++;
                             updateSidebarAccess();
                             patientReached = false;
@@ -3202,14 +3747,26 @@
                 openActionModal(
                     "Confirm Patient Onboard",
                     "Confirm that you have arrived at the patient and the patient is safely onboard the ambulance.",
-                    function() {
+                    async function() {
 
                         // Driver has confirmed arrival at the patient.
+                        // Persist the same status in Supabase before changing
+                        // the local dashboard to the onboard/hospital stage.
+                        if (!(await syncEmergencyStatusSafely("ARRIVED_AT_PATIENT"))) {
+                            return;
+                        }
+
+                        if (!(await syncEmergencyStatusSafely("PATIENT_ONBOARD"))) {
+                            return;
+                        }
+
                         // Reveal the patient's medical information in the
                         // panel beside the map and allow the live vitals
                         // simulation to continue during transport.
                         showPatientMedicalData();
                         patientReached = true;
+
+                        saveActiveTripState();
 
                         document.getElementById("tripStatus").textContent = "To Hospital";
                         document.getElementById("ambulanceStatus").textContent = "Transporting";
@@ -3225,6 +3782,13 @@
                         if (etaSub) etaSub.textContent = "Current route to hospital";
 
                         hospitalRouteActive = true;
+
+                        if (!(await syncEmergencyStatusSafely("EN_ROUTE_TO_HOSPITAL"))) {
+                            hospitalRouteActive = false;
+                            return;
+                        }
+
+                        saveActiveTripState();
                         activateStep(4);
 
                         // Invalidate every older patient-route request. If an
@@ -3292,6 +3856,249 @@
 
         initLeafletMap();
         setupMapControls();
+
+        (async function initializeAmbulanceDashboard() {
+            try {
+                await initializeDriverContext();
+                await loadEmergencyRequests();
+                startAmbulanceEmergencyRealtime();
+            } catch (error) {
+                console.error("Ambulance dashboard initialization error:", error);
+                const list = document.getElementById("requestList");
+                if (list) {
+                    list.innerHTML = '<div style="padding:20px;text-align:center;color:#c72535;font-size:11px;">' + escapeHtml(error.message || "Unable to initialize ambulance dashboard.") + '</div>';
+                }
+            }
+        })();
+
+        /* =====================================================
+           OPEN PATIENT FROM HOSPITAL DASHBOARD
+           ===================================================== */
+
+        async function openPatientFromHospitalDashboard() {
+            const params = new URLSearchParams(window.location.search);
+            const requestedId = params.get("request");
+            const requestedPatient = params.get("patient");
+            const savedTrip = getSavedActiveTrip();
+
+            let requestId = requestedId;
+
+            if (
+                savedTrip &&
+                (!requestId || savedTrip.requestId === requestId)
+            ) {
+                requestId = savedTrip.requestId;
+            }
+
+            if (!requestId && requestedPatient) {
+                const match = Object.keys(emergencyRequests).find(function(id) {
+                    return String(emergencyRequests[id].name).toLowerCase() ===
+                        String(requestedPatient).toLowerCase();
+                });
+
+                if (match) {
+                    requestId = match;
+                }
+            }
+
+            if (!requestId) {
+                return;
+            }
+
+            /*
+             * Always resolve the real emergency from Supabase when a hospital
+             * request is supplied. This prevents the ambulance page from
+             * accepting a frontend-only demo request.
+             */
+            let realEmergency;
+
+            try {
+                realEmergency =
+                    await resolveEmergencyRecord(
+                        requestId,
+                        emergencyRequests[requestId] || {
+                            name: requestedPatient || ""
+                        }
+                    );
+            } catch (error) {
+                console.error(
+                    "Could not resolve hospital emergency:",
+                    error
+                );
+
+                alert(
+                    "The selected emergency could not be loaded from Supabase."
+                );
+
+                return;
+            }
+
+            const uiRequestId = requestId || realEmergency.id;
+
+            const request =
+                buildRequestFromEmergencyRecord(
+                    realEmergency,
+                    emergencyRequests[uiRequestId] || {},
+                    uiRequestId
+                );
+
+            emergencyRequests[uiRequestId] = request;
+
+            if (
+                savedTrip &&
+                savedTrip.requestId === uiRequestId
+            ) {
+                acceptedRequestId = uiRequestId;
+                activeEmergencyRecord = realEmergency;
+
+                patientReached = !!savedTrip.patientReached;
+                hospitalRouteActive = !!savedTrip.hospitalRouteActive;
+
+                updateSidebarAccess();
+
+                document.querySelectorAll(".request-card").forEach(function(card) {
+                    card.classList.remove("accepted");
+                });
+
+                document.querySelectorAll(".accept-request-btn").forEach(function(button) {
+                    button.disabled = false;
+                    button.textContent = "ACCEPT REQUEST";
+                });
+
+                const selectedCard = document.querySelector(
+                    '.request-card[data-request-id="' + uiRequestId + '"]'
+                );
+
+                const selectedButton = document.querySelector(
+                    '.accept-request-btn[data-request="' + uiRequestId + '"]'
+                );
+
+                if (selectedCard) {
+                    selectedCard.classList.add("accepted");
+                }
+
+                if (selectedButton) {
+                    selectedButton.disabled = true;
+                    selectedButton.textContent = "REQUEST ACCEPTED";
+                }
+
+                document.getElementById("patientName").textContent =
+                    request.name;
+
+                document.getElementById("emergencyType").textContent =
+                    request.emergencyType;
+
+                document.getElementById("conditionBadge").textContent =
+                    request.condition;
+
+                document.getElementById("patientDistance").textContent =
+                    patientReached ? "Reached" : request.distance;
+
+                document.getElementById("patientEta").textContent =
+                    patientReached ? "--" : request.eta;
+
+                document.getElementById("pickupDistance").textContent =
+                    patientReached ? "Reached" : request.distance;
+
+                document.getElementById("hospitalDistance").textContent =
+                    request.hospitalDistance;
+
+                const preArrivalEmergencyType =
+                    document.getElementById("preArrivalEmergencyType");
+
+                const preArrivalAddress =
+                    document.getElementById("preArrivalAddress");
+
+                const preArrivalCondition =
+                    document.getElementById("preArrivalCondition");
+
+                if (preArrivalEmergencyType) {
+                    preArrivalEmergencyType.textContent =
+                        request.emergencyType;
+                }
+
+                if (preArrivalAddress) {
+                    preArrivalAddress.textContent =
+                        request.location;
+                }
+
+                if (preArrivalCondition) {
+                    preArrivalCondition.textContent =
+                        "CONDITION: " + request.condition;
+                }
+
+                if (patientReached) {
+                    showPatientMedicalData();
+
+                    document.getElementById("tripStatus").textContent =
+                        "To Hospital";
+
+                    document.getElementById("ambulanceStatus").textContent =
+                        "Transporting";
+
+                    patientActionButton.disabled = false;
+                    patientActionButton.dataset.stage = "hospital";
+                    patientActionButton.textContent =
+                        "ARRIVED AT HOSPITAL";
+
+                    activateStep(4);
+                } else {
+                    hidePatientMedicalData();
+
+                    document.getElementById("tripStatus").textContent =
+                        "En Route";
+
+                    document.getElementById("ambulanceStatus").textContent =
+                        "Dispatched";
+
+                    patientActionButton.disabled = false;
+                    patientActionButton.dataset.stage = "patient";
+                    patientActionButton.textContent =
+                        "ARRIVED AT PATIENT";
+
+                    activateStep(2);
+                }
+
+                setTimeout(function() {
+                    if (!ambulanceMap) return;
+
+                    if (!ambulanceMarker) {
+                        const markerPosition = driverPosition
+                            ? [driverPosition.lat, driverPosition.lng]
+                            : DEFAULT_DRIVER_LOCATION;
+
+                        ambulanceMarker =
+                            L.marker(
+                                markerPosition,
+                                {
+                                    icon: ambulanceIcon,
+                                    title:
+                                        "Ambulance current location"
+                                }
+                            ).addTo(ambulanceMap);
+                    }
+
+                    if (hospitalRouteActive) {
+                        drawRouteToHospital();
+                    } else {
+                        drawRouteToAcceptedPatient();
+                    }
+
+                    document
+                        .getElementById("navigationSection")
+                        .scrollIntoView({
+                            behavior: "smooth",
+                            block: "center"
+                        });
+                }, 250);
+
+                return;
+            }
+
+            await acceptEmergencyRequest(uiRequestId);
+        }
+
+        openPatientFromHospitalDashboard();
 
         /* =========================
            LIVE PATIENT VITALS
@@ -3377,13 +4184,18 @@
             }
         });
 
+
+        window.addEventListener("beforeunload", function() {
+            if (locationWatchId !== null && navigator.geolocation) {
+                navigator.geolocation.clearWatch(locationWatchId);
+            }
+            if (ambulanceEmergencyChannel) {
+                const supabase = window.supabaseClient || (window.resqRoute && window.resqRoute.supabase);
+                if (supabase) supabase.removeChannel(ambulanceEmergencyChannel);
+            }
+        });
     </script>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/supabase.js"></script>
-<script src="js/auth.js"></script>
-<script src="js/emergency.js"></script>
-<script src="js/realtime.js"></script>
-<script src="js/bed-allocation.js"></script>
+
 </body>
 </html>
