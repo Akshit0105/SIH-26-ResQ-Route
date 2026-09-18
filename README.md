@@ -803,26 +803,19 @@ The central architectural principle is:
 
 ## 👥 Project Team
 
-Add your team members here:
-
 ```text
-Team Name: ______________________
+Team Name: Algnites
 
 Members:
-1. _____________________________
-2. _____________________________
-3. _____________________________
-4. _____________________________
+1. Rohit Jandial 
+2. Akshit Bhardwaj 
+3. Harjot Singh
+4. Gurmehak Kaur
+5. Gurleen Kaur
+6. Alice Chawla
 ```
 
 ---
-
-## 📄 License
-
-Add the project's license here if required by your team or hackathon.
-
----
-
 ## 🚑 ResQ-Route
 
 **Emergency → Location → Ambulance → Hospital → Realtime → Patient → Bed**
