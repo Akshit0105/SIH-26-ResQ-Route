@@ -393,9 +393,9 @@
 
             border-radius: 20px;
 
-            background: #fff3df;
+            background: #eaf8f0;
 
-            color: #a56608;
+            color: #16834a;
 
             font-size: 11px;
 
@@ -459,6 +459,12 @@
             color: #7d8796;
 
             margin-top: 5px;
+        }
+
+
+        .condition-reassurance {
+            color: #1b9657;
+            font-weight: 700;
         }
 
 
@@ -1178,6 +1184,50 @@
 
 
         /* =====================================================
+           SOS EMERGENCY BUTTON
+        ====================================================== */
+        .sos-area{display:flex;align-items:center;gap:12px;}
+        .sos-button{border:none;background:#e63946;color:#fff;min-width:190px;padding:13px 20px;border-radius:12px;cursor:pointer;font-size:13px;font-weight:800;box-shadow:0 8px 20px rgba(230,57,70,.20);}
+        .sos-button:hover{background:#cf2938;}
+        .sos-button:disabled{background:#aeb7c4;cursor:not-allowed;box-shadow:none;}
+        .sos-top-area{display:flex;justify-content:center;align-items:center;margin:24px 0 22px;}
+        .sos-top-button{border:none;background:#e63946;color:#fff;width:min(520px,100%);min-height:76px;padding:18px 28px;border-radius:18px;cursor:pointer;font-size:20px;font-weight:900;letter-spacing:.2px;box-shadow:0 12px 30px rgba(230,57,70,.24);display:flex;align-items:center;justify-content:center;gap:12px;}
+        .sos-top-button:hover{background:#cf2938;transform:translateY(-1px);}
+        .sos-top-button:disabled{background:#aeb7c4;cursor:not-allowed;box-shadow:none;transform:none;}
+        .sos-top-icon{font-size:27px;line-height:1;}
+        .sos-modal{position:fixed;inset:0;z-index:5000;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(23,32,51,.55);backdrop-filter:blur(4px);}
+        .sos-modal.open{display:flex;}
+        .sos-modal-card{width:min(560px,100%);max-height:90vh;overflow-y:auto;background:#fff;border-radius:18px;border:1px solid #e3e8ef;box-shadow:0 25px 70px rgba(23,32,51,.22);}
+        .sos-modal-header{padding:22px 24px 18px;border-bottom:1px solid #edf0f4;display:flex;align-items:center;justify-content:space-between;gap:15px;}
+        .sos-modal-header h2{font-size:19px;margin-bottom:5px;}
+        .sos-modal-header p{color:#758092;font-size:12px;line-height:1.5;}
+        .sos-close{width:34px;height:34px;border:1px solid #dce2ea;background:#fff;color:#596579;border-radius:9px;cursor:pointer;font-size:18px;}
+        .sos-form-body{padding:22px 24px 24px;}
+        .sos-section-label{display:block;font-size:11px;font-weight:800;color:#596579;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;}
+        .sos-type-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:20px;}
+        .sos-type-option{position:relative;}
+        .sos-type-option input{position:absolute;opacity:0;pointer-events:none;}
+        .sos-type-option label{display:block;padding:13px;border:1px solid #dfe5ed;border-radius:11px;background:#fff;cursor:pointer;font-size:12px;font-weight:700;color:#4d596b;text-align:center;}
+        .sos-type-option input:checked+label{border-color:#e63946;background:#fff1f2;color:#c72535;}
+        .sos-label{display:block;font-size:11px;font-weight:700;color:#596579;margin-bottom:7px;}
+        .sos-select,.sos-textarea{width:100%;border:1px solid #dfe5ed;border-radius:10px;padding:12px 13px;font:inherit;font-size:12px;color:#172033;background:#fff;outline:none;}
+        .sos-select:focus,.sos-textarea:focus{border-color:#e63946;box-shadow:0 0 0 3px rgba(230,57,70,.08);}
+        .sos-textarea{min-height:110px;resize:vertical;}
+        .sos-location-note{margin-top:14px;padding:11px 12px;border-radius:9px;background:#f5f7fa;color:#697586;font-size:10px;line-height:1.5;}
+        .sos-submit{width:100%;margin-top:17px;border:none;background:#e63946;color:#fff;padding:13px 18px;border-radius:10px;cursor:pointer;font-size:12px;font-weight:800;}
+        .sos-submit:disabled{background:#aeb7c4;cursor:not-allowed;}
+        .sos-message{display:none;margin-top:12px;padding:10px 12px;border-radius:9px;font-size:11px;line-height:1.5;}
+        .user-location-marker{width:18px;height:18px;border-radius:50%;background:#2563eb;border:3px solid #fff;box-shadow:0 2px 10px rgba(37,99,235,.35);}
+        .nearby-hospital-marker{width:28px;height:28px;border-radius:50%;background:#172033;color:#fff;display:flex;align-items:center;justify-content:center;border:2px solid #fff;box-shadow:0 3px 10px rgba(0,0,0,.18);font-size:11px;font-weight:800;}
+        .nearby-hospitals-panel{position:absolute;right:16px;bottom:16px;z-index:500;background:#fff;border-radius:10px;padding:12px 14px;box-shadow:0 5px 20px rgba(0,0,0,.14);width:min(285px,calc(100% - 32px));display:none;}
+        .nearby-hospitals-panel.show{display:block;}
+        .nearby-hospitals-title{font-size:11px;font-weight:800;margin-bottom:8px;}
+        .nearby-hospital-row{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid #edf0f4;font-size:10px;}
+        .nearby-hospital-row:last-child{border-bottom:none;}
+        .nearby-hospital-name{color:#4d596b;font-weight:700;}
+        .nearby-hospital-distance{color:#1b9657;font-weight:800;white-space:nowrap;}
+
+        /* =====================================================
            RESPONSIVE
         ====================================================== */
 
@@ -1228,6 +1278,16 @@
                 flex-direction: column;
 
                 gap: 12px;
+            }
+
+            .sos-area {
+                width: 100%;
+                flex-direction: column-reverse;
+                align-items: stretch;
+            }
+
+            .sos-button {
+                width: 100%;
             }
 
 
@@ -1414,17 +1474,20 @@
 
 
                 <div class="live-indicator">
-
                     <div class="live-dot"></div>
-
-                    <span id="connectionStatus">
-                        LIVE SYSTEM
-                    </span>
-
+                    <span id="connectionStatus">LIVE SYSTEM</span>
                 </div>
 
             </div>
 
+
+            <!-- BIG SOS ACTION -->
+            <div class="sos-top-area">
+                <button class="sos-top-button" id="sosButton" type="button">
+                    <span class="sos-top-icon">🚨</span>
+                    <span>SOS • REPORT EMERGENCY</span>
+                </button>
+            </div>
 
 
             <!-- =================================================
@@ -1455,8 +1518,8 @@
 
                             <div>
 
-                                <h2>
-                                    Active Emergency
+                                <h2 id="emergencyCardTitle">
+                                    Emergency Ready
                                 </h2>
 
 
@@ -1474,7 +1537,7 @@
                             class="status-badge"
                             id="emergencyStatus"
                         >
-                            DISPATCHING
+                            EMERGENCY ACTIVE
                         </span>
 
                     </div>
@@ -1536,8 +1599,8 @@
                                 </div>
 
 
-                                <div class="stat-sub">
-                                    View only • latest clinical update
+                                <div class="stat-sub condition-reassurance">
+                                    You are doing fine
                                 </div>
 
                             </div>
@@ -1642,65 +1705,37 @@
                                     <!-- MAP OVERLAY -->
 
                                     <div class="map-overlay">
-
-                                        <strong id="mapRouteTitle">
-                                            Ambulance → Patient
-                                        </strong>
-
-
-                                        <span id="mapRouteStatus">
-                                            Waiting for ambulance
-                                            location...
-                                        </span>
-
+                                        <strong id="mapRouteTitle">Your Location</strong>
+                                        <span id="mapRouteStatus">Finding your nearest hospitals...</span>
                                     </div>
 
-
-                                    <!-- MAP LEGEND -->
+                                    <div class="nearby-hospitals-panel" id="nearbyHospitalsPanel">
+                                        <div class="nearby-hospitals-title">Nearest Hospitals</div>
+                                        <div id="nearbyHospitalsList"></div>
+                                    </div>
 
                                     <div class="map-legend">
-
-                                        <div class="legend-item">
-
-                                            <span
-                                                class="legend-dot
-                                                legend-ambulance"
-                                            ></span>
-
+                                        <div class="legend-item" id="legendUser">
+                                            <span class="legend-dot" style="background:#2563eb;"></span>
+                                            Your Location
+                                        </div>
+                                        <div class="legend-item" id="legendAmbulance" style="display:none;">
+                                            <span class="legend-dot legend-ambulance"></span>
                                             Ambulance
-
                                         </div>
-
-
-                                        <div class="legend-item">
-
-                                            <span
-                                                class="legend-dot
-                                                legend-patient"
-                                            ></span>
-
+                                        <div class="legend-item" id="legendPatient" style="display:none;">
+                                            <span class="legend-dot legend-patient"></span>
                                             Patient
-
                                         </div>
-
-
-                                        <div class="legend-item">
-
-                                            <span
-                                                class="legend-dot
-                                                legend-hospital"
-                                            ></span>
-
+                                        <div class="legend-item" id="legendHospital">
+                                            <span class="legend-dot legend-hospital"></span>
                                             Hospital
-
                                         </div>
-
                                     </div>
 
                                 </div>
 
                             </div>
-
 
 
                             <!-- PATIENT STATUS + STAFF -->
@@ -1777,13 +1812,12 @@
                                                     class="info-value"
                                                     id="statusDetail"
                                                 >
-                                                    Dispatching
+                                                    Emergency Active
                                                 </div>
 
 
                                                 <div class="info-sub">
-                                                    Updated by authorized
-                                                    emergency personnel.
+                                                    Emergency response is currently in progress.
                                                 </div>
 
                                             </div>
@@ -1932,15 +1966,12 @@
                                         <div>
 
                                             <h3 id="hospitalName">
-                                                Awaiting hospital
-                                                assignment
+                                                No hospital assigned yet
                                             </h3>
 
 
                                             <p id="hospitalAddress">
-                                                Hospital address will
-                                                appear here when the
-                                                emergency is assigned.
+                                                You are doing fine. Hospital details will appear here if a hospital is required.
                                             </p>
 
                                         </div>
@@ -1960,49 +1991,18 @@
                                         <div class="resource">
 
                                             <span class="resource-name">
-                                                Emergency Department
+                                                Hospital facilities
                                             </span>
 
 
                                             <span
-                                                class="pending-resource"
+                                                class="available"
                                             >
-                                                Pending
+                                                Not required yet
                                             </span>
 
                                         </div>
 
-
-                                        <div class="resource">
-
-                                            <span class="resource-name">
-                                                ICU
-                                            </span>
-
-
-                                            <span
-                                                class="pending-resource"
-                                            >
-                                                Pending
-                                            </span>
-
-                                        </div>
-
-
-                                        <div class="resource">
-
-                                            <span class="resource-name">
-                                                Trauma Support
-                                            </span>
-
-
-                                            <span
-                                                class="pending-resource"
-                                            >
-                                                Pending
-                                            </span>
-
-                                        </div>
 
                                     </div>
 
@@ -2427,6 +2427,40 @@
 
 
 <!-- =========================================================
+     SOS EMERGENCY MODAL
+========================================================== -->
+<div class="sos-modal" id="sosModal" aria-hidden="true">
+    <div class="sos-modal-card" role="dialog" aria-modal="true" aria-labelledby="sosModalTitle">
+        <div class="sos-modal-header">
+            <div><h2 id="sosModalTitle">Report an Emergency</h2><p>Your personal details and current location will be attached automatically.</p></div>
+            <button class="sos-close" id="sosClose" type="button" aria-label="Close">×</button>
+        </div>
+        <form id="familySosForm">
+            <div class="sos-form-body">
+                <span class="sos-section-label">What happened to you?</span>
+                <div class="sos-type-grid">
+                    <div class="sos-type-option"><input id="sosMedical" type="radio" name="sosEmergencyType" value="medical" checked><label for="sosMedical">🩺 Medical Emergency</label></div>
+                    <div class="sos-type-option"><input id="sosAccident" type="radio" name="sosEmergencyType" value="accident"><label for="sosAccident">🚗 Accident / Injury</label></div>
+                    <div class="sos-type-option"><input id="sosFire" type="radio" name="sosEmergencyType" value="fire"><label for="sosFire">🔥 Fire / Burn</label></div>
+                    <div class="sos-type-option"><input id="sosOther" type="radio" name="sosEmergencyType" value="other"><label for="sosOther">⚠️ Other Emergency</label></div>
+                </div>
+                <label class="sos-label" for="sosCondition">How are you feeling right now?</label>
+                <select class="sos-select" id="sosCondition" required>
+                    <option value="Stable">Stable</option><option value="Injured">Injured</option><option value="Severe pain">Severe pain</option><option value="Difficulty breathing">Difficulty breathing</option><option value="Unconscious / not responding">Unconscious / not responding</option>
+                </select>
+                <div style="height:14px;"></div>
+                <label class="sos-label" for="sosDetails">Tell us what happened</label>
+                <textarea class="sos-textarea" id="sosDetails" placeholder="Briefly describe what happened, where it hurts, or what help you need..." required></textarea>
+                <div class="sos-location-note" id="sosLocationNote">📍 Getting your current location...</div>
+                <input type="hidden" id="patientName"><input type="hidden" id="patientAge"><input type="hidden" id="patientGender"><input type="hidden" id="bloodGroup"><input type="hidden" id="allergies"><input type="hidden" id="medicalConditions"><input type="hidden" id="emergencyDetails"><input type="hidden" id="priority" value="high">
+                <button class="sos-submit" id="sosSubmit" type="submit">🚑 Send Emergency Request</button>
+                <div class="sos-message" id="sosMessage"></div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- =========================================================
      LEAFLET
 ========================================================== -->
 
@@ -2535,6 +2569,14 @@
     let ambulanceMarker = null;
 
     let hospitalMarker = null;
+
+    let userLocationMarker = null;
+
+    let nearbyHospitalMarkers = [];
+
+    let nearbyHospitals = [];
+
+    let userLocation = null;
 
     let routeLine = null;
 
@@ -2755,6 +2797,108 @@
     }
 
 
+    function makeUserLocationIcon(){return L.divIcon({className:"",html:'<div class="user-location-marker"></div>',iconSize:[18,18],iconAnchor:[9,9]});}
+    function makeNearbyHospitalIcon(){return L.divIcon({className:"",html:'<div class="nearby-hospital-marker">H</div>',iconSize:[28,28],iconAnchor:[14,14]});}
+    function clearNearbyHospitalMarkers(){nearbyHospitalMarkers.forEach(function(marker){if(map&&marker)map.removeLayer(marker);});nearbyHospitalMarkers=[];if($("nearbyHospitalsPanel"))$("nearbyHospitalsPanel").classList.remove("show");}
+    function setEmergencyMapMode(active){if($("legendUser"))$("legendUser").style.display=active?"none":"flex";if($("legendAmbulance"))$("legendAmbulance").style.display=active?"flex":"none";if($("legendPatient"))$("legendPatient").style.display=active?"flex":"none";if($("legendHospital"))$("legendHospital").style.display="flex";if(userLocationMarker){if(active&&map.hasLayer(userLocationMarker))map.removeLayer(userLocationMarker);if(!active&&!map.hasLayer(userLocationMarker))userLocationMarker.addTo(map);}if(active)clearNearbyHospitalMarkers();if($("sosButton")){$("sosButton").disabled=active;$("sosButton").textContent=active?"✓ EMERGENCY ACTIVE":"🚨 SOS • REPORT EMERGENCY";}}
+    function calculateGeoDistanceKm(lat1,lng1,lat2,lng2){const R=6371,dLat=(lat2-lat1)*Math.PI/180,dLng=(lng2-lng1)*Math.PI/180,a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));}
+    function renderNearbyHospitals(hospitals){clearNearbyHospitalMarkers();nearbyHospitals=Array.isArray(hospitals)?hospitals:[];const list=$("nearbyHospitalsList");if(list){list.innerHTML=nearbyHospitals.slice(0,4).map(function(item,index){const emergency=item.emergency_available?" • Emergency ready":"";return `<div class="nearby-hospital-row"><span class="nearby-hospital-name">${index===0?"★ ":""}${escapeHtml(item.name||"Hospital")}<small style="display:block;color:#8a94a5;font-weight:500;margin-top:2px;">${escapeHtml(emergency.replace(" • ","")||"Hospital")}</small></span><span class="nearby-hospital-distance">${Number(item.distanceKm).toFixed(1)} km</span></div>`;}).join("");}if(!map||!nearbyHospitals.length||currentEmergency)return;nearbyHospitals.slice(0,5).forEach(function(item){if(!validPosition(item.latitude,item.longitude))return;const marker=L.marker([Number(item.latitude),Number(item.longitude)],{icon:makeNearbyHospitalIcon()}).addTo(map).bindPopup(`<strong>${escapeHtml(item.name||"Hospital")}</strong><br>${escapeHtml(item.address||"Hospital")}<br><strong>${Number(item.distanceKm).toFixed(1)} km away</strong>`);nearbyHospitalMarkers.push(marker);});if($("nearbyHospitalsPanel"))$("nearbyHospitalsPanel").classList.add("show");}
+    async function loadNearbyHospitals(latitude,longitude){
+        if(!validPosition(latitude,longitude))return;
+
+        /*
+         * Use OpenStreetMap/Overpass for the public "nearest hospital" view.
+         * This is intentionally separate from the ResQ-Route hospital table:
+         * the family map should show real hospitals near the user's location,
+         * even when the hospital has not yet been registered in our system.
+         */
+        try{
+            if($("mapRouteStatus"))$("mapRouteStatus").textContent="Finding the closest hospitals near you...";
+
+            const radius=25000;
+            const query=`[out:json][timeout:20];(nwr["amenity"="hospital"](around:${radius},${latitude},${longitude}););out center tags;`;
+            const endpoints=[
+                "https://overpass-api.de/api/interpreter",
+                "https://overpass.kumi.systems/api/interpreter"
+            ];
+
+            let osmData=null;
+            let lastError=null;
+
+            for(const endpoint of endpoints){
+                try{
+                    const response=await fetch(endpoint+"?data="+encodeURIComponent(query),{method:"GET",headers:{"Accept":"application/json"}});
+                    if(!response.ok)throw new Error("HTTP "+response.status);
+                    osmData=await response.json();
+                    break;
+                }catch(error){
+                    lastError=error;
+                }
+            }
+
+            if(!osmData)throw lastError||new Error("Hospital search failed");
+
+            const results=(osmData.elements||[]).map(function(item){
+                const tags=item.tags||{};
+                const lat=item.lat!=null?Number(item.lat):(item.center&&item.center.lat!=null?Number(item.center.lat):null);
+                const lng=item.lon!=null?Number(item.lon):(item.center&&item.center.lon!=null?Number(item.center.lon):null);
+                if(!validPosition(lat,lng))return null;
+
+                const address=[
+                    tags["addr:housenumber"],
+                    tags["addr:street"],
+                    tags["addr:city"]
+                ].filter(Boolean).join(", ");
+
+                return {
+                    id:"osm-"+item.type+"-"+item.id,
+                    name:tags.name||tags["official_name"]||"Nearby Hospital",
+                    address:address||tags["addr:full"]||"Nearby hospital",
+                    latitude:lat,
+                    longitude:lng,
+                    emergency_available:true,
+                    source:"OpenStreetMap",
+                    distanceKm:calculateGeoDistanceKm(latitude,longitude,lat,lng)
+                };
+            }).filter(Boolean)
+            .sort(function(a,b){return a.distanceKm-b.distanceKm;});
+
+            /* Remove duplicate names/coordinates returned as node + area. */
+            const seen=new Set();
+            const unique=results.filter(function(item){
+                const key=(item.name||"").toLowerCase().trim()+"|"+Number(item.latitude).toFixed(4)+"|"+Number(item.longitude).toFixed(4);
+                if(seen.has(key))return false;
+                seen.add(key);
+                return true;
+            });
+
+            renderNearbyHospitals(unique);
+
+            if($("mapRouteStatus")){
+                $("mapRouteStatus").textContent=unique.length
+                    ? `${Math.min(unique.length,4)} nearest hospitals found.`
+                    : "No hospitals found near your current location.";
+            }
+        }catch(error){
+            console.warn("OpenStreetMap hospital lookup failed:",error);
+
+            /* Fallback to hospitals registered in ResQ-Route. */
+            try{
+                const client=window.resqRoute?.supabase||window.supabaseClient;
+                if(!client)throw error;
+                const response=await client.from("hospitals").select("id,name,address,latitude,longitude,emergency_available,icu_available,trauma_available,cardiology_available").limit(200);
+                if(response.error)throw response.error;
+                const results=(response.data||[]).filter(function(h){return validPosition(h.latitude,h.longitude);}).map(function(h){return {...h,distanceKm:calculateGeoDistanceKm(latitude,longitude,Number(h.latitude),Number(h.longitude))};}).sort(function(a,b){return a.distanceKm-b.distanceKm;});
+                renderNearbyHospitals(results);
+                if($("mapRouteStatus"))$("mapRouteStatus").textContent=results.length?`${Math.min(results.length,4)} nearest hospitals found.`:"No hospitals found near your current location.";
+            }catch(fallbackError){
+                console.warn("Fallback hospital lookup failed:",fallbackError);
+                if($("mapRouteStatus"))$("mapRouteStatus").textContent="Unable to load nearby hospitals right now.";
+            }
+        }
+    }
+    function requestUserLocationForMap(){if(!navigator.geolocation){if($("mapRouteStatus"))$("mapRouteStatus").textContent="Location services are not available in this browser.";return;}navigator.geolocation.getCurrentPosition(function(position){userLocation={lat:position.coords.latitude,lng:position.coords.longitude};if(!map)return;if(!userLocationMarker){userLocationMarker=L.marker([userLocation.lat,userLocation.lng],{icon:makeUserLocationIcon(),zIndexOffset:1000}).addTo(map).bindPopup("<strong>Your Location</strong><br>Current device location");}else{userLocationMarker.setLatLng([userLocation.lat,userLocation.lng]);}if(!currentEmergency){map.setView([userLocation.lat,userLocation.lng],14);setEmergencyMapMode(false);loadNearbyHospitals(userLocation.lat,userLocation.lng);}if($("sosLocationNote"))$("sosLocationNote").textContent="📍 Your current location will be attached to this emergency request.";},function(error){console.warn("Family location unavailable:",error);if($("mapRouteStatus"))$("mapRouteStatus").textContent="Allow location access to show your location and nearby hospitals.";if($("sosLocationNote"))$("sosLocationNote").textContent="📍 Location access is required to send an emergency request.";},{enableHighAccuracy:true,timeout:10000,maximumAge:30000});}
+
     /* =====================================================
        INITIALIZE LEAFLET
     ====================================================== */
@@ -2812,104 +2956,15 @@
 
 
         /* =================================================
-           DEFAULT POSITIONS
+           PRE-EMERGENCY MAP
         ================================================== */
 
-        patientPosition = {
-            ...DEFAULTS.patient
-        };
-
-
-        ambulancePosition = {
-            ...DEFAULTS.ambulance
-        };
-
-
-        hospitalPosition = {
-            ...DEFAULTS.hospital
-        };
-
-
-        /* =================================================
-           PATIENT MARKER
-        ================================================== */
-
-        patientMarker = L.marker(
-
-            [
-                patientPosition.lat,
-                patientPosition.lng
-            ],
-
-            {
-                icon:
-                    makeIcon("patient")
-            }
-
-        )
-        .addTo(map)
-
-        .bindPopup(
-            "<strong>Patient</strong>" +
-            "Current emergency location"
-        );
-
-
-        /* =================================================
-           AMBULANCE MARKER
-        ================================================== */
-
-        ambulanceMarker = L.marker(
-
-            [
-                ambulancePosition.lat,
-                ambulancePosition.lng
-            ],
-
-            {
-                icon:
-                    makeIcon("ambulance")
-            }
-
-        )
-        .addTo(map)
-
-        .bindPopup(
-            "<strong>Ambulance</strong>" +
-            "Assigned emergency vehicle"
-        );
-
-
-        /* =================================================
-           HOSPITAL MARKER
-        ================================================== */
-
-        hospitalMarker = L.marker(
-
-            [
-                hospitalPosition.lat,
-                hospitalPosition.lng
-            ],
-
-            {
-                icon:
-                    makeIcon("hospital")
-            }
-
-        )
-        .addTo(map)
-
-        .bindPopup(
-            "<strong>Hospital</strong>" +
-            "Destination emergency department"
-        );
-
-
-        /* =================================================
-           INITIAL ROUTE
-        ================================================== */
-
-        drawCurrentRoute();
+        map.setView([20.5937,78.9629],5);
+        patientPosition=null;
+        ambulancePosition=null;
+        hospitalPosition=null;
+        setEmergencyMapMode(false);
+        requestUserLocationForMap();
 
 
         setTimeout(
@@ -2924,6 +2979,8 @@
     }
 
 
+    function ensureEmergencyMarkers(){if(!map)return;if(patientPosition&&!patientMarker){patientMarker=L.marker([patientPosition.lat,patientPosition.lng],{icon:makeIcon("patient")}).addTo(map).bindPopup("<strong>Patient</strong><br>Emergency location");}if(ambulancePosition&&!ambulanceMarker){ambulanceMarker=L.marker([ambulancePosition.lat,ambulancePosition.lng],{icon:makeIcon("ambulance")}).addTo(map).bindPopup("<strong>Ambulance</strong><br>Assigned emergency vehicle");}if(hospitalPosition&&!hospitalMarker){hospitalMarker=L.marker([hospitalPosition.lat,hospitalPosition.lng],{icon:makeIcon("hospital")}).addTo(map).bindPopup("<strong>Hospital</strong><br>Destination emergency department");}setEmergencyMapMode(true);}
+
     /* =====================================================
        DRAW OSRM ROUTE
     ====================================================== */
@@ -2932,6 +2989,8 @@
 
         if (
             !map
+            ||
+            !currentEmergency
             ||
             !ambulancePosition
         ) {
@@ -3306,6 +3365,8 @@
                 Number(lng)
 
         };
+
+        if(currentEmergency){if(type==="patient")patientPosition=position;if(type==="ambulance")ambulancePosition=position;if(type==="hospital")hospitalPosition=position;ensureEmergencyMarkers();}
 
 
         /* =================================================
@@ -3854,6 +3915,40 @@
         }
 
 
+        const hospitalAssigned =
+            Boolean(
+                hospital?.name
+                ||
+                hospital?.address
+                ||
+                validPosition(
+                    hospital?.latitude,
+                    hospital?.longitude
+                )
+            );
+
+
+        if (!hospitalAssigned && !Array.isArray(facilities)) {
+
+            list.innerHTML = `
+                <div class="resource" style="border-bottom:none;">
+                    <span class="resource-name">
+                        Hospital facilities
+                    </span>
+
+                    <span
+                        class="available"
+                    >
+                        Not required yet
+                    </span>
+                </div>
+            `;
+
+            return;
+
+        }
+
+
         const values =
 
             Array.isArray(
@@ -4223,6 +4318,14 @@
         currentEmergency =
             data;
 
+        setText("emergencyCardTitle","Active Emergency");
+
+        setEmergencyMapMode(true);
+        clearNearbyHospitalMarkers();
+        if($("mapRouteTitle"))$("mapRouteTitle").textContent="Emergency Location";
+        if($("mapRouteStatus"))$("mapRouteStatus").textContent="Live emergency response tracking";
+        if(userLocationMarker&&map&&map.hasLayer(userLocationMarker))map.removeLayer(userLocationMarker);
+
 
         const status =
 
@@ -4236,6 +4339,14 @@
 
         const statusLabel =
 
+            status === "DISPATCHING"
+
+                ?
+
+            "EMERGENCY ACTIVE"
+
+                :
+
             status.replaceAll(
                 "_",
                 " "
@@ -4248,10 +4359,55 @@
         );
 
 
+        const patientStatusLabel =
+
+            status === "DISPATCHING"
+
+                ?
+
+            "Emergency Active"
+
+                :
+
+            statusLabel;
+
+
         setText(
             "statusDetail",
-            statusLabel
+            patientStatusLabel
         );
+
+
+        if ($("statusDetail")) {
+
+            const statusDescription =
+
+                status === "DISPATCHING"
+
+                    ?
+
+                "Emergency response is currently in progress."
+
+                    :
+
+                "Updated by authorized emergency personnel.";
+
+
+            const statusDescriptionElement =
+
+                $("statusDetail")
+                    .parentElement
+                    ?.querySelector(".info-sub");
+
+
+            if (statusDescriptionElement) {
+
+                statusDescriptionElement.textContent =
+                    statusDescription;
+
+            }
+
+        }
 
 
         setText(
@@ -4395,39 +4551,59 @@
             {};
 
 
-        if (
-            data.hospital_name
+        const hospitalAssigned =
+            Boolean(
+                data.hospital_name
+                ||
+                hospital.name
+                ||
+                validPosition(
+                    data.hospital_latitude,
+                    data.hospital_longitude
+                )
+                ||
+                validPosition(
+                    hospital.latitude,
+                    hospital.longitude
+                )
+            );
 
-            ||
 
-            hospital.name
-        ) {
+        if (hospitalAssigned) {
 
             setText(
                 "hospitalName",
 
                 data.hospital_name
                 ||
-                hospital.name
+                hospital.name,
+
+                "Hospital assigned"
             );
 
-        }
-
-
-        if (
-            data.hospital_address
-
-            ||
-
-            hospital.address
-        ) {
 
             setText(
                 "hospitalAddress",
 
                 data.hospital_address
                 ||
-                hospital.address
+                hospital.address,
+
+                "Hospital destination details available."
+            );
+
+        }
+
+        else {
+
+            setText(
+                "hospitalName",
+                "No hospital assigned yet"
+            );
+
+            setText(
+                "hospitalAddress",
+                "You are doing fine. Hospital details will appear here if a hospital is required."
             );
 
         }
@@ -4931,6 +5107,34 @@
     }
 
 
+    function resetPreEmergencyUI(){
+        currentEmergency=null;
+        setText("emergencyCardTitle","Emergency Ready");
+        setText("emergencyStatus","READY");
+        setText("emergencyId","No active emergency reported");
+        setText("eta","-- min");
+        setText("etaSub","Available when an emergency is reported");
+        setText("condition","Stable");
+        setText("conditionDetail","Stable");
+        setText("statusDetail","No active emergency");
+        setText("allottedBed","--");
+        setText("bedSub","Available if hospital care is required");
+        setText("hospitalName","No hospital assigned");
+        setText("hospitalAddress","You are doing fine. Hospital details will appear here if emergency care is required.");
+        setText("transferHospital","--");
+        setText("mapRouteTitle","Your Location");
+        setText("mapRouteStatus","Finding your nearest hospitals...");
+        setText("mapUpdate","Waiting for your location");
+        setText("lastUpdate","Ready for emergency request");
+        setEmergencyMapMode(false);
+        if($("facilityList")){$("facilityList").innerHTML='<div class="resource"><span class="resource-name">Hospital facilities</span><span class="available">Not required yet</span></div>';}
+    }
+
+    async function prefillEmergencyPersonalDetails(){const client=window.resqRoute?.supabase||window.supabaseClient;if(!client)return;try{const {data:authData}=await client.auth.getUser();const user=authData?.user;if(!user)return;const profileResponse=await client.from("profiles").select("name,email,phone").eq("id",user.id).maybeSingle();const profile=profileResponse.data||{};const patientResponse=await client.from("patients").select("name,age,gender,blood_group,allergies,medical_conditions").eq("user_id",user.id).order("created_at",{ascending:false}).limit(1).maybeSingle();const patient=patientResponse.error?null:patientResponse.data;const values={patientName:patient?.name||profile.name||user.user_metadata?.name||"",patientAge:patient?.age||"",patientGender:patient?.gender||"",bloodGroup:patient?.blood_group||"",allergies:patient?.allergies||"",medicalConditions:patient?.medical_conditions||""};Object.keys(values).forEach(function(id){if($(id))$(id).value=values[id];});}catch(error){console.warn("Could not prefill emergency details:",error);}}
+    function openSosModal(){if(currentEmergency)return;const modal=$("sosModal");if(!modal)return;modal.classList.add("open");modal.setAttribute("aria-hidden","false");prefillEmergencyPersonalDetails();requestUserLocationForMap();setTimeout(function(){$("sosDetails")?.focus();},100);}
+    function closeSosModal(){const modal=$("sosModal");if(!modal)return;modal.classList.remove("open");modal.setAttribute("aria-hidden","true");}
+    async function submitFamilySos(event){event.preventDefault();const button=$("sosSubmit"),message=$("sosMessage"),type=document.querySelector('input[name="sosEmergencyType"]:checked')?.value||"medical",condition=$("sosCondition")?.value||"Stable",details=$("sosDetails")?.value.trim()||"";if(!details){if(message){message.style.display="block";message.style.background="#fff1f2";message.style.color="#991b1b";message.textContent="Please briefly tell us what happened.";}return;}if(!navigator.geolocation){if(message){message.style.display="block";message.style.background="#fff1f2";message.style.color="#991b1b";message.textContent="Location services are required for emergency dispatch.";}return;}button.disabled=true;button.textContent="Locating you...";try{const location=await new Promise(function(resolve,reject){navigator.geolocation.getCurrentPosition(function(position){resolve({latitude:position.coords.latitude,longitude:position.coords.longitude});},reject,{enableHighAccuracy:true,timeout:15000,maximumAge:0});});await prefillEmergencyPersonalDetails();const patient={name:$("patientName")?.value||"",age:$("patientAge")?.value||"",gender:$("patientGender")?.value||"",bloodGroup:$("bloodGroup")?.value||"",allergies:$("allergies")?.value||"",medicalConditions:$("medicalConditions")?.value||"",consentGiven:true};if(!patient.name)throw new Error("Your account does not have a saved name. Please update your profile first.");if(!window.resqEmergency||typeof window.resqEmergency.create!=="function")throw new Error("Emergency service is not loaded.");button.textContent="Sending emergency request...";const result=await window.resqEmergency.create({patient:patient,emergencyType:type,condition:condition,priority:"high",description:details,location:location});if(!result||!result.success||!result.emergency)throw new Error("Emergency request could not be created.");localStorage.setItem("resq_active_emergency_id",result.emergency.id);localStorage.setItem("resq_emergency_id",result.emergency.id);applyEmergency({...result.emergency,patient:result.patient,ambulance:result.ambulance,hospital:result.hospital,condition:condition,latitude:location.latitude,longitude:location.longitude,patient_latitude:location.latitude,patient_longitude:location.longitude,ambulance_latitude:result.ambulance?.latitude,ambulance_longitude:result.ambulance?.longitude,hospital_latitude:result.hospital?.latitude,hospital_longitude:result.hospital?.longitude});if(message){message.style.display="block";message.style.background="#ecfdf3";message.style.color="#166534";message.textContent=result.ambulance?"Emergency reported. An ambulance has been assigned.":"Emergency reported. We are finding an available ambulance.";}setTimeout(closeSosModal,900);}catch(error){console.error("SOS emergency submission failed:",error);if(message){message.style.display="block";message.style.background="#fff1f2";message.style.color="#991b1b";message.textContent=error?.message||"Unable to send the emergency request.";}button.disabled=false;button.textContent="🚑 Send Emergency Request";}}
+
     /* =====================================================
        INITIALIZE
     ====================================================== */
@@ -5156,6 +5360,16 @@
             loadDemoOrStoredData();
 
             initMap();
+
+            resetPreEmergencyUI();
+
+            const sosButton=$("sosButton"),sosClose=$("sosClose"),sosModal=$("sosModal"),sosForm=$("familySosForm");
+            if(sosButton)sosButton.addEventListener("click",openSosModal);
+            if(sosClose)sosClose.addEventListener("click",closeSosModal);
+            if(sosForm)sosForm.addEventListener("submit",submitFamilySos);
+            if(sosModal)sosModal.addEventListener("click",function(event){if(event.target===sosModal)closeSosModal();});
+            document.addEventListener("keydown",function(event){if(event.key==="Escape")closeSosModal();});
+            try{if(window.resqEmergency&&typeof window.resqEmergency.getStoredActive==="function"){const existingEmergency=await window.resqEmergency.getStoredActive();if(existingEmergency)applyEmergency(existingEmergency);}}catch(error){console.warn("Unable to restore active emergency:",error);}
 
             updateClock();
 
