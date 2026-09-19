@@ -1754,6 +1754,23 @@
             border-radius: 50%;
         }
 
+
+        /* =========================
+           LIVE TEAM MANAGEMENT
+        ========================== */
+        .team-modal { display:none; position:fixed; inset:0; background:rgba(14,21,34,.58); z-index:900; align-items:center; justify-content:center; padding:20px; }
+        .team-modal.active { display:flex; }
+        .team-modal-card { width:100%; max-width:520px; background:#fff; border-radius:16px; padding:24px; box-shadow:0 20px 60px rgba(14,21,34,.22); }
+        .team-modal-card h3 { margin:0 0 6px; font-size:18px; }
+        .team-modal-card p { margin:0 0 16px; color:#667085; font-size:11px; line-height:1.5; }
+        .team-modal-card select { width:100%; height:42px; border:1px solid #dce2ea; border-radius:8px; padding:0 10px; background:#fff; font-size:11px; }
+        .team-modal-info { background:#f8fafc; border:1px solid #e5e9ef; border-radius:10px; padding:13px; margin:14px 0; font-size:11px; line-height:1.7; }
+        .team-modal-actions { display:flex; gap:9px; margin-top:16px; }
+        .team-modal-actions button { flex:1; height:42px; border-radius:8px; cursor:pointer; font-size:10px; font-weight:800; }
+        .team-modal-cancel { background:#fff; border:1px solid #dce2ea; color:#596579; }
+        .team-modal-primary { background:#e63946; border:1px solid #e63946; color:#fff; }
+        .team-modal-danger { background:#fff0f1; border:1px solid #f3c8cd; color:#c72535; }
+
         @media (max-width: 1000px) {
             .operations-overview {
                 grid-template-columns: repeat(2, 1fr);
@@ -2251,7 +2268,6 @@
                 <div class="sidebar-title" style="margin-top:18px;">Monitoring</div>
 
                 <button class="side-item" data-section="tracking">📍 Ambulance Tracking</button>
-                <button class="side-item" data-section="queue">📋 ER Queue</button>
             </div>
         </aside>
 
@@ -2732,19 +2748,16 @@
                 <div class="section-toolbar">
                     <div>
                         <h2>Emergency Teams</h2>
-                        <p>View readiness and current assignments of hospital response teams.</p>
+                        <p>Live hospital response teams and their current emergency assignments.</p>
                     </div>
-                    <div class="live-counter"><span></span> 08 READY</div>
+                    <div class="live-counter"><span></span> <span id="teamReadyCount">0</span> READY</div>
                 </div>
 
                 <div class="data-table-wrap">
                     <table class="data-table">
                         <thead><tr><th>Team</th><th>Department</th><th>Members</th><th>Current Case</th><th>Status</th><th>Action</th></tr></thead>
-                        <tbody>
-                            <tr><td class="table-patient">Trauma Team A</td><td>Trauma / ER</td><td>06</td><td class="table-muted">RQ-2026-1048</td><td><span class="status-pill green">READY</span></td><td><button class="small-btn" type="button" data-demo-action="team">ACTIVATE</button></td></tr>
-                            <tr><td class="table-patient">Cardiac Team</td><td>Cardiology</td><td>05</td><td class="table-muted">RQ-2026-1044</td><td><span class="status-pill orange">BUSY</span></td><td><button class="small-btn" type="button" data-demo-action="team">VIEW</button></td></tr>
-                            <tr><td class="table-patient">Trauma Team B</td><td>Trauma / ER</td><td>05</td><td class="table-muted">None</td><td><span class="status-pill green">READY</span></td><td><button class="small-btn" type="button" data-demo-action="team">ACTIVATE</button></td></tr>
-                            <tr><td class="table-patient">Respiratory Team</td><td>Respiratory</td><td>04</td><td class="table-muted">RQ-2026-1037</td><td><span class="status-pill red">ENGAGED</span></td><td><button class="small-btn" type="button" data-demo-action="team">VIEW</button></td></tr>
+                        <tbody id="teamsTableBody">
+                            <tr><td colspan="6" class="table-muted" style="text-align:center;padding:28px;">Loading hospital teams...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -2830,23 +2843,7 @@
                 </div>
             </section>
 
-            <section class="operations-section" id="queueSectionNew">
-                <div class="section-toolbar">
-                    <div><h2>Emergency Queue</h2><p>Active emergency cases currently associated with the hospital.</p></div>
-                    <div class="live-counter"><span></span> 05 ACTIVE</div>
-                </div>
 
-                <div class="data-table-wrap">
-                    <table class="data-table">
-                        <thead><tr><th>Emergency</th><th>Patient</th><th>Condition</th><th>ETA / Time</th><th>Priority</th><th>Action</th></tr></thead>
-                        <tbody>
-                            <tr><td>RQ-2026-1048</td><td class="table-patient">Rahul Sharma</td><td>Road Accident</td><td>08 min</td><td><span class="status-pill red">CRITICAL</span></td><td><button class="small-btn primary" type="button" data-patient="Rahul Sharma" data-resource="ICU-03">ALLOCATE</button></td></tr>
-                            <tr><td>RQ-2026-1044</td><td class="table-patient">Aman Singh</td><td>Chest Pain</td><td>Treatment</td><td><span class="status-pill orange">HIGH</span></td><td><button class="small-btn" type="button" data-patient="Aman Singh" data-resource="ER-04">MANAGE</button></td></tr>
-                            <tr><td>RQ-2026-1041</td><td class="table-patient">Simran Kaur</td><td>Fall Injury</td><td>Waiting</td><td><span class="status-pill orange">MEDIUM</span></td><td><button class="small-btn" type="button" data-patient="Simran Kaur" data-resource="WARD-12">MANAGE</button></td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </section>
 
         </main>
 
@@ -2993,7 +2990,6 @@
         icu: "icuSection",
         resources: "resourcesManagementSection",
         tracking: "trackingSectionNew",
-        queue: "queueSectionNew"
     };
 
     const sideItems =
@@ -3073,6 +3069,23 @@
 
             refreshBedInventory();
 
+        }
+
+        // Leaflet must calculate its size AFTER the tracking section
+        // becomes visible. Initialising it while the section is hidden
+        // causes the common grey/partially-loaded map problem.
+        if (name === "tracking") {
+            setTimeout(function () {
+                initHospitalMap();
+
+                if (hospitalMap) {
+                    hospitalMap.invalidateSize(true);
+                    setTimeout(function () {
+                        if (hospitalMap) hospitalMap.invalidateSize(true);
+                        drawHospitalRoute();
+                    }, 150);
+                }
+            }, 50);
         }
 
     }
@@ -5294,33 +5307,262 @@
 
 
     /* =====================================================
-       DEMO ACTIONS
+       LIVE HOSPITAL TEAM MANAGEMENT
        ===================================================== */
 
-    document
-        .querySelectorAll(
-            "[data-demo-action]"
-        )
-        .forEach(
-            function (button) {
+    let hospitalTeams = [];
+    let teamEmergencyMap = {};
+    let teamRealtimeChannel = null;
 
-                button.addEventListener(
-                    "click",
-                    function () {
+    const teamTableBody = document.getElementById("teamsTableBody");
+    const teamReadyCount = document.getElementById("teamReadyCount");
 
-                        alert(
-                            button.dataset
-                                .demoAction
-                                .toUpperCase() +
-                            " management will be connected to the hospital backend."
-                        );
+    function ensureTeamModal() {
+        let modal = document.getElementById("hospitalTeamModal");
+        if (modal) return modal;
 
-                    }
-                );
+        modal = document.createElement("div");
+        modal.id = "hospitalTeamModal";
+        modal.className = "team-modal";
+        modal.innerHTML = `
+            <div class="team-modal-card">
+                <h3 id="teamModalTitle">Activate Emergency Team</h3>
+                <p id="teamModalSubtitle">Assign this team to an active emergency patient.</p>
+                <div id="teamModalBody"></div>
+                <div class="team-modal-actions">
+                    <button type="button" class="team-modal-cancel" id="teamModalCancel">CANCEL</button>
+                    <button type="button" class="team-modal-primary" id="teamModalPrimary">ACTIVATE TEAM</button>
+                </div>
+            </div>`;
+        document.body.appendChild(modal);
+        modal.addEventListener("click", function (event) {
+            if (event.target === modal) closeTeamModal();
+        });
+        document.getElementById("teamModalCancel").addEventListener("click", closeTeamModal);
+        return modal;
+    }
 
+    function closeTeamModal() {
+        const modal = document.getElementById("hospitalTeamModal");
+        if (modal) modal.classList.remove("active");
+    }
+
+    async function getActiveTeamEmergencies() {
+        const response = await supabaseClient
+            .from("emergencies")
+            .select("id,patient_id,emergency_type,priority,status,patients(name)")
+            .eq("hospital_id", hospitalId)
+            .not("status", "in", "(COMPLETED,CANCELLED)")
+            .order("created_at", { ascending: false });
+        if (response.error) throw response.error;
+        return response.data || [];
+    }
+
+    async function loadHospitalTeams() {
+        if (!supabaseClient || !hospitalId) return;
+
+        let response = await supabaseClient
+            .from("hospital_teams")
+            .select("id,hospital_id,team_name,team_type,members_count,available_members,status,current_emergency_id,updated_at")
+            .eq("hospital_id", hospitalId)
+            .order("team_name", { ascending: true });
+
+        /* current_emergency_id is added by the one-time SQL migration below. */
+        if (response.error) {
+            console.warn("Team load failed:", response.error);
+            if (teamTableBody) teamTableBody.innerHTML = `<tr><td colspan="6" class="table-muted" style="text-align:center;padding:28px;">Teams are not connected yet. Run the team SQL migration first.</td></tr>`;
+            return;
+        }
+
+        hospitalTeams = response.data || [];
+
+        if (!hospitalTeams.length) {
+            const defaults = [
+                { hospital_id: hospitalId, team_name: "Trauma Team A", team_type: "Trauma / ER", members_count: 6, available_members: 6, status: "available" },
+                { hospital_id: hospitalId, team_name: "Cardiac Team", team_type: "Cardiology", members_count: 5, available_members: 5, status: "available" },
+                { hospital_id: hospitalId, team_name: "Trauma Team B", team_type: "Trauma / ER", members_count: 5, available_members: 5, status: "available" },
+                { hospital_id: hospitalId, team_name: "Respiratory Team", team_type: "Respiratory", members_count: 4, available_members: 4, status: "available" }
+            ];
+            const seed = await supabaseClient.from("hospital_teams").insert(defaults).select("id,hospital_id,team_name,team_type,members_count,available_members,status,current_emergency_id,updated_at");
+            if (!seed.error) hospitalTeams = seed.data || [];
+        }
+
+        await loadTeamEmergencyDetails();
+        renderHospitalTeams();
+    }
+
+    async function loadTeamEmergencyDetails() {
+        teamEmergencyMap = {};
+        const ids = hospitalTeams.map(team => team.current_emergency_id).filter(Boolean);
+        if (!ids.length) return;
+        const response = await supabaseClient
+            .from("emergencies")
+            .select("id,patient_id,emergency_type,priority,status,patients(name)")
+            .in("id", ids);
+        if (response.error) return;
+        (response.data || []).forEach(emergency => {
+            teamEmergencyMap[String(emergency.id)] = emergency;
+        });
+    }
+
+    function teamStatusClass(status) {
+        const value = String(status || "available").toLowerCase();
+        if (value === "engaged" || value === "busy") return "orange";
+        if (value === "unavailable" || value === "offline") return "red";
+        return "green";
+    }
+
+    function renderHospitalTeams() {
+        if (!teamTableBody) return;
+        const ready = hospitalTeams.filter(team => String(team.status || "").toLowerCase() === "available").length;
+        if (teamReadyCount) teamReadyCount.textContent = String(ready).padStart(2, "0");
+
+        if (!hospitalTeams.length) {
+            teamTableBody.innerHTML = `<tr><td colspan="6" class="table-muted" style="text-align:center;padding:28px;">No hospital teams configured.</td></tr>`;
+            return;
+        }
+
+        teamTableBody.innerHTML = hospitalTeams.map(team => {
+            const current = teamEmergencyMap[String(team.current_emergency_id)] || null;
+            const status = String(team.status || "available").toLowerCase();
+            const caseLabel = current
+                ? `${escapeHtml(current.patients?.name || "Patient")} • ${escapeHtml(current.emergency_type || "Emergency")}`
+                : "None";
+            const action = status === "engaged"
+                ? `<button class="small-btn" type="button" data-team-action="view" data-team-id="${escapeHtml(team.id)}">VIEW</button>`
+                : `<button class="small-btn primary" type="button" data-team-action="activate" data-team-id="${escapeHtml(team.id)}">ACTIVATE</button>`;
+            return `
+                <tr>
+                    <td class="table-patient">${escapeHtml(team.team_name)}</td>
+                    <td>${escapeHtml(team.team_type || "Emergency")}</td>
+                    <td>${escapeHtml(team.available_members ?? 0)} / ${escapeHtml(team.members_count ?? 0)}</td>
+                    <td class="table-muted">${caseLabel}</td>
+                    <td><span class="status-pill ${teamStatusClass(status)}">${escapeHtml(status === "available" ? "READY" : status.toUpperCase())}</span></td>
+                    <td>${action}</td>
+                </tr>`;
+        }).join("");
+    }
+
+    async function openTeamModal(teamId, mode) {
+        const team = hospitalTeams.find(item => String(item.id) === String(teamId));
+        if (!team) return;
+        const modal = ensureTeamModal();
+        const title = document.getElementById("teamModalTitle");
+        const subtitle = document.getElementById("teamModalSubtitle");
+        const body = document.getElementById("teamModalBody");
+        const primary = document.getElementById("teamModalPrimary");
+        title.textContent = mode === "view" ? "Emergency Team" : "Activate Emergency Team";
+
+        if (mode === "view") {
+            const emergency = teamEmergencyMap[String(team.current_emergency_id)] || null;
+            subtitle.textContent = "Review the team's current assignment and release it when the case is handed over.";
+            body.innerHTML = `
+                <div class="team-modal-info">
+                    <strong>${escapeHtml(team.team_name)}</strong><br>
+                    Department: ${escapeHtml(team.team_type || "Emergency")}<br>
+                    Members available: ${escapeHtml(team.available_members ?? 0)} / ${escapeHtml(team.members_count ?? 0)}<br>
+                    Current patient: ${escapeHtml(emergency?.patients?.name || "Not available")}<br>
+                    Emergency: ${escapeHtml(emergency?.emergency_type || "Not available")}<br>
+                    Status: <strong>${escapeHtml(String(team.status || "engaged").toUpperCase())}</strong>
+                </div>`;
+            primary.textContent = "RELEASE TEAM";
+            primary.className = "team-modal-danger";
+            primary.onclick = () => releaseHospitalTeam(team.id);
+        } else {
+            const emergencies = await getActiveTeamEmergencies();
+            if (!emergencies.length) {
+                body.innerHTML = `<div class="team-modal-info">No active emergency patients are currently assigned to this hospital.</div>`;
+                primary.disabled = true;
+                primary.textContent = "NO ACTIVE CASE";
+                primary.className = "team-modal-primary";
+            } else {
+                body.innerHTML = `
+                    <label style="display:block;font-size:9px;font-weight:800;color:#687386;margin-bottom:6px;text-transform:uppercase;">Emergency Patient</label>
+                    <select id="teamEmergencySelect">
+                        ${emergencies.map(item => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.patients?.name || "Patient")} • ${escapeHtml(item.emergency_type || "Emergency")} • ${escapeHtml(String(item.priority || "").toUpperCase())}</option>`).join("")}
+                    </select>
+                    <div class="team-modal-info">${escapeHtml(team.team_name)} will be marked <strong>ENGAGED</strong> and the selected emergency will become its current case.</div>`;
+                primary.disabled = false;
+                primary.textContent = "ACTIVATE TEAM";
+                primary.className = "team-modal-primary";
+                primary.onclick = () => activateHospitalTeam(team.id);
             }
-        );
+        }
+        modal.classList.add("active");
+    }
 
+    async function activateHospitalTeam(teamId) {
+        const select = document.getElementById("teamEmergencySelect");
+        const emergencyId = select?.value;
+        if (!emergencyId) return;
+        const team = hospitalTeams.find(item => String(item.id) === String(teamId));
+        if (!team) return;
+
+        const userResult = await supabaseClient.auth.getUser();
+        const userId = userResult.data?.user?.id || null;
+        const update = await supabaseClient
+            .from("hospital_teams")
+            .update({ status: "engaged", available_members: 0, current_emergency_id: emergencyId, updated_at: new Date().toISOString() })
+            .eq("id", teamId)
+            .eq("hospital_id", hospitalId);
+        if (update.error) { alert(update.error.message); return; }
+
+        await supabaseClient.from("emergency_events").insert({
+            emergency_id: emergencyId,
+            event_type: "TEAM_ACTIVATED",
+            description: `${team.team_name} activated for the emergency.`,
+            created_by: userId
+        });
+
+        closeTeamModal();
+        await loadHospitalTeams();
+    }
+
+    async function releaseHospitalTeam(teamId) {
+        const team = hospitalTeams.find(item => String(item.id) === String(teamId));
+        if (!team) return;
+        if (!confirm(`Release ${team.team_name} from its current emergency?`)) return;
+        const emergencyId = team.current_emergency_id;
+        const userResult = await supabaseClient.auth.getUser();
+        const userId = userResult.data?.user?.id || null;
+        const update = await supabaseClient
+            .from("hospital_teams")
+            .update({ status: "available", available_members: team.members_count, current_emergency_id: null, updated_at: new Date().toISOString() })
+            .eq("id", teamId)
+            .eq("hospital_id", hospitalId);
+        if (update.error) { alert(update.error.message); return; }
+
+        if (emergencyId) {
+            await supabaseClient.from("emergency_events").insert({
+                emergency_id: emergencyId,
+                event_type: "TEAM_RELEASED",
+                description: `${team.team_name} released from the emergency.`,
+                created_by: userId
+            });
+        }
+
+        closeTeamModal();
+        await loadHospitalTeams();
+    }
+
+    if (teamTableBody) {
+        teamTableBody.addEventListener("click", function (event) {
+            const button = event.target.closest("[data-team-action]");
+            if (!button) return;
+            openTeamModal(button.dataset.teamId, button.dataset.teamAction);
+        });
+    }
+
+    function startTeamRealtime() {
+        if (!supabaseClient || !hospitalId) return;
+        if (teamRealtimeChannel) supabaseClient.removeChannel(teamRealtimeChannel);
+        teamRealtimeChannel = supabaseClient
+            .channel(`hospital-teams-${hospitalId}`)
+            .on("postgres_changes", { event: "*", schema: "public", table: "hospital_teams", filter: `hospital_id=eq.${hospitalId}` }, function () {
+                loadHospitalTeams();
+            })
+            .subscribe();
+    }
 
     /* =====================================================
        INCOMING PATIENT REQUESTS
@@ -6038,7 +6280,24 @@
     };
 
     document.addEventListener("DOMContentLoaded", function () {
-        initHospitalMap();
+        // Do not initialise Leaflet while the tracking section is hidden.
+        // It is initialised by showSection("tracking") after the section
+        // has been made visible.
+        const trackingSection = document.getElementById("trackingSectionNew");
+        if (trackingSection && trackingSection.classList.contains("active")) {
+            setTimeout(function () {
+                initHospitalMap();
+                if (hospitalMap) hospitalMap.invalidateSize(true);
+            }, 50);
+        }
+    });
+
+    window.addEventListener("resize", function () {
+        if (hospitalMap) {
+            setTimeout(function () {
+                hospitalMap.invalidateSize(true);
+            }, 100);
+        }
     });
 
 
@@ -6285,6 +6544,8 @@
 
 
             startBedRealtime();
+            await loadHospitalTeams();
+            startTeamRealtime();
 
 
             console.log(
@@ -6330,6 +6591,10 @@
 
         if (emergencyRefreshTimer) {
             clearTimeout(emergencyRefreshTimer);
+        }
+        if (teamRealtimeChannel && supabaseClient) {
+            supabaseClient.removeChannel(teamRealtimeChannel);
+            teamRealtimeChannel = null;
         }
     });
 
@@ -6883,6 +7148,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     </div>
                 </div>
                 <div class="patient-status-box">
+                    <div class="patient-monitor-live-status" style="font-size:9px;font-weight:900;color:#16834a;margin-bottom:5px;">● LIVE</div>
                     <div class="patient-status-label">Current Priority</div>
                     <span class="patient-status-value ${priorityClass(emergency.priority)}">${esc(priority || "NOT SET")}</span>
                     <div style="margin-top:7px;font-size:11px;color:#667085;">${esc(status)}</div>
@@ -6946,7 +7212,237 @@ document.addEventListener("DOMContentLoaded", function () {
         `;
     }
 
-    async function openPatientMonitoringDashboard(patientName, emergencyId) {
+
+    /* =====================================================
+       LIVE PATIENT / AMBULANCE MONITORING
+       Keeps the hospital patient workspace synchronized with
+       the same Supabase rows written by the ambulance dashboard.
+       ===================================================== */
+
+    let hospitalPatientRealtimeChannel = null;
+    let hospitalPatientRealtimeEmergencyId = null;
+    let hospitalPatientRealtimeRefreshTimer = null;
+
+    function stopHospitalPatientRealtime() {
+        if (hospitalPatientRealtimeRefreshTimer) {
+            clearTimeout(hospitalPatientRealtimeRefreshTimer);
+            hospitalPatientRealtimeRefreshTimer = null;
+        }
+
+        if (hospitalPatientRealtimeChannel && window.supabaseClient) {
+            try {
+                window.supabaseClient.removeChannel(hospitalPatientRealtimeChannel);
+            } catch (error) {
+                console.warn("Could not remove patient realtime channel:", error);
+            }
+        }
+
+        hospitalPatientRealtimeChannel = null;
+        hospitalPatientRealtimeEmergencyId = null;
+    }
+
+    function schedulePatientMonitoringRefresh() {
+        clearTimeout(hospitalPatientRealtimeRefreshTimer);
+
+        hospitalPatientRealtimeRefreshTimer = setTimeout(async function () {
+            hospitalPatientRealtimeRefreshTimer = null;
+
+            const patientName = decodeURIComponent(
+                String(window.location.hash || "").replace("#patient=", "")
+            );
+
+            if (!patientName || !hospitalPatientRealtimeEmergencyId) return;
+
+            try {
+                const emergency = await getSelectedEmergency(patientName);
+
+                let [vitals, allocations, events] = await Promise.all([
+                    getLatestVitals(emergency.id),
+                    getPatientAllocations(emergency),
+                    getEmergencyEvents(emergency.id)
+                ]);
+
+                renderPatientDashboard(emergency, vitals, allocations, events);
+
+                // Keep the current ambulance position fresh after every emergency update.
+                const locationResponse = await window.supabaseClient
+                    .from("ambulance_locations")
+                    .select("latitude,longitude,speed,timestamp")
+                    .eq("emergency_id", emergency.id)
+                    .order("timestamp", { ascending: false })
+                    .limit(1)
+                    .maybeSingle();
+
+                if (!locationResponse.error && locationResponse.data) {
+                    const location = locationResponse.data;
+                    window.updateHospitalAmbulanceLocation?.(
+                        Number(location.latitude),
+                        Number(location.longitude)
+                    );
+
+                    const status = document.getElementById("hospitalMapRouteStatus");
+                    if (status) {
+                        status.textContent =
+                            `Live ambulance GPS • ${new Date(location.timestamp || Date.now()).toLocaleTimeString([], {
+                                hour: "2-digit",
+                                minute: "2-digit"
+                            })}`;
+                    }
+                }
+            } catch (error) {
+                console.warn("Live patient monitoring refresh failed:", error);
+            }
+        }, 150);
+    }
+
+    async function startHospitalPatientRealtime(emergencyId) {
+        stopHospitalPatientRealtime();
+
+        if (!window.supabaseClient || !hospitalId || !emergencyId) {
+            console.warn("Hospital patient realtime not started: missing Supabase, hospital or emergency ID.");
+            return;
+        }
+
+        hospitalPatientRealtimeEmergencyId = emergencyId;
+
+        const channelName =
+            "hospital-patient-live-" +
+            String(hospitalId) +
+            "-" +
+            String(emergencyId);
+
+        hospitalPatientRealtimeChannel =
+            window.supabaseClient
+                .channel(channelName)
+
+                // Emergency status / route state
+                .on(
+                    "postgres_changes",
+                    {
+                        event: "*",
+                        schema: "public",
+                        table: "emergencies",
+                        filter: "id=eq." + emergencyId
+                    },
+                    function (payload) {
+                        console.log("Hospital live emergency update:", payload.new || payload.old);
+                        schedulePatientMonitoringRefresh();
+                    }
+                )
+
+                // Ambulance GPS — INSERT and UPDATE are both supported.
+                .on(
+                    "postgres_changes",
+                    {
+                        event: "*",
+                        schema: "public",
+                        table: "ambulance_locations",
+                        filter: "emergency_id=eq." + emergencyId
+                    },
+                    function (payload) {
+                        const location = payload.new;
+                        if (!location) return;
+
+                        const latitude = Number(location.latitude);
+                        const longitude = Number(location.longitude);
+
+                        if (
+                            Number.isFinite(latitude) &&
+                            Number.isFinite(longitude)
+                        ) {
+                            window.updateHospitalAmbulanceLocation?.(
+                                latitude,
+                                longitude
+                            );
+                        }
+
+                        const mapUpdate = document.getElementById("mapUpdate");
+                        if (mapUpdate) {
+                            mapUpdate.textContent = "GPS updated just now";
+                        }
+
+                        const routeStatus =
+                            document.getElementById("hospitalMapRouteStatus");
+
+                        if (routeStatus) {
+                            const time = location.timestamp
+                                ? new Date(location.timestamp).toLocaleTimeString([], {
+                                    hour: "2-digit",
+                                    minute: "2-digit"
+                                })
+                                : "just now";
+
+                            routeStatus.textContent =
+                                `Live ambulance GPS • ${time}`;
+                        }
+                    }
+                )
+
+                // Patient vitals
+                .on(
+                    "postgres_changes",
+                    {
+                        event: "*",
+                        schema: "public",
+                        table: "patient_vitals",
+                        filter: "emergency_id=eq." + emergencyId
+                    },
+                    function (payload) {
+                        console.log("Hospital live vitals update:", payload.new || payload.old);
+                        schedulePatientMonitoringRefresh();
+                    }
+                )
+
+                // Emergency timeline
+                .on(
+                    "postgres_changes",
+                    {
+                        event: "INSERT",
+                        schema: "public",
+                        table: "emergency_events",
+                        filter: "emergency_id=eq." + emergencyId
+                    },
+                    function (payload) {
+                        console.log("Hospital live timeline event:", payload.new);
+                        schedulePatientMonitoringRefresh();
+                    }
+                )
+
+                .subscribe(function (status) {
+                    console.log(
+                        "Hospital patient realtime:",
+                        status,
+                        "Emergency:",
+                        emergencyId
+                    );
+
+                    if (status === "SUBSCRIBED") {
+                        const liveBadge = document.querySelector(
+                            ".patient-monitor-live-status"
+                        );
+
+                        if (liveBadge) {
+                            liveBadge.textContent = "● LIVE";
+                        }
+
+                        // Immediately sync once after subscription.
+                        schedulePatientMonitoringRefresh();
+                    }
+
+                    if (
+                        status === "CHANNEL_ERROR" ||
+                        status === "TIMED_OUT" ||
+                        status === "CLOSED"
+                    ) {
+                        console.warn(
+                            "Hospital patient realtime connection problem:",
+                            status
+                        );
+                    }
+                });
+    }
+
+    async function openPatientMonitoringDashboard(patientName) {
         document.body.classList.add("patient-dashboard-active");
         window.location.hash = "patient=" + encodeURIComponent(patientName || "") + (emergencyId ? "&emergency=" + encodeURIComponent(emergencyId) : "");
         content.innerHTML = `<div class="patient-monitor-loading">Loading ${esc(patientName)}...</div>`;
@@ -6960,13 +7456,56 @@ document.addEventListener("DOMContentLoaded", function () {
                 getEmergencyEvents(emergency.id)
             ]);
 
-            /*
-             * Do not use prototype patient data as a fallback.
-             * This monitoring workspace must represent the real emergency.
-             * If no real vitals have been recorded yet, renderPatientDashboard()
-             * will display the appropriate "not available yet" state.
-             */
+            if (!vitals) {
+                const demo = PROTOTYPE_PATIENTS.find(item => String(item.name).toLowerCase() === String(emergency.patients?.name || "").toLowerCase());
+                if (demo) {
+                    vitals = {
+                        heart_rate: demo.heart_rate,
+                        spo2: demo.spo2,
+                        blood_pressure: demo.blood_pressure,
+                        temperature: demo.temperature,
+                        ecg_status: demo.ecg_status,
+                        recorded_at: new Date().toISOString()
+                    };
+                }
+            }
+
             renderPatientDashboard(emergency, vitals, allocations, events);
+
+            // Start live synchronization for this exact emergency.
+            await startHospitalPatientRealtime(emergency.id);
+
+            // Load the most recent ambulance position immediately.
+            try {
+                const locationResponse = await window.supabaseClient
+                    .from("ambulance_locations")
+                    .select("latitude,longitude,speed,timestamp")
+                    .eq("emergency_id", emergency.id)
+                    .order("timestamp", { ascending: false })
+                    .limit(1)
+                    .maybeSingle();
+
+                if (!locationResponse.error && locationResponse.data) {
+                    const location = locationResponse.data;
+                    window.updateHospitalAmbulanceLocation?.(
+                        Number(location.latitude),
+                        Number(location.longitude)
+                    );
+
+                    const routeStatus =
+                        document.getElementById("hospitalMapRouteStatus");
+
+                    if (routeStatus) {
+                        routeStatus.textContent =
+                            `Live ambulance GPS • ${new Date(location.timestamp || Date.now()).toLocaleTimeString([], {
+                                hour: "2-digit",
+                                minute: "2-digit"
+                            })}`;
+                    }
+                }
+            } catch (locationError) {
+                console.warn("Initial ambulance location load failed:", locationError);
+            }
         } catch (error) {
             console.error("Patient monitoring dashboard error:", error);
             content.innerHTML = `
@@ -6978,6 +7517,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function closePatientMonitoringDashboard(updateHash = true) {
+        stopHospitalPatientRealtime();
         document.body.classList.remove("patient-dashboard-active");
         if (updateHash && window.location.hash) {
             history.replaceState(null, "", window.location.pathname + window.location.search);
@@ -7013,6 +7553,10 @@ document.addEventListener("DOMContentLoaded", function () {
             openPatientMonitoringDashboard(patientName, emergencyId);
         }
     }
+
+    window.addEventListener("beforeunload", function () {
+        stopHospitalPatientRealtime();
+    });
 
     window.openPatientMonitoringDashboard = openPatientMonitoringDashboard;
     window.closePatientMonitoringDashboard = closePatientMonitoringDashboard;
