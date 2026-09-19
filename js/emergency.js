@@ -1,9 +1,18 @@
+
 /* =========================================================
-   ResQ-Route Emergency Request Flow
-   No signup required for emergency requests.
+   ResQ-Route Emergency System
    ========================================================= */
 
 const EMERGENCY_CONFIG = {
+
+    emergencyPage: "emergency.html",
+
+    familyDashboard: "family.html",
+
+    ambulanceDashboard: "ambulance.html",
+
+    hospitalDashboard: "hospital.html",
+
     defaultPriority: "high",
 
     activeStatuses: [
@@ -17,13 +26,7 @@ const EMERGENCY_CONFIG = {
         "EN_ROUTE_TO_HOSPITAL",
         "ARRIVED_AT_HOSPITAL"
     ]
-};
 
-let emergencyLocation = {
-    latitude: null,
-    longitude: null,
-    accuracy: null,
-    source: null
 };
 
 let emergencyRealtimeChannel = null;
@@ -33,14 +36,21 @@ let emergencyRealtimeChannel = null;
    SUPABASE
    ========================================================= */
 
-function db() {
+function getEmergencySupabase() {
 
-    return (
-        window.resqRoute &&
-        window.resqRoute.supabase
-    ) ||
-    window.supabaseClient ||
-    null;
+    if (
+        typeof window.resqRoute === "undefined" ||
+        !window.resqRoute.supabase
+    ) {
+
+        console.error(
+            "Supabase client is not available."
+        );
+
+        return null;
+    }
+
+    return window.resqRoute.supabase;
 }
 
 
@@ -48,55 +58,70 @@ function db() {
    INPUT HELPERS
    ========================================================= */
 
-function value(id) {
+async function getEmergencyUser() {
 
-    const element =
-        document.getElementById(id);
+    const supabase =
+        getEmergencySupabase();
 
-    return element
-        ? String(element.value || "").trim()
-        : "";
-}
+    if (!supabase) {
+        return null;
+    }
 
+    try {
 
-function radio(name) {
+        const {
+            data,
+            error
+        } = await supabase.auth.getUser();
 
-    const element =
-        document.querySelector(
-            'input[name="' +
-            name +
-            '"]:checked'
+        if (
+            error ||
+            !data ||
+            !data.user
+        ) {
+
+            return null;
+        }
+
+        return data.user;
+
+    } catch (error) {
+
+        console.error(
+            "Unable to get current user:",
+            error
         );
 
-    return element
-        ? element.value
-        : "";
-}
-
-
-function personType() {
-
-    return (
-        radio("personType") ||
-        "unknown"
-    );
+        return null;
+    }
 }
 
 
 /* =========================================================
-   VALIDATION
+   LOCATION
    ========================================================= */
 
-function validCoords(
+let emergencyLocation = {
+
+    latitude: null,
+
+    longitude: null,
+
+    accuracy: null,
+
+    source: null,
+
+    address: null
+
+};
+
+
+function isValidCoordinate(
     latitude,
     longitude
 ) {
-
-    const lat =
-        Number(latitude);
-
-    const lng =
-        Number(longitude);
+    const lat = Number(latitude);
+    const lng = Number(longitude);
 
     return (
         Number.isFinite(lat) &&
@@ -109,150 +134,225 @@ function validCoords(
 }
 
 
-function escapeHtml(value) {
+function getEmergencyLocation() {
 
-    return String(
-        value == null
-            ? ""
-            : value
-    )
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-}
+    return new Promise(
+        function(resolve, reject) {
 
+            if (!navigator.geolocation) {
 
-/* =========================================================
-   MESSAGES
-   ========================================================= */
+                reject(
+                    new Error(
+                        "Geolocation is not supported by this browser."
+                    )
+                );
 
-function message(
-    text,
-    type
-) {
+                return;
+            }
 
-    const element =
-        document.getElementById(
-            "statusMessage"
-        );
+            navigator.geolocation.getCurrentPosition(
 
-    if (!element) {
-        return;
-    }
+                function(position) {
 
-    element.textContent =
-        text;
+                    emergencyLocation = {
 
-    element.className =
-        "message show " +
-        (
-            type === "success"
-                ? "success"
-                : "error"
-        );
-}
+                        latitude:
+                            Number(
+                                position.coords.latitude
+                            ),
 
+                        longitude:
+                            Number(
+                                position.coords.longitude
+                            ),
 
-function clearMessage() {
+                        accuracy:
+                            Number(
+                                position.coords.accuracy
+                            ),
 
-    const element =
-        document.getElementById(
-            "statusMessage"
-        );
+                        source:
+                            "gps",
 
-    if (element) {
+                        address:
+                            null
 
-        element.textContent =
-            "";
-
-        element.className =
-            "message";
-    }
-}
+                    };
 
 
-/* =========================================================
-   TEMPORARY PATIENT ID
-   ========================================================= */
+                    if (
+                        !isValidCoordinate(
+                            emergencyLocation.latitude,
+                            emergencyLocation.longitude
+                        )
+                    ) {
 
-function temporaryPatientId() {
+                        reject(
+                            new Error(
+                                "Invalid location received from browser."
+                            )
+                        );
 
-    let id = null;
+                        return;
+                    }
 
-    try {
 
-        id =
-            sessionStorage.getItem(
-                "resq_temporary_patient_id"
+                    updateLocationUI();
+
+                    resolve(
+                        emergencyLocation
+                    );
+                },
+
+                function(error) {
+
+                    let message =
+                        "Unable to determine your current location.";
+
+                    if (
+                        error.code ===
+                        error.PERMISSION_DENIED
+                    ) {
+
+                        message =
+                            "Location permission was denied. Please allow location access and try again.";
+
+                    } else if (
+                        error.code ===
+                        error.POSITION_UNAVAILABLE
+                    ) {
+
+                        message =
+                            "Your device could not determine your location.";
+
+                    } else if (
+                        error.code ===
+                        error.TIMEOUT
+                    ) {
+
+                        message =
+                            "Location detection timed out.";
+                    }
+
+                    reject(
+                        new Error(message)
+                    );
+                },
+
+                {
+
+                    enableHighAccuracy:
+                        true,
+
+                    timeout:
+                        15000,
+
+                    maximumAge:
+                        0
+
+                }
             );
+        }
+    );
+}
 
-    } catch (error) {
 
-        console.warn(
-            "Session storage unavailable.",
-            error
+function updateLocationUI() {
+
+    const latitude =
+        document.getElementById(
+            "latitude"
         );
+
+    const longitude =
+        document.getElementById(
+            "longitude"
+        );
+
+    const status =
+        document.getElementById(
+            "locationStatus"
+        );
+
+    const locationText =
+        document.getElementById(
+            "locationText"
+        );
+
+
+    if (latitude) {
+
+        latitude.value =
+            emergencyLocation.latitude ??
+            "";
     }
 
 
-    if (
-        !/^PAT-[A-Z0-9]{6}$/.test(
-            id || ""
-        )
-    ) {
+    if (longitude) {
 
-        const chars =
-            "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+        longitude.value =
+            emergencyLocation.longitude ??
+            "";
+    }
 
-        id = "PAT-";
 
-        for (
-            let i = 0;
-            i < 6;
-            i++
+    if (status) {
+
+        if (
+            emergencyLocation.latitude !== null &&
+            emergencyLocation.longitude !== null
         ) {
 
-            id +=
-                chars[
-                    Math.floor(
-                        Math.random() *
-                        chars.length
-                    )
-                ];
-        }
+            status.textContent =
+                "Location detected successfully.";
 
+            status.style.color =
+                "#166534";
 
-        try {
+        } else {
 
-            sessionStorage.setItem(
-                "resq_temporary_patient_id",
-                id
-            );
+            status.textContent =
+                "Location not detected.";
 
-        } catch (error) {
-
-            console.warn(
-                "Unable to save temporary ID.",
-                error
-            );
+            status.style.color =
+                "#991b1b";
         }
     }
 
-    return id;
+
+    if (locationText) {
+
+        if (
+            emergencyLocation.latitude !== null &&
+            emergencyLocation.longitude !== null
+        ) {
+
+            locationText.textContent =
+                emergencyLocation.latitude.toFixed(6) +
+                ", " +
+                emergencyLocation.longitude.toFixed(6);
+
+        } else {
+
+            locationText.textContent =
+                "Location not available";
+        }
+    }
 }
 
 
-/* =========================================================
-   LOCATION
-   ========================================================= */
-
-function setLocation(
+function setManualLocation(
     latitude,
     longitude,
     source
 ) {
+
+    const lat =
+        Number(latitude);
+
+    const lng =
+        Number(longitude);
+
 
     if (
         !validCoords(
@@ -260,7 +360,6 @@ function setLocation(
             longitude
         )
     ) {
-
         throw new Error(
             "Invalid emergency location."
         );
@@ -279,231 +378,115 @@ function setLocation(
             null,
 
         source:
-            source || "manual"
+            "manual",
+
+        address:
+            address
+
     };
 
 
-    const latitudeInput =
-        document.getElementById(
-            "latitude"
-        );
-
-    const longitudeInput =
-        document.getElementById(
-            "longitude"
-        );
-
-    const status =
-        document.getElementById(
-            "locationStatus"
-        );
-
-    const coordinates =
-        document.getElementById(
-            "coordinates"
-        );
-
-
-    if (latitudeInput) {
-
-        latitudeInput.value =
-            emergencyLocation.latitude;
-    }
-
-
-    if (longitudeInput) {
-
-        longitudeInput.value =
-            emergencyLocation.longitude;
-    }
-
-
-    if (status) {
-
-        status.textContent =
-            "✓ Emergency location saved.";
-
-        status.style.color =
-            "#16733a";
-    }
-
-
-    if (coordinates) {
-
-        coordinates.textContent =
-            "Latitude: " +
-            emergencyLocation.latitude.toFixed(6) +
-            " | Longitude: " +
-            emergencyLocation.longitude.toFixed(6);
-
-        coordinates.classList.add(
-            "active"
-        );
-    }
-
+    updateLocationUI();
 
     return emergencyLocation;
 }
 
 
-function getEmergencyLocation() {
+/* =========================================================
+   DISTANCE
+   ========================================================= */
 
-    return new Promise(
-        function(resolve, reject) {
+function toRadians(degrees) {
 
-            if (
-                !navigator.geolocation
-            ) {
-
-                reject(
-                    new Error(
-                        "This browser does not support location detection."
-                    )
-                );
-
-                return;
-            }
-
-
-            navigator.geolocation.getCurrentPosition(
-
-                function(position) {
-
-                    const latitude =
-                        Number(
-                            position.coords.latitude
-                        );
-
-                    const longitude =
-                        Number(
-                            position.coords.longitude
-                        );
-
-
-                    if (
-                        !validCoords(
-                            latitude,
-                            longitude
-                        )
-                    ) {
-
-                        reject(
-                            new Error(
-                                "The browser returned an invalid location."
-                            )
-                        );
-
-                        return;
-                    }
-
-
-                    emergencyLocation = {
-
-                        latitude:
-                            latitude,
-
-                        longitude:
-                            longitude,
-
-                        accuracy:
-                            Number(
-                                position.coords.accuracy
-                            ) || null,
-
-                        source:
-                            "browser"
-                    };
-
-
-                    setLocation(
-                        latitude,
-                        longitude,
-                        "browser"
-                    );
-
-
-                    resolve(
-                        emergencyLocation
-                    );
-                },
-
-
-                function(error) {
-
-                    if (
-                        error.code === 1
-                    ) {
-
-                        reject(
-                            new Error(
-                                "Location permission was denied. Allow location access and try again."
-                            )
-                        );
-
-                        return;
-                    }
-
-
-                    if (
-                        error.code === 2
-                    ) {
-
-                        reject(
-                            new Error(
-                                "Your device could not determine its location."
-                            )
-                        );
-
-                        return;
-                    }
-
-
-                    if (
-                        error.code === 3
-                    ) {
-
-                        reject(
-                            new Error(
-                                "Location detection timed out. Please try again."
-                            )
-                        );
-
-                        return;
-                    }
-
-
-                    reject(
-                        new Error(
-                            "Unable to detect your location."
-                        )
-                    );
-                },
-
-
-                {
-                    enableHighAccuracy:
-                        true,
-
-                    timeout:
-                        15000,
-
-                    maximumAge:
-                        30000
-                }
-            );
-        }
+    return (
+        Number(degrees) *
+        Math.PI /
+        180
     );
 }
 
 
+function calculateDistance(
+    lat1,
+    lon1,
+    lat2,
+    lon2
+) {
+
+    if (
+        !isValidCoordinate(
+            lat1,
+            lon1
+        ) ||
+        !isValidCoordinate(
+            lat2,
+            lon2
+        )
+    ) {
+
+        return Infinity;
+    }
+
+
+    const earthRadius =
+        6371;
+
+
+    const dLat =
+        toRadians(
+            Number(lat2) -
+            Number(lat1)
+        );
+
+
+    const dLon =
+        toRadians(
+            Number(lon2) -
+            Number(lon1)
+        );
+
+
+    const a =
+        Math.sin(dLat / 2) ** 2 +
+
+        Math.cos(
+            toRadians(
+                Number(lat1)
+            )
+        ) *
+
+        Math.cos(
+            toRadians(
+                Number(lat2)
+            )
+        ) *
+
+        Math.sin(dLon / 2) ** 2;
+
+
+    const c =
+        2 *
+        Math.atan2(
+            Math.sqrt(a),
+            Math.sqrt(1 - a)
+        );
+
+
+    return earthRadius * c;
+}
+
+
 /* =========================================================
-   AUTH
+   PATIENT
    ========================================================= */
 
-async function currentUser() {
+async function findPatientForUser(
+    userId
+) {
 
     const supabase =
-        db();
+        getEmergencySupabase();
+
 
     if (!supabase) {
         return null;
@@ -512,21 +495,36 @@ async function currentUser() {
 
     try {
 
-        const result =
-            await supabase.auth.getUser();
+        const {
+            data,
+            error
+        } = await supabase
+            .from("patients")
+            .select("*")
+            .eq(
+                "user_id",
+                userId
+            )
+            .maybeSingle();
 
 
-        return (
-            result.data &&
-            result.data.user
-        )
-            ? result.data.user
-            : null;
+        if (error) {
+
+            console.error(
+                "Patient lookup error:",
+                error
+            );
+
+            return null;
+        }
+
+
+        return data;
 
     } catch (error) {
 
-        console.warn(
-            "Unable to read current user.",
+        console.error(
+            "Patient lookup failed:",
             error
         );
 
@@ -535,68 +533,830 @@ async function currentUser() {
 }
 
 
-async function getOrCreateEmergencyIdentity() {
+async function getOrCreatePatient(
+    userId,
+    patientData
+) {
+
+    const supabase =
+        getEmergencySupabase();
+
+
+    if (!supabase) {
+        return null;
+    }
+
+
+    try {
+
+        let patient =
+            await findPatientForUser(
+                userId
+            );
+
+
+        const payload = {
+
+            user_id:
+                userId,
+
+            name:
+                patientData.name,
+
+            age:
+                patientData.age
+                    ? Number(
+                        patientData.age
+                    )
+                    : null,
+
+            gender:
+                patientData.gender ||
+                null,
+
+            blood_group:
+                patientData.bloodGroup ||
+                null,
+
+            allergies:
+                patientData.allergies ||
+                null,
+
+            medical_conditions:
+                patientData.medicalConditions ||
+                null,
+
+            consent_given:
+                patientData.consentGiven === true,
+
+            consent_timestamp:
+                patientData.consentGiven === true
+                    ? new Date().toISOString()
+                    : null
+
+        };
+
+
+        if (patient) {
+
+            const {
+                data,
+                error
+            } = await supabase
+                .from("patients")
+                .update(payload)
+                .eq(
+                    "id",
+                    patient.id
+                )
+                .select("*")
+                .single();
+
+
+            if (error) {
+
+                throw error;
+            }
+
+
+            return data;
+        }
+
+
+        const {
+            data,
+            error
+        } = await supabase
+            .from("patients")
+            .insert(payload)
+            .select("*")
+            .single();
+
+
+        if (error) {
+
+            throw error;
+        }
+
+
+        return data;
+
+    } catch (error) {
+
+        console.error(
+            "Get/create patient error:",
+            error
+        );
+
+        throw error;
+    }
+}
+
+
+/* =========================================================
+   FIND AVAILABLE AMBULANCE
+   ========================================================= */
+
+async function findAvailableAmbulance(
+    latitude,
+    longitude,
+    emergencyType = null,
+    priority = "high"
+) {
+
+    const supabase =
+        getEmergencySupabase();
+
+
+    if (!supabase) {
+        return null;
+    }
+
+
+    try {
+
+        /*
+         * IMPORTANT:
+         *
+         * Do NOT trust ambulance.status alone.
+         *
+         * An ambulance can accidentally remain
+         * "available" in the database while an
+         * active emergency is still assigned to it.
+         *
+         * We therefore first find every ambulance
+         * currently attached to an active emergency.
+         */
+
+        const activeStatuses = [
+
+            "REPORTED",
+
+            "DISPATCHING",
+
+            "ASSIGNED",
+
+            "DRIVER_ACCEPTED",
+
+            "EN_ROUTE_TO_PATIENT",
+
+            "ARRIVED_AT_PATIENT",
+
+            "PATIENT_ONBOARD",
+
+            "EN_ROUTE_TO_HOSPITAL",
+
+            "ARRIVED_AT_HOSPITAL"
+
+        ];
+
+
+        const {
+            data:
+                activeEmergencies,
+
+            error:
+                activeEmergencyError
+
+        } = await supabase
+
+            .from("emergencies")
+
+            .select(
+                "id,ambulance_id,status"
+            )
+
+            .in(
+                "status",
+                activeStatuses
+            )
+
+            .not(
+                "ambulance_id",
+                "is",
+                null
+            );
+
+
+        if (activeEmergencyError) {
+
+            console.error(
+                "Active emergency lookup error:",
+                activeEmergencyError
+            );
+
+            return null;
+        }
+
+
+        /*
+         * Create a Set containing the IDs
+         * of all busy ambulances.
+         */
+
+        const busyAmbulanceIds =
+            new Set(
+
+                (
+                    activeEmergencies ||
+                    []
+                )
+
+                    .map(
+                        function(emergency) {
+
+                            return String(
+                                emergency.ambulance_id ||
+                                ""
+                            );
+
+                        }
+                    )
+
+                    .filter(
+                        Boolean
+                    )
+
+            );
+
+
+        /*
+         * Now get ambulances whose database
+         * status says "available".
+         */
+
+        const {
+            data,
+            error
+        } = await supabase
+
+            .from("ambulances")
+
+            .select("*")
+
+            .eq(
+                "status",
+                "available"
+            )
+
+            .limit(100);
+
+
+        if (error) {
+
+            console.error(
+                "Ambulance search error:",
+                error
+            );
+
+            return null;
+        }
+
+
+        if (
+            !data ||
+            data.length === 0
+        ) {
+
+            return null;
+        }
+
+
+        /*
+         * Remove every ambulance that already
+         * has an active emergency.
+         */
+
+        const trulyAvailable =
+            data.filter(
+
+                function(ambulance) {
+
+                    return !busyAmbulanceIds.has(
+                        String(
+                            ambulance.id
+                        )
+                    );
+
+                }
+
+            );
+
+
+        if (
+            trulyAvailable.length === 0
+        ) {
+
+            console.log(
+                "No ambulance is actually available. All database-available ambulances have active emergencies."
+            );
+
+            return null;
+        }
+
+
+        /*
+         * Pick the nearest truly available
+         * ambulance.
+         */
+
+        const sorted =
+            trulyAvailable
+
+                .map(
+
+                    function(ambulance) {
+
+                        const distance =
+                            calculateDistance(
+
+                                latitude,
+
+                        longitude:
+                            longitude,
+
+                                ambulance.latitude,
+
+                                ambulance.longitude
+
+                            );
+
+
+                        return {
+
+                            ambulance:
+                                ambulance,
+
+                            distance:
+                                distance
+
+                        };
+
+                    }
+
+                )
+
+                .sort(
+
+                    function(a, b) {
+
+                        return (
+                            a.distance -
+                            b.distance
+                        );
+
+                    }
+
+                );
+
+
+        return sorted.length > 0
+
+            ? sorted[0].ambulance
+
+            : null;
+
+
+    } catch (error) {
+
+        console.error(
+            "Ambulance dispatch search failed:",
+            error
+        );
+
+        return null;
+    }
+}
+/* =========================================================
+   FIND SUITABLE HOSPITAL
+   ========================================================= */
+
+async function findSuitableHospital(
+    latitude,
+    longitude,
+    emergencyType = null,
+    priority = "high"
+) {
+
+    const supabase =
+        getEmergencySupabase();
+
+
+    if (!supabase) {
+        return null;
+    }
+
+
+    try {
+
+        const {
+            data,
+            error
+        } = await supabase
+
+            .from("hospitals")
+
+            .select("*")
+
+            .eq(
+                "emergency_available",
+                true
+            )
+
+            .limit(100);
+
+
+        if (error) {
+
+            console.error(
+                "Hospital search error:",
+                error
+            );
+
+            return null;
+        }
+
+
+        if (
+            !data ||
+            data.length === 0
+        ) {
+
+            return null;
+        }
+
+
+        const sorted =
+            data
+
+                .map(
+
+                    function(hospital) {
+
+                        const distance =
+                            calculateDistance(
+
+                                latitude,
+
+                                longitude,
+
+                                hospital.latitude,
+
+                                hospital.longitude
+
+                            );
+
+
+                        return {
+
+                            hospital:
+                                hospital,
+
+                            distance:
+                                distance
+
+                        };
+
+                    }
+
+                )
+
+                .sort(
+
+                    function(a, b) {
+
+                        return (
+                            a.distance -
+                            b.distance
+                        );
+
+                    }
+
+                );
+
+
+        return sorted.length
+
+            ? sorted[0].hospital
+
+            : null;
+
+
+    } catch (error) {
+
+        console.error(
+            "Hospital search failed:",
+            error
+        );
+
+        return null;
+    }
+}
+
+
+/* =========================================================
+   CREATE EMERGENCY EVENT
+   ========================================================= */
+
+async function createEmergencyEvent(
+    emergencyId,
+    eventType,
+    description
+) {
+
+    const supabase =
+        getEmergencySupabase();
+
+
+    if (!supabase) {
+        return null;
+    }
+
+
+    try {
+
+        const user =
+            await getEmergencyUser();
+
+
+        const {
+            data,
+            error
+        } = await supabase
+
+            .from("emergency_events")
+
+            .insert({
+
+                emergency_id:
+                    emergencyId,
+
+                event_type:
+                    eventType,
+
+                description:
+                    description,
+
+                created_by:
+                    user
+                        ? user.id
+                        : null
+
+            })
+
+            .select("*")
+
+            .single();
+
+
+        if (error) {
+
+            console.error(
+                "Emergency event error:",
+                error
+            );
+
+            return null;
+        }
+
+
+        return data;
+
+    } catch (error) {
+
+        console.error(
+            "Emergency event creation failed:",
+            error
+        );
+
+        return null;
+    }
+}
+
+
+/* =========================================================
+   AUTH
+   ========================================================= */
+
+async function createEmergencyNotification(
+    userId,
+    emergencyId,
+    title,
+    message,
+    notificationType = "emergency"
+) {
+
+    const supabase =
+        db();
+
+    if (
+        !supabase ||
+        !userId
+    ) {
+
+        return null;
+    }
+
+
+    try {
+
+        const {
+            data,
+            error
+        } = await supabase
+
+            .from("notifications")
+
+            .insert({
+
+                user_id:
+                    userId,
+
+                emergency_id:
+                    emergencyId,
+
+                title:
+                    title,
+
+                message:
+                    message,
+
+                notification_type:
+                    notificationType,
+
+                is_read:
+                    false
+
+            })
+
+            .select("*")
+
+            .single();
+
+
+        if (error) {
+
+            console.error(
+                "Notification error:",
+                error
+            );
+
+            return null;
+        }
+
+
+        return data;
+
+    } catch (error) {
+
+        console.error(
+            "Notification creation failed:",
+            error
+        );
+
+        return null;
+    }
+}
+
+
+/* =========================================================
+   NOTIFY EMERGENCY PARTIES
+   ========================================================= */
+
+async function notifyEmergencyParties(
+    emergency,
+    ambulance,
+    hospital
+) {
+
+    if (!emergency) {
+        return;
+    }
+
 
     const supabase =
         db();
 
 
     if (!supabase) {
-
-        throw new Error(
-            "Supabase is not configured."
-        );
+        return;
     }
 
 
-    const existing =
-        await currentUser();
+    try {
+
+        if (
+            emergency.requester_id
+        ) {
+
+            await createEmergencyNotification(
+
+                emergency.requester_id,
+
+                emergency.id,
+
+                "Emergency Request Created",
+
+                ambulance
+
+                    ? `Ambulance ${ambulance.vehicle_number || ""} has been assigned.`
+
+                    : "Your emergency request has been received. Ambulance dispatch is in progress.",
+
+                "emergency"
+
+            );
+        }
 
 
-    if (existing) {
+        if (
+            ambulance &&
+            ambulance.driver_id
+        ) {
 
-        return {
+            await createEmergencyNotification(
 
-            user:
-                existing,
+                ambulance.driver_id,
 
-            anonymous:
-                Boolean(
-                    existing.is_anonymous
+                emergency.id,
+
+                "New Emergency Assignment",
+
+                `Emergency ${String(emergency.id).slice(0, 8)} has been assigned to ambulance ${ambulance.vehicle_number || ""}.`,
+
+                "ambulance_assignment"
+
+            );
+        }
+
+
+        if (
+            hospital &&
+            hospital.id
+        ) {
+
+            const {
+                data: staff,
+                error
+            } = await supabase
+
+                .from("hospital_staff")
+
+                .select(
+                    "user_id"
                 )
-        };
-    }
+
+                .eq(
+                    "hospital_id",
+                    hospital.id
+                );
 
 
-    const result =
-        await supabase.auth.signInAnonymously();
+            if (
+                !error &&
+                Array.isArray(staff)
+            ) {
+
+                for (
+                    const member
+                    of staff
+                ) {
+
+                    if (
+                        !member.user_id
+                    ) {
+
+                        continue;
+                    }
 
 
-    if (
-        result.error ||
-        !result.data ||
-        !result.data.user
-    ) {
+                    await createEmergencyNotification(
+
+                        member.user_id,
+
+                        emergency.id,
+
+                        "Incoming Emergency Patient",
+
+                        `A new emergency patient has been assigned to ${hospital.name}.`,
+
+                        "hospital_emergency"
+
+                    );
+
+                }
+
+            }
+
+        }
+
+    } catch (error) {
 
         console.error(
-            "Anonymous Auth error:",
-            result.error
-        );
-
-        throw new Error(
-            "Emergency access could not start. Enable Anonymous Sign-Ins in Supabase Authentication."
+            "Emergency notifications failed:",
+            error
         );
     }
-
-
-    return {
-
-        user:
-            result.data.user,
-
-        anonymous:
-            true
-    };
 }
 
 
@@ -607,7 +1367,6 @@ async function getOrCreateEmergencyIdentity() {
 async function createEmergency(
     data
 ) {
-
     const supabase =
         db();
 
@@ -645,28 +1404,104 @@ async function createEmergency(
     }
 
 
-    const identity =
-        await getOrCreateEmergencyIdentity();
+    try {
+
+        /*
+         * Get patient.
+         */
+
+        const patient =
+            await getOrCreatePatient(
+
+                user.id,
+
+                emergencyData.patient
+
+            );
 
 
-    const patientId =
-        data.temporaryPatientId ||
-        temporaryPatientId();
+        if (!patient) {
+
+            throw new Error(
+                "Unable to create patient record."
+            );
+        }
 
 
-    const result =
-        await supabase.rpc(
-            "create_guest_emergency",
-            {
+        /*
+         * Find ambulance.
+         *
+         * The updated function now excludes
+         * ambulances already handling another
+         * active emergency.
+         */
 
-                p_emergency_type:
-                    data.emergencyType,
+        const ambulance =
+            await findAvailableAmbulance(
 
-                p_priority:
-                    data.priority ||
-                    "high",
+                emergencyData.location.latitude,
 
-                p_latitude:
+                emergencyData.location.longitude,
+
+                emergencyData.emergencyType,
+
+                emergencyData.priority
+
+            );
+
+
+        /*
+         * Find hospital.
+         */
+
+        const hospital =
+            await findSuitableHospital(
+
+                emergencyData.location.latitude,
+
+                emergencyData.location.longitude,
+
+                emergencyData.emergencyType,
+
+                emergencyData.priority
+
+            );
+
+
+        const initialStatus =
+            ambulance
+                ? "ASSIGNED"
+                : "DISPATCHING";
+
+
+        /*
+         * Create emergency row.
+         */
+
+        const {
+            data: emergency,
+            error: emergencyError
+
+        } = await supabase
+
+            .from("emergencies")
+
+            .insert({
+
+                patient_id:
+                    patient.id,
+
+                requester_id:
+                    user.id,
+
+                emergency_type:
+                    emergencyData.emergencyType,
+
+                priority:
+                    emergencyData.priority ||
+                    EMERGENCY_CONFIG.defaultPriority,
+
+                latitude:
                     Number(
                         data.location.latitude
                     ),
@@ -687,80 +1522,158 @@ async function createEmergency(
                     data.condition ||
                     null,
 
-                p_description:
-                    data.description ||
-                    null
-            }
-        );
+                status:
+                    initialStatus
+
+            })
+
+            .select("*")
+
+            .single();
 
 
     if (result.error) {
 
-        console.error(
-            "Emergency RPC error:",
-            result.error
+            console.error(
+                "Emergency insert error:",
+                emergencyError
+            );
+
+            throw emergencyError;
+        }
+
+
+        /*
+         * Initial event.
+         */
+
+        await createEmergencyEvent(
+
+            emergency.id,
+
+            "EMERGENCY_CREATED",
+
+            emergencyData.description
+                ? `Emergency request created. Details: ${emergencyData.description}`
+                : "Emergency request created."
+
         );
 
-        throw new Error(
-            result.error.message ||
-            "Emergency request could not be created."
+
+        /*
+         * Assign ambulance.
+         */
+
+        if (ambulance) {
+
+            await createEmergencyEvent(
+
+                emergency.id,
+
+                "AMBULANCE_ASSIGNED",
+
+                `Ambulance ${ambulance.vehicle_number || ambulance.id} assigned.`
+
+            );
+
+
+            const {
+                error:
+                    ambulanceUpdateError
+
+            } = await supabase
+
+                .from("ambulances")
+
+                .update({
+
+                    status:
+                        "assigned"
+
+                })
+
+                .eq(
+                    "id",
+                    ambulance.id
+                );
+
+
+            if (ambulanceUpdateError) {
+
+                console.error(
+                    "Ambulance status update error:",
+                    ambulanceUpdateError
+                );
+            }
+        }
+
+
+        /*
+         * Hospital assignment.
+         */
+
+        if (hospital) {
+
+            await createEmergencyEvent(
+
+                emergency.id,
+
+                "HOSPITAL_SELECTED",
+
+                `Destination hospital selected: ${hospital.name}.`
+
+            );
+
+        } else {
+
+            await createEmergencyEvent(
+
+                emergency.id,
+
+                "HOSPITAL_SEARCH_PENDING",
+
+                "No emergency-capable hospital was found during initial dispatch."
+
+            );
+        }
+
+
+        /*
+         * Notify parties.
+         */
+
+        await notifyEmergencyParties(
+
+            emergency,
+
+            ambulance,
+
+            hospital
+
         );
-    }
 
 
-    const rpc =
-        result.data || {};
+        /*
+         * Store active emergency locally.
+         */
 
+        try {
 
-    if (!rpc.emergency_id) {
+            localStorage.setItem(
 
-        throw new Error(
-            "Emergency was created but no ID was returned."
-        );
-    }
+                "resq_active_emergency_id",
 
+                emergency.id
 
-    try {
+            );
 
-        localStorage.setItem(
-            "resq_active_emergency_id",
-            rpc.emergency_id
-        );
+        } catch (storageError) {
 
-        localStorage.setItem(
-            "resq_temporary_patient_id",
-            patientId
-        );
-
-    } catch (error) {
-
-        console.warn(
-            "Unable to save emergency locally.",
-            error
-        );
-    }
-
-
-    let emergency =
-        null;
-
-
-    const lookup =
-        await supabase
-            .from("emergencies")
-            .select("*")
-            .eq(
-                "id",
-                rpc.emergency_id
-            )
-            .maybeSingle();
-
-
-    if (!lookup.error) {
-
-        emergency =
-            lookup.data;
-    }
+            console.warn(
+                "Could not save emergency ID:",
+                storageError
+            );
+        }
 
 
     return {
@@ -774,27 +1687,36 @@ async function createEmergency(
         emergency:
             emergency,
 
-        temporaryPatientId:
-            patientId,
+            ambulance:
+                ambulance,
 
-        anonymous:
-            identity.anonymous,
+            hospital:
+                hospital,
 
-        hospitalId:
-            rpc.hospital_id ||
-            null
-    };
+            patient:
+                patient
+
+        };
+
+    } catch (error) {
+
+        console.error(
+            "Emergency creation failed:",
+            error
+        );
+
+        throw error;
+    }
 }
 
 
 /* =========================================================
-   EMERGENCY LOOKUP
+   GET EMERGENCY
    ========================================================= */
 
 async function getEmergencyById(
     id
 ) {
-
     const supabase =
         db();
 
@@ -803,25 +1725,49 @@ async function getEmergencyById(
         !supabase ||
         !id
     ) {
-
         return null;
     }
 
 
-    const result =
-        await supabase
+    try {
+
+        const {
+            data,
+            error
+        } = await supabase
+
             .from("emergencies")
             .select("*")
             .eq(
                 "id",
-                id
+                emergencyId
             )
-            .maybeSingle();
+
+            .single();
 
 
-    return result.error
-        ? null
-        : result.data;
+        if (error) {
+
+            console.error(
+                "Emergency retrieval error:",
+                error
+            );
+
+            return null;
+        }
+
+
+        return data;
+
+    } catch (error) {
+
+        console.error(
+            "Emergency retrieval failed:",
+            error
+        );
+
+        return null;
+    }
 }
 
 
@@ -834,7 +1780,6 @@ async function updateEmergencyStatus(
     status,
     description
 ) {
-
     const supabase =
         db();
 
@@ -844,7 +1789,6 @@ async function updateEmergencyStatus(
         !id ||
         !status
     ) {
-
         return false;
     }
 
@@ -866,9 +1810,23 @@ async function updateEmergencyStatus(
     }
 
 
-    const result =
-        await supabase
+    try {
+
+        /*
+         * Get ambulance ID together with
+         * the updated emergency.
+         *
+         * This is necessary so we can release
+         * the correct ambulance later.
+         */
+
+        const {
+            data,
+            error
+        } = await supabase
+
             .from("emergencies")
+
             .update({
 
                 status:
@@ -880,36 +1838,135 @@ async function updateEmergencyStatus(
             })
             .eq(
                 "id",
-                id
+                emergencyId
             )
+
             .select(
-                "id,status"
+                "id,status,updated_at,ambulance_id"
             )
-            .maybeSingle();
+
+            .single();
 
 
-    if (result.error) {
+        if (error) {
 
-        console.error(
-            "Emergency status update failed:",
-            result.error
-        );
+            console.error(
+                "Emergency status update error:",
+                error
+            );
 
         return false;
     }
 
 
-    try {
+        if (
+            !data ||
+            data.id !== emergencyId ||
+            data.status !== status
+        ) {
 
-        await supabase
-            .from("emergency_events")
-            .insert({
+            console.error(
+                "Supabase could not confirm emergency status:",
+                data
+            );
 
-                emergency_id:
-                    id,
+            return false;
+        }
 
-                event_type:
-                    status,
+
+        /*
+         * IMPORTANT:
+         *
+         * When the emergency ends, release
+         * the assigned ambulance.
+         *
+         * This prevents the ambulance from
+         * staying permanently unavailable.
+         */
+
+        if (
+            status === "CANCELLED" ||
+            status === "COMPLETED"
+        ) {
+
+            if (
+                data.ambulance_id
+            ) {
+
+                try {
+
+                    const {
+                        error:
+                            releaseError
+
+                    } = await supabase
+
+                        .from("ambulances")
+
+                        .update({
+
+                            status:
+                                "available"
+
+                        })
+
+                        .eq(
+                            "id",
+                            data.ambulance_id
+                        );
+
+
+                    if (releaseError) {
+
+                        console.warn(
+
+                            "Emergency status changed, but ambulance could not be released:",
+
+                            releaseError
+
+                        );
+
+                    } else {
+
+                        console.log(
+
+                            "Ambulance released after emergency ended:",
+
+                            data.ambulance_id
+
+                        );
+
+                    }
+
+                } catch (releaseError) {
+
+                    console.warn(
+
+                        "Ambulance release failed:",
+
+                        releaseError
+
+                    );
+
+                }
+
+            }
+
+        }
+
+
+        /*
+         * Event logging should not prevent
+         * the actual status update from succeeding.
+         */
+
+        try {
+
+            await createEmergencyEvent(
+
+                emergencyId,
+
+                status,
 
                 description:
                     description ||
@@ -920,19 +1977,70 @@ async function updateEmergencyStatus(
 
     } catch (error) {
 
-        console.warn(
-            "Emergency event logging failed.",
-            error
+            console.warn(
+
+                "Status updated but event logging failed:",
+
+                eventError
+
+            );
+
+        }
+
+
+        try {
+
+            localStorage.setItem(
+
+                "resq_active_emergency_id",
+
+                emergencyId
+
+            );
+
+        } catch (storageError) {
+
+            console.warn(
+
+                "Could not save emergency ID:",
+
+                storageError
+
+            );
+
+        }
+
+
+        console.log(
+
+            "Emergency status synchronized:",
+
+            emergencyId,
+
+            "=>",
+
+            status
+
         );
+
+
+        return true;
+
+    } catch (error) {
+
+        console.error(
+
+            "Emergency status update failed:",
+
+            error
+
+        );
+
+        return false;
     }
-
-
-    return true;
 }
-
-
 /* =========================================================
-   ACTIVE EMERGENCY
+   ACTIVE EMERGENCY FOR CURRENT USER
    ========================================================= */
 
 async function getActiveEmergencyForUser() {
@@ -953,8 +2061,13 @@ async function getActiveEmergencyForUser() {
     }
 
 
-    const result =
-        await supabase
+    try {
+
+        const {
+            data,
+            error
+        } = await supabase
+
             .from("emergencies")
             .select("*")
             .eq(
@@ -983,178 +2096,262 @@ async function getActiveEmergencyForUser() {
 
 
 /* =========================================================
-   SUCCESS BOX
+   STORED ACTIVE EMERGENCY
    ========================================================= */
 
-function showSuccess(
-    emergency,
-    patientId
-) {
+async function getStoredActiveEmergency() {
 
-    const box =
-        document.getElementById(
-            "successBox"
+    let emergencyId =
+        null;
+
+
+    try {
+
+        emergencyId =
+            localStorage.getItem(
+                "resq_active_emergency_id"
+            );
+
+    } catch (error) {
+
+        console.warn(
+            "Unable to access local storage:",
+            error
+        );
+    }
+
+
+    if (!emergencyId) {
+
+        return await getActiveEmergencyForUser();
+    }
+
+
+    const emergency =
+        await getEmergencyById(
+            emergencyId
         );
 
 
-    if (!box) {
+    if (emergency) {
+
+        return emergency;
+    }
+
+
+    return await getActiveEmergencyForUser();
+}
+
+
+/* =========================================================
+   MESSAGE
+   ========================================================= */
+
+function showEmergencyMessage(
+    message,
+    type = "error"
+) {
+
+    let element =
+        document.getElementById(
+            "emergencyMessage"
+        );
+
+
+    if (!element) {
+
+        element =
+            document.getElementById(
+                "message"
+            );
+    }
+
+
+    if (element) {
+
+        element.textContent =
+            message;
+
+        element.style.display =
+            "block";
+
+        element.style.color =
+            type === "success"
+                ? "#166534"
+                : "#991b1b";
+
         return;
     }
 
 
-    const status =
-        emergency &&
-        emergency.status
-            ? emergency.status
-            : "DISPATCHING";
+    let notification =
+        document.getElementById(
+            "resq-emergency-notification"
+        );
 
 
-    box.innerHTML =
+    if (!notification) {
 
-        "<strong>🚑 Help request sent</strong>" +
+        notification =
+            document.createElement(
+                "div"
+            );
 
-        "<div>" +
-        "Temporary Patient ID: " +
-        "<code>" +
-        escapeHtml(patientId) +
-        "</code>" +
-        "</div>" +
+        notification.id =
+            "resq-emergency-notification";
 
-        "<div>" +
-        "Status: " +
-        "<strong>" +
-        escapeHtml(status) +
-        "</strong>" +
-        "</div>" +
+        notification.style.position =
+            "fixed";
 
-        "<div style=\"margin-top:5px;font-size:11px\">" +
-        "Nearby available ambulances can accept this request. " +
-        "The same patient ID will be shown to the hospital." +
-        "</div>";
+        notification.style.top =
+            "20px";
+
+        notification.style.right =
+            "20px";
+
+        notification.style.zIndex =
+            "99999";
+
+        notification.style.padding =
+            "15px 20px";
+
+        notification.style.borderRadius =
+            "10px";
+
+        notification.style.maxWidth =
+            "420px";
+
+        notification.style.fontWeight =
+            "600";
+
+        notification.style.boxShadow =
+            "0 8px 25px rgba(0,0,0,0.15)";
+
+        document.body.appendChild(
+            notification
+        );
+    }
 
 
-    box.classList.add(
-        "show"
+    notification.textContent =
+        message;
+
+
+    notification.style.background =
+        type === "success"
+            ? "#dcfce7"
+            : "#fee2e2";
+
+
+    notification.style.color =
+        type === "success"
+            ? "#166534"
+            : "#991b1b";
+
+
+    notification.style.display =
+        "block";
+
+
+    clearTimeout(
+        notification._hideTimer
     );
+
+
+    notification._hideTimer =
+        setTimeout(
+
+            function() {
+
+                notification.style.display =
+                    "none";
+
+            },
+
+            5000
+
+        );
 }
 
 
 /* =========================================================
-   REALTIME STATUS
+   EMERGENCY FORM
    ========================================================= */
 
-function watchEmergency(
-    id
+function getEmergencyValue(
+    ...ids
 ) {
 
-    const supabase =
-        db();
-
-
-    if (
-        !supabase ||
-        !id
+    for (
+        const id
+        of ids
     ) {
 
-        return;
-    }
-
-
-    if (
-        emergencyRealtimeChannel
-    ) {
-
-        supabase.removeChannel(
-            emergencyRealtimeChannel
-        );
-    }
-
-
-    emergencyRealtimeChannel =
-        supabase
-            .channel(
-                "emergency-request-" +
+        const element =
+            document.getElementById(
                 id
-            )
-            .on(
-
-                "postgres_changes",
-
-                {
-
-                    event:
-                        "UPDATE",
-
-                    schema:
-                        "public",
-
-                    table:
-                        "emergencies",
-
-                    filter:
-                        "id=eq." +
-                        id
-                },
-
-                function(payload) {
-
-                    const emergency =
-                        payload.new || {};
+            );
 
 
-                    showSuccess(
-                        emergency,
-                        temporaryPatientId()
-                    );
-                }
-            )
-            .subscribe();
+        if (element) {
+
+            return String(
+                element.value ||
+                ""
+            ).trim();
+
+        }
+
+    }
+
+
+    return "";
 }
 
 
-/* =========================================================
-   PERSON TYPE UI
-   ========================================================= */
+function getSelectedRadio(
+    name
+) {
 
-function setupPersonType() {
-
-    const panel =
-        document.getElementById(
-            "knownPatientPanel"
+    const element =
+        document.querySelector(
+            `input[name="${name}"]:checked`
         );
 
 
-    document
-        .querySelectorAll(
-            'input[name="personType"]'
-        )
-        .forEach(
-            function(input) {
-
-                input.addEventListener(
-                    "change",
-                    function() {
-
-                        if (panel) {
-
-                            panel.style.display =
-                                personType() === "me"
-                                    ? "block"
-                                    : "none";
-                        }
-                    }
-                );
-            }
-        );
+    return element
+        ? element.value
+        : null;
+}
 
 
-    if (panel) {
+function getChecked(
+    ...ids
+) {
 
-        panel.style.display =
-            personType() === "me"
-                ? "block"
-                : "none";
+    for (
+        const id
+        of ids
+    ) {
+
+        const element =
+            document.getElementById(
+                id
+            );
+
+
+        if (element) {
+
+            return Boolean(
+                element.checked
+            );
+
+        }
+
     }
+
+
+    return false;
 }
 
 
@@ -1164,37 +2361,36 @@ function setupPersonType() {
 
 function setupLocation() {
 
-    const detect =
-        document.getElementById(
-            "detectLocation"
-        );
+    const buttons =
+        document.querySelectorAll(
 
-    const manualOpen =
-        document.getElementById(
-            "showManualLocation"
-        );
+            "#detectLocation, #getLocation, [data-action='location']"
 
-    const panel =
-        document.getElementById(
-            "manualLocationPanel"
-        );
-
-    const save =
-        document.getElementById(
-            "saveManualLocation"
-        );
-
-    const cancel =
-        document.getElementById(
-            "cancelManualLocation"
         );
 
 
-    if (detect) {
+    buttons.forEach(
 
-        detect.addEventListener(
-            "click",
-            async function() {
+        function(button) {
+
+            if (
+                button.dataset.resqLocationBound ===
+                "true"
+            ) {
+
+                return;
+            }
+
+
+            button.dataset.resqLocationBound =
+                "true";
+
+
+            button.addEventListener(
+
+                "click",
+
+                async function(event) {
 
                 const old =
                     detect.textContent;
@@ -1202,8 +2398,25 @@ function setupLocation() {
                 detect.disabled =
                     true;
 
-                detect.textContent =
-                    "Detecting location...";
+
+                    button.textContent =
+                        "Detecting...";
+
+
+                    const status =
+                        document.getElementById(
+                            "locationStatus"
+                        );
+
+
+                    if (status) {
+
+                        status.textContent =
+                            "Detecting your location...";
+
+                        status.style.color =
+                            "";
+                    }
 
 
                 try {
@@ -1215,213 +2428,212 @@ function setupLocation() {
                         "success"
                     );
 
-                } catch (error) {
+                    } catch (error) {
 
-                    message(
-                        error.message,
-                        "error"
-                    );
+                        showEmergencyMessage(
+                            error.message
+                        );
 
                 } finally {
 
                     detect.disabled =
                         false;
 
-                    detect.textContent =
-                        old;
+                        button.textContent =
+                            originalText;
+                    }
+
                 }
-            }
+
+            );
+
+        }
+
+    );
+}
+
+
+/* =========================================================
+   MANUAL LOCATION
+   ========================================================= */
+
+function setupManualLocationInputs() {
+
+    const latitudeInput =
+        document.getElementById(
+            "latitude"
         );
+
+    const longitudeInput =
+        document.getElementById(
+            "longitude"
+        );
+
+    const manualButton =
+        document.getElementById(
+            "setManualLocation"
+        );
+
+
+    if (
+        !manualButton ||
+        !latitudeInput ||
+        !longitudeInput
+    ) {
+
+        return;
     }
 
 
     if (
-        manualOpen &&
-        panel
+        manualButton.dataset.resqManualBound ===
+        "true"
     ) {
 
-        manualOpen.addEventListener(
-            "click",
-            function() {
-
-                panel.classList.add(
-                    "active"
-                );
-            }
-        );
+        return;
     }
 
 
-    if (
-        cancel &&
-        panel
-    ) {
-
-        cancel.addEventListener(
-            "click",
-            function() {
-
-                panel.classList.remove(
-                    "active"
-                );
-            }
-        );
-    }
+    manualButton.dataset.resqManualBound =
+        "true";
 
 
-    if (save) {
+    manualButton.addEventListener(
 
-        save.addEventListener(
-            "click",
-            async function() {
+        "click",
+
+        function(event) {
+
+            event.preventDefault();
+
+
+            try {
 
                 const address =
-                    value("manualAddress");
+                    getEmergencyValue(
 
-                const city =
-                    value("manualCity");
+                        "address",
 
-                const state =
-                    value("manualState");
+                        "locationAddress",
 
-                const pin =
-                    value("manualPincode");
+                        "manualAddress"
 
-
-                if (
-                    !address &&
-                    !city
-                ) {
-
-                    message(
-                        "Enter an address or city first.",
-                        "error"
-                    );
-
-                    return;
-                }
-
-
-                if (
-                    pin &&
-                    !/^\d{6}$/.test(pin)
-                ) {
-
-                    message(
-                        "Enter a valid 6-digit pincode.",
-                        "error"
-                    );
-
-                    return;
-                }
-
-
-                const query =
-                    [
-                        address,
-                        city,
-                        state,
-                        pin
-                    ]
-                        .filter(Boolean)
-                        .join(", ");
-
-
-                save.disabled =
-                    true;
-
-                save.textContent =
-                    "Finding...";
-
-
-                try {
-
-                    const response =
-                        await fetch(
-
-                            "https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=in&q=" +
-                            encodeURIComponent(
-                                query
-                            ),
-
-                            {
-                                headers: {
-                                    Accept:
-                                        "application/json"
-                                }
-                            }
-                        );
-
-
-                    if (
-                        !response.ok
-                    ) {
-
-                        throw new Error(
-                            "Unable to find that location."
-                        );
-                    }
-
-
-                    const results =
-                        await response.json();
-
-
-                    if (
-                        !results.length
-                    ) {
-
-                        throw new Error(
-                            "That address could not be located."
-                        );
-                    }
-
-
-                    setLocation(
-
-                        Number(
-                            results[0].lat
-                        ),
-
-                        Number(
-                            results[0].lon
-                        ),
-
-                        "manual"
                     );
 
 
-                    if (panel) {
+                setManualLocation(
 
-                        panel.classList.remove(
-                            "active"
-                        );
-                    }
+                    latitudeInput.value,
+
+                    longitudeInput.value,
+
+                    address || null
+
+                );
 
 
-                    message(
-                        "Manual emergency location saved.",
-                        "success"
-                    );
+                showEmergencyMessage(
 
-                } catch (error) {
+                    "Manual emergency location saved.",
 
-                    message(
-                        error.message,
-                        "error"
-                    );
+                    "success"
 
-                } finally {
+                );
 
-                    save.disabled =
-                        false;
+            } catch (error) {
 
-                    save.textContent =
-                        "Save manual location";
-                }
+                showEmergencyMessage(
+                    error.message
+                );
             }
-        );
+
+        }
+
+    );
+}
+
+
+/* =========================================================
+   PREFILL PATIENT
+   ========================================================= */
+
+async function prefillEmergencyPatient() {
+
+    const user =
+        await getEmergencyUser();
+
+
+    if (!user) {
+        return;
     }
+
+
+    const patient =
+        await findPatientForUser(
+            user.id
+        );
+
+
+    if (!patient) {
+        return;
+    }
+
+
+    const mappings = {
+
+        patientName:
+            patient.name,
+
+        patientAge:
+            patient.age,
+
+        patientGender:
+            patient.gender,
+
+        patientSex:
+            patient.gender,
+
+        bloodGroup:
+            patient.blood_group,
+
+        allergies:
+            patient.allergies,
+
+        medicalConditions:
+            patient.medical_conditions
+
+    };
+
+
+    Object.entries(
+        mappings
+    ).forEach(
+
+        function([
+            id,
+            value
+        ]) {
+
+            const element =
+                document.getElementById(
+                    id
+                );
+
+
+            if (
+                element &&
+                !element.value &&
+                value !== null &&
+                value !== undefined
+            ) {
+
+                element.value =
+                    value;
+            }
+
+        }
+
+    );
 }
 
 
@@ -1429,170 +2641,7 @@ function setupLocation() {
    FORM SUBMISSION
    ========================================================= */
 
-async function submitEmergency(
-    event
-) {
-
-    event.preventDefault();
-
-    clearMessage();
-
-
-    const button =
-        document.getElementById(
-            "requestButton"
-        );
-
-
-    if (button) {
-
-        button.disabled =
-            true;
-
-        button.dataset.oldText =
-            button.textContent;
-
-        button.textContent =
-            "Connecting to emergency network...";
-    }
-
-
-    try {
-
-        const emergencyType =
-            value("emergencyType");
-
-
-        if (!emergencyType) {
-
-            throw new Error(
-                "Please select what is happening."
-            );
-        }
-
-
-        if (
-            !validCoords(
-                emergencyLocation.latitude,
-                emergencyLocation.longitude
-            )
-        ) {
-
-            await getEmergencyLocation();
-        }
-
-
-        const patientId =
-            temporaryPatientId();
-
-
-        const result =
-            await createEmergency({
-
-                personType:
-                    personType(),
-
-                temporaryPatientId:
-                    patientId,
-
-                emergencyType:
-                    emergencyType,
-
-                condition:
-                    value(
-                        "patientCondition"
-                    ),
-
-                description:
-                    value(
-                        "description"
-                    ),
-
-                priority:
-                    radio("priority") ||
-                    "high",
-
-                location:
-                    emergencyLocation
-            });
-
-
-        showSuccess(
-            result.emergency,
-            patientId
-        );
-
-
-        message(
-            "Emergency request sent successfully.",
-            "success"
-        );
-
-
-        watchEmergency(
-            result.emergencyId
-        );
-
-
-        if (button) {
-
-            button.textContent =
-                "✓ EMERGENCY REQUEST ACTIVE";
-        }
-
-    } catch (error) {
-
-        console.error(
-            "Emergency submission failed:",
-            error
-        );
-
-
-        message(
-
-            error.message ||
-            "Emergency request could not be created.",
-
-            "error"
-        );
-
-
-        if (button) {
-
-            button.disabled =
-                false;
-
-            button.textContent =
-                button.dataset.oldText ||
-                "🚑 REQUEST EMERGENCY ASSISTANCE";
-        }
-    }
-}
-
-
-/* =========================================================
-   INITIALIZATION
-   ========================================================= */
-
-function initEmergencyPage() {
-
-    const id =
-        document.getElementById(
-            "temporaryPatientId"
-        );
-
-
-    if (id) {
-
-        id.textContent =
-            temporaryPatientId();
-    }
-
-
-    setupPersonType();
-
-    setupLocation();
-
+function setupEmergencyForm() {
 
     const form =
         document.getElementById(
@@ -1600,74 +2649,376 @@ function initEmergencyPage() {
         );
 
 
+    if (!form) {
+        return;
+    }
+
+
     if (
-        form &&
-        form.dataset.resqBound !== "true"
+        form.dataset.resqEmergencyBound ===
+        "true"
     ) {
 
-        form.dataset.resqBound =
-            "true";
-
-        form.addEventListener(
-            "submit",
-            submitEmergency
-        );
+        return;
     }
 
 
-    let stored =
-        null;
+    form.dataset.resqEmergencyBound =
+        "true";
 
 
-    try {
+    form.addEventListener(
 
-        stored =
-            localStorage.getItem(
-                "resq_active_emergency_id"
-            );
+        "submit",
 
-    } catch (error) {
+        async function(event) {
 
-        console.warn(
-            "Local storage unavailable.",
-            error
-        );
-    }
+            event.preventDefault();
 
 
-    if (stored) {
+            const submitButton =
+                form.querySelector(
+                    'button[type="submit"]'
+                );
 
-        getEmergencyById(
-            stored
-        ).then(
-            function(emergency) {
+
+            if (submitButton) {
+
+                submitButton.disabled =
+                    true;
+
+                submitButton.dataset.originalText =
+                    submitButton.textContent;
+
+                submitButton.textContent =
+                    "Dispatching...";
+            }
+
+
+            try {
 
                 if (
-                    emergency &&
-                    EMERGENCY_CONFIG
-                        .activeStatuses
-                        .includes(
-                            emergency.status
-                        )
+                    emergencyLocation.latitude === null ||
+                    emergencyLocation.longitude === null
                 ) {
 
-                    showSuccess(
-                        emergency,
-                        temporaryPatientId()
+                    await getEmergencyLocation();
+                }
+
+
+                const emergencyType =
+                    getSelectedRadio(
+                        "emergencyType"
+                    ) ||
+                    getEmergencyValue(
+                        "emergencyType"
                     );
 
-                    watchEmergency(
-                        emergency.id
+
+                const priority =
+                    getSelectedRadio(
+                        "priority"
+                    ) ||
+                    getEmergencyValue(
+                        "priority"
+                    ) ||
+                    EMERGENCY_CONFIG.defaultPriority;
+
+
+                const patientData = {
+
+                    name:
+                        getEmergencyValue(
+                            "patientName",
+                            "name",
+                            "fullName"
+                        ),
+
+                    age:
+                        getEmergencyValue(
+                            "patientAge",
+                            "age"
+                        ),
+
+                    gender:
+                        getEmergencyValue(
+                            "patientGender",
+                            "gender"
+                        ),
+
+                    bloodGroup:
+                        getEmergencyValue(
+                            "bloodGroup",
+                            "blood_group"
+                        ),
+
+                    allergies:
+                        getEmergencyValue(
+                            "allergies"
+                        ),
+
+                    medicalConditions:
+                        getEmergencyValue(
+                            "medicalConditions",
+                            "medical_conditions"
+                        ),
+
+                    consentGiven:
+                        getChecked(
+                            "medicalConsent"
+                        )
+
+                };
+
+
+                if (
+                    !patientData.name
+                ) {
+
+                    throw new Error(
+                        "Please enter the patient's name."
                     );
                 }
+
+
+                if (!emergencyType) {
+
+                    throw new Error(
+                        "Please select the emergency type."
+                    );
+                }
+
+
+                const consentElement =
+                    document.getElementById(
+                        "medicalConsent"
+                    );
+
+
+                if (
+                    consentElement &&
+                    !consentElement.checked
+                ) {
+
+                    throw new Error(
+                        "Please provide consent to share the patient's emergency medical information."
+                    );
+                }
+
+
+                const description =
+                    getEmergencyValue(
+
+                        "emergencyDetails",
+
+                        "details",
+
+                        "description",
+
+                        "condition"
+
+                    );
+
+
+                const result =
+                    await createEmergency({
+
+                        patient:
+                            patientData,
+
+                        emergencyType:
+                            emergencyType,
+
+                        priority:
+                            priority,
+
+                        description:
+                            description,
+
+                        location:
+                            emergencyLocation
+
+                    });
+
+
+                if (
+                    !result ||
+                    !result.success
+                ) {
+
+                    throw new Error(
+                        "Emergency request could not be created."
+                    );
+                }
+
+
+                let message =
+                    "Emergency request created successfully.";
+
+
+                if (
+                    result.ambulance
+                ) {
+
+                    message =
+                        `Emergency created. Ambulance ${result.ambulance.vehicle_number || ""} has been assigned.`;
+
+                } else {
+
+                    message =
+                        "Emergency created. Searching for an available ambulance.";
+
+                }
+
+
+                if (
+                    result.hospital
+                ) {
+
+                    message +=
+                        ` Destination: ${result.hospital.name}.`;
+                }
+
+
+                showEmergencyMessage(
+
+                    message,
+
+                    "success"
+
+                );
+
+
+                setTimeout(
+
+                    function() {
+
+                        window.location.replace(
+                            EMERGENCY_CONFIG.familyDashboard
+                        );
+
+                    },
+
+                    1200
+
+                );
+
+            } catch (error) {
+
+                console.error(
+                    "Emergency form error:",
+                    error
+                );
+
+
+                showEmergencyMessage(
+
+                    error.message ||
+                    "Unable to submit emergency request."
+
+                );
+
+            } finally {
+
+                if (submitButton) {
+
+                    submitButton.disabled =
+                        false;
+
+                    submitButton.textContent =
+                        submitButton.dataset.originalText ||
+                        "Request Emergency Assistance";
+
+                }
+
             }
-        );
-    }
+
+        }
+
+    );
 }
 
 
 /* =========================================================
-   PUBLIC API
+   INITIALIZATION
+   ========================================================= */
+
+document.addEventListener(
+
+    "DOMContentLoaded",
+
+    function() {
+
+        setupEmergencyForm();
+
+        setupLocationButton();
+
+        setupManualLocationInputs();
+
+
+        if (
+            window.location.pathname
+                .toLowerCase()
+                .includes(
+                    "emergency.html"
+                )
+        ) {
+
+            getEmergencyLocation()
+
+                .then(
+
+                    function(location) {
+
+                        console.log(
+                            "Emergency location detected:",
+                            location
+                        );
+
+                    }
+
+                )
+
+                .catch(
+
+                    function(error) {
+
+                        console.warn(
+                            "Automatic location detection failed:",
+                            error
+                        );
+
+                        updateLocationUI();
+
+                    }
+
+                );
+
+
+            prefillEmergencyPatient()
+
+                .catch(
+
+                    function(error) {
+
+                        console.warn(
+                            "Patient prefill skipped:",
+                            error
+                        );
+
+                    }
+
+                );
+
+        }
+
+    }
+
+);
+
+
+/* =========================================================
+   PUBLIC RESQ-ROUTE EMERGENCY API
    ========================================================= */
 
 window.resqEmergency = {
@@ -1693,86 +3044,27 @@ window.resqEmergency = {
     updateStatus:
         updateEmergencyStatus,
 
+    addEvent:
+        createEmergencyEvent,
+
+    notify:
+        createEmergencyNotification,
+
+    notifyParties:
+        notifyEmergencyParties,
+
+    findAmbulance:
+        findAvailableAmbulance,
+
+    findHospital:
+        findSuitableHospital,
+
     calculateDistance:
-        function(
-            lat1,
-            lng1,
-            lat2,
-            lng2
-        ) {
+        calculateDistance
 
-            if (
-                !validCoords(
-                    lat1,
-                    lng1
-                ) ||
-                !validCoords(
-                    lat2,
-                    lng2
-                )
-            ) {
-
-                return Infinity;
-            }
-
-
-            const earthRadius =
-                6371;
-
-
-            const dLat =
-                (
-                    Number(lat2) -
-                    Number(lat1)
-                ) *
-                Math.PI /
-                180;
-
-
-            const dLng =
-                (
-                    Number(lng2) -
-                    Number(lng1)
-                ) *
-                Math.PI /
-                180;
-
-
-            const a =
-                Math.sin(
-                    dLat / 2
-                ) ** 2 +
-
-                Math.cos(
-                    Number(lat1) *
-                    Math.PI /
-                    180
-                ) *
-
-                Math.cos(
-                    Number(lat2) *
-                    Math.PI /
-                    180
-                ) *
-
-                Math.sin(
-                    dLng / 2
-                ) ** 2;
-
-
-            return (
-                earthRadius *
-                2 *
-                Math.atan2(
-                    Math.sqrt(a),
-                    Math.sqrt(1 - a)
-                )
-            );
-        }
 };
 
 
-document.addEventListener(
-    "DOMContentLoaded",
-    initEmergencyPage
+console.log(
+    "ResQ-Route emergency.js loaded."
 );
