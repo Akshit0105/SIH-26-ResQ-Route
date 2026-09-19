@@ -534,51 +534,6 @@
       }
 
       /* =========================
-           RESTORE FORM DATA FROM URL
-           ========================== */
-
-      function prefillEmergencyFormFromUrl() {
-        const params = new URLSearchParams(window.location.search);
-
-        const values = {
-          patientName: params.get("patientName"),
-          patientPhone: params.get("patientPhone"),
-          patientAge: params.get("patientAge"),
-          patientSex: params.get("patientSex") || params.get("patientGender"),
-          emergencyType: params.get("emergencyType"),
-          patientCondition: params.get("patientCondition"),
-          description: params.get("description") || params.get("details"),
-        };
-
-        Object.entries(values).forEach(([id, value]) => {
-          if (value === null || value === "") return;
-
-          const element = document.getElementById(id);
-          if (element) {
-            element.value = value;
-            element.dispatchEvent(new Event("input", { bubbles: true }));
-            element.dispatchEvent(new Event("change", { bubbles: true }));
-          }
-        });
-
-        const priority = params.get("priority");
-        if (priority) {
-          const priorityInput = document.querySelector(
-            'input[name="priority"][value="' + CSS.escape(priority) + '"]'
-          );
-          if (priorityInput) {
-            priorityInput.checked = true;
-            priorityInput.dispatchEvent(new Event("change", { bubbles: true }));
-          }
-        }
-      }
-
-      // The page is sometimes opened with patient details in the query string.
-      // Restore those values immediately so a browser refresh does not make
-      // the form appear empty while the URL still contains the data.
-      prefillEmergencyFormFromUrl();
-
-      /* =========================
            STATUS MESSAGE
         ========================== */
 
@@ -1227,6 +1182,52 @@
       const latitudeInput = document.getElementById("latitude");
 
       const longitudeInput = document.getElementById("longitude");
+
+      /* =========================
+           RESTORE FORM DATA FROM URL
+           ========================== */
+
+      function prefillEmergencyFormFromUrl() {
+        const params = new URLSearchParams(window.location.search);
+
+        const values = {
+          patientName: params.get("patientName"),
+          patientPhone: params.get("patientPhone"),
+          patientAge: params.get("patientAge"),
+          patientSex: params.get("patientSex") || params.get("patientGender"),
+          emergencyType: params.get("emergencyType"),
+          patientCondition: params.get("patientCondition"),
+          description: params.get("description") || params.get("details"),
+        };
+
+        Object.entries(values).forEach(([id, value]) => {
+          if (value === null || value === "") return;
+
+          const element = document.getElementById(id);
+          if (element) {
+            element.value = value;
+            element.dispatchEvent(new Event("input", { bubbles: true }));
+            element.dispatchEvent(new Event("change", { bubbles: true }));
+          }
+        });
+
+        const priority = params.get("priority");
+        if (priority) {
+          const priorityInput = document.querySelector(
+            'input[name="priority"][value="' + CSS.escape(priority) + '"]'
+          );
+          if (priorityInput) {
+            priorityInput.checked = true;
+            priorityInput.dispatchEvent(new Event("change", { bubbles: true }));
+          }
+        }
+      }
+
+      // The page is sometimes opened with patient details in the query string.
+      // Restore those values immediately so a browser refresh does not make
+      // the form appear empty while the URL still contains the data.
+      prefillEmergencyFormFromUrl();
+
 
       /* =========================
            STATUS MESSAGE
