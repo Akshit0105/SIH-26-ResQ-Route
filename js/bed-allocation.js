@@ -39,9 +39,6 @@
         confirmationSeconds: 90,
 
         activeStatuses: [
-            "REPORTED",
-            "DISPATCHING",
-            "ASSIGNED",
             "DRIVER_ACCEPTED",
             "EN_ROUTE_TO_PATIENT",
             "ARRIVED_AT_PATIENT",
@@ -279,6 +276,8 @@
 
     async function loadEmergencies() {
 
+        const freshCutoff = new Date(Date.now() - (10 * 60 * 1000)).toISOString();
+
         const result =
             await state.db
                 .from("emergencies")
@@ -303,6 +302,20 @@
                 .eq(
                     "hospital_id",
                     state.hospitalId
+                )
+                .gte(
+                    "created_at",
+                    freshCutoff
+                )
+                .not(
+                    "ambulance_id",
+                    "is",
+                    null
+                )
+                .not(
+                    "driver_id",
+                    "is",
+                    null
                 )
                 .not(
                     "status",

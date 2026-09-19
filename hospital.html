@@ -372,26 +372,6 @@
             color: white;
         }
 
-        .incoming-request-btn.complete {
-            background: #172033;
-            color: white;
-            border-color: #172033;
-        }
-
-        .incoming-request-btn.complete:hover {
-            background: #29344a;
-            color: white;
-            border-color: #29344a;
-        }
-
-        .incoming-request-btn:disabled {
-            opacity: .5;
-            cursor: not-allowed;
-            border-color: #dce2ea;
-            color: #8a94a3;
-            background: #f8fafc;
-        }
-
         .incoming-request-empty {
             padding: 32px 20px;
             text-align: center;
@@ -2807,16 +2787,14 @@
             <section class="operations-section" id="incomingSection">
                 <div class="section-toolbar">
                     <div><h2>Incoming Ambulances</h2><p>Live ambulances transporting registered emergency patients to this hospital.</p></div>
-                    <div class="live-counter"><span></span> 03 INCOMING</div>
+                    <div class="live-counter"><span></span> <span id="incomingCount">0</span> INCOMING</div>
                 </div>
 
                 <div class="data-table-wrap">
                     <table class="data-table">
                         <thead><tr><th>Ambulance</th><th>Patient</th><th>Driver</th><th>ETA</th><th>Distance</th><th>Priority</th></tr></thead>
-                        <tbody>
-                            <tr><td class="table-patient">HR-26-4582</td><td>Rahul Sharma</td><td>Assigned Driver</td><td>08 min</td><td>7.8 km</td><td><span class="status-pill red">CRITICAL</span></td></tr>
-                            <tr><td class="table-patient">PB10AB1234</td><td>Aman Singh</td><td>Harpreet Singh</td><td>14 min</td><td>11.2 km</td><td><span class="status-pill orange">HIGH</span></td></tr>
-                            <tr><td class="table-patient">DL01C1234</td><td>Simran Kaur</td><td>Manpreet Gill</td><td>22 min</td><td>16.4 km</td><td><span class="status-pill orange">MEDIUM</span></td></tr>
+                        <tbody id="incomingAmbulancesBody">
+                            <tr><td colspan="6" style="text-align:center;color:#7b8595;padding:24px;">Waiting for a real ambulance request...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -2859,10 +2837,7 @@
             <div class="form-group">
                 <label for="allocationPatient">Emergency Patient</label>
                 <select id="allocationPatient">
-                    <option value="Rahul Sharma">Rahul Sharma • RQ-2026-1048</option>
-                    <option value="Aman Singh">Aman Singh • RQ-2026-1044</option>
-                    <option value="Simran Kaur">Simran Kaur • RQ-2026-1041</option>
-                    <option value="Karan Mehta">Karan Mehta • RQ-2026-1037</option>
+                    <option value="">No active emergency patient</option>
                 </select>
             </div>
 
@@ -5357,7 +5332,10 @@
             .from("emergencies")
             .select("id,patient_id,emergency_type,priority,status,patients!inner(user_id,name)")
             .eq("hospital_id", hospitalId)
+            .gte("created_at", getFreshEmergencyCutoff())
             .not("patients.user_id", "is", null)
+            .not("ambulance_id", "is", null)
+            .not("driver_id", "is", null)
             .not("status", "in", "(COMPLETED,CANCELLED)")
             .order("created_at", { ascending: false });
         if (response.error) throw response.error;
@@ -5732,79 +5710,31 @@
                         >
                             PREPARE ER
                         </button>
-
-                        <button
-                            class="incoming-request-btn complete"
-                            type="button"
-                            data-incoming-patient="${escapeHtml(name)}"
-                            data-incoming-request-id="${escapeHtml(emergencyId)}"
-                            data-incoming-action="complete"
-                            ${String(emergency.status || "").toUpperCase() !== "ARRIVED_AT_HOSPITAL" ? "disabled title=\"Available after ambulance arrival at hospital\"" : ""}
-                        >
-                            ${String(emergency.status || "").toUpperCase() === "ARRIVED_AT_HOSPITAL" ? "COMPLETE CASE" : "AWAIT ARRIVAL"}
-                        </button>
                     </div>
                 </div>
             `;
         }).join("");
 
         list.querySelectorAll("[data-incoming-patient]").forEach(button => {
-            button.addEventListener("click", async function () {
+            button.addEventListener("click", function () {
                 const patientName = this.dataset.incomingPatient || "";
                 const requestId = this.dataset.incomingRequestId || "";
-                const action = this.dataset.incomingAction || "view";
 
                 /*
-                 * COMPLETE CASE -> update the real emergency record to
-                 * COMPLETED through the shared emergency service.
-                 * The hospital realtime listener will then reload this
-                 * list and the completed case will disappear automatically
-                 * because completed emergencies are not active requests.
+                 * VIEW REQUEST -> open the real Emergency Patients page.
+                 * The emergency/patient identifiers are passed along so the
+                 * next page can use them if patient-specific routing is added.
                  */
-                if (action === "complete") {
-                    if (!requestId || this.disabled) return;
+                if (this.dataset.incomingAction !== "prepare") {
+                    let url =
+                        "emergency-patients.html?patient=" +
+                        encodeURIComponent(patientName);
 
-                    const confirmed = window.confirm(
-                        `Mark the emergency for ${patientName || "this patient"} as completed?\n\n` +
-                        "This will close the active hospital request and remove it from the incoming queue."
-                    );
-
-                    if (!confirmed) return;
-
-                    const button = this;
-                    button.disabled = true;
-                    button.textContent = "COMPLETING...";
-
-                    try {
-                        if (
-                            !window.resqEmergency ||
-                            typeof window.resqEmergency.updateStatus !== "function"
-                        ) {
-                            throw new Error("Emergency status service is not available.");
-                        }
-
-                        const success = await window.resqEmergency.updateStatus(
-                            requestId,
-                            "COMPLETED",
-                            "Emergency case completed by the hospital."
-                        );
-
-                        if (!success) {
-                            throw new Error("The emergency status could not be updated.");
-                        }
-
-                        await loadIncomingPatientRequests();
-                        await loadHospitalEmergencyPatientsPreview();
-                    } catch (error) {
-                        console.error("Hospital emergency completion error:", error);
-                        alert(
-                            "Unable to complete this emergency.\n\n" +
-                            (error?.message || "Please try again.")
-                        );
-                        button.disabled = false;
-                        button.textContent = "COMPLETE CASE";
+                    if (requestId) {
+                        url += "&emergency=" + encodeURIComponent(requestId);
                     }
 
+                    window.location.href = url;
                     return;
                 }
 
@@ -5813,30 +5743,12 @@
                  * Staff can then activate the appropriate response team
                  * for this incoming patient.
                  */
-                if (action === "prepare") {
-                    showSection("teams");
+                showSection("teams");
 
-                    const teamsSection = document.getElementById("teamsSection");
-                    if (teamsSection) {
-                        teamsSection.scrollIntoView({ behavior: "smooth", block: "start" });
-                    }
-                    return;
+                const teamsSection = document.getElementById("teamsSection");
+                if (teamsSection) {
+                    teamsSection.scrollIntoView({ behavior: "smooth", block: "start" });
                 }
-
-                /*
-                 * VIEW REQUEST -> open the real Emergency Patients page.
-                 * The emergency/patient identifiers are passed along so the
-                 * next page can use them if patient-specific routing is added.
-                 */
-                let url =
-                    "emergency-patients.html?patient=" +
-                    encodeURIComponent(patientName);
-
-                if (requestId) {
-                    url += "&emergency=" + encodeURIComponent(requestId);
-                }
-
-                window.location.href = url;
             });
         });
     }
@@ -5846,39 +5758,69 @@
         if (!container || !hospitalId || !supabaseClient) return;
 
         try {
-            const response = await supabaseClient
-                .from("emergencies")
-                .select(`
-                    id,
-                    patient_id,
-                    ambulance_id,
-                    emergency_type,
-                    priority,
-                    status,
-                    created_at,
-                    updated_at,
-                    patients!inner (
-                        id,
-                        user_id,
-                        name,
-                        age,
-                        gender,
-                        blood_group
-                    )
-                `)
-                .eq("hospital_id", hospitalId)
-                .not("ambulance_id", "is", null)
-                .not("patients.user_id", "is", null)
-                .in("status", [
-                    "DRIVER_ACCEPTED",
-                    "EN_ROUTE_TO_PATIENT",
-                    "ARRIVED_AT_PATIENT",
-                    "PATIENT_ONBOARD",
-                    "EN_ROUTE_TO_HOSPITAL",
-                    "ARRIVED_AT_HOSPITAL"
-                ])
-                .order("created_at", { ascending: false })
-                .limit(6);
+            const response =
+    await supabaseClient
+        .from("emergencies")
+        .select(`
+            id,
+            patient_id,
+            requester_id,
+            ambulance_id,
+            hospital_id,
+            emergency_type,
+            priority,
+            status,
+            created_at,
+            updated_at,
+
+            patients (
+                id,
+                user_id,
+                name,
+                age,
+                gender,
+                blood_group
+            ),
+
+            ambulances (
+                id,
+                vehicle_number,
+                driver_id,
+                status
+            )
+        `)
+
+        .eq(
+            "hospital_id",
+            hospitalId
+        )
+
+        .not(
+            "ambulance_id",
+            "is",
+            null
+        )
+
+        .in(
+            "status",
+            [
+                "DRIVER_ACCEPTED",
+                "EN_ROUTE_TO_PATIENT",
+                "ARRIVED_AT_PATIENT",
+                "PATIENT_ONBOARD",
+                "EN_ROUTE_TO_HOSPITAL",
+                "ARRIVED_AT_HOSPITAL"
+            ]
+        )
+
+        .order(
+            "created_at",
+            {
+                ascending: false
+            }
+        )
+
+        .limit(6);
 
             if (response.error) throw response.error;
 
@@ -5960,13 +5902,47 @@
         }
     }
 
+    function getFreshEmergencyCutoff() {
+        // Hide stale/test emergencies. A real request created during the demo
+        // is visible for 10 minutes and is then no longer treated as incoming.
+        return new Date(Date.now() - (10 * 60 * 1000)).toISOString();
+    }
+
     async function loadIncomingPatientRequests() {
-        const list = document.getElementById("incomingRequestList");
 
-        if (!list || !hospitalId || !supabaseClient) return;
+    const list =
+        document.getElementById("incomingRequestList");
 
-        try {
-            const response = await supabaseClient
+    if (
+        !list ||
+        !hospitalId ||
+        !supabaseClient
+    ) {
+        return;
+    }
+
+    try {
+
+        /*
+         * =====================================================
+         * LOAD REAL EMERGENCIES
+         * =====================================================
+         *
+         * IMPORTANT:
+         *
+         * We do NOT use patients.user_id as a filter here.
+         *
+         * The emergency itself is already linked to:
+         *     patient_id
+         *     requester_id
+         *     ambulance_id
+         *     hospital_id
+         *
+         * The ambulance assignment is the important handoff.
+         */
+
+        const response =
+            await supabaseClient
                 .from("emergencies")
                 .select(`
                     id,
@@ -5981,7 +5957,8 @@
                     longitude,
                     created_at,
                     updated_at,
-                    patients!inner (
+
+                    patients (
                         id,
                         user_id,
                         name,
@@ -5992,49 +5969,166 @@
                         medical_conditions,
                         consent_given
                     ),
+
                     ambulances (
                         id,
                         vehicle_number,
+                        driver_id,
                         status
                     )
                 `)
-                .eq("hospital_id", hospitalId)
-                .not("ambulance_id", "is", null)
-                .not("patients.user_id", "is", null)
-                .in("status", [
-                    "DRIVER_ACCEPTED",
-                    "EN_ROUTE_TO_PATIENT",
-                    "ARRIVED_AT_PATIENT",
-                    "PATIENT_ONBOARD",
-                    "EN_ROUTE_TO_HOSPITAL",
-                    "ARRIVED_AT_HOSPITAL"
-                ])
-                .order("created_at", { ascending: false });
 
-            if (response.error) {
-                throw response.error;
-            }
+                /*
+                 * Only emergencies coming to THIS hospital.
+                 */
+                .eq(
+                    "hospital_id",
+                    hospitalId
+                )
 
-            const requests = response.data || [];
+                /*
+                 * Driver/ambulance must have accepted the request.
+                 * This prevents random unassigned emergencies.
+                 */
+                .not(
+                    "ambulance_id",
+                    "is",
+                    null
+                )
 
-            /*
-             * Render only real Supabase emergency records.
-             * No demo/fallback patients are generated here.
-             */
-            renderIncomingRequests(requests);
+                /*
+                 * These are the states that belong on the
+                 * hospital dashboard.
+                 *
+                 * ARRIVED_AT_HOSPITAL is deliberately included.
+                 *
+                 * COMPLETED is deliberately NOT included.
+                 */
+                .in(
+                    "status",
+                    [
+                        "DRIVER_ACCEPTED",
+                        "EN_ROUTE_TO_PATIENT",
+                        "ARRIVED_AT_PATIENT",
+                        "PATIENT_ONBOARD",
+                        "EN_ROUTE_TO_HOSPITAL",
+                        "ARRIVED_AT_HOSPITAL"
+                    ]
+                )
 
-        } catch (error) {
-            console.error("Incoming patient request loading error:", error);
+                .order(
+                    "created_at",
+                    {
+                        ascending: false
+                    }
+                );
 
-            /*
-             * Never replace a database failure with fake emergency
-             * requests. An empty list is safer than displaying a
-             * patient who does not actually exist.
-             */
-            renderIncomingRequests([]);
+
+        /*
+         * =====================================================
+         * DATABASE ERROR
+         * =====================================================
+         */
+
+        if (response.error) {
+
+            console.error(
+                "Hospital emergency query failed:",
+                response.error
+            );
+
+            list.innerHTML = `
+                <div
+                    class="incoming-request-empty"
+                    style="
+                        color:#c72535;
+                        border-color:#f5c2c7;
+                        background:#fff5f5;
+                    "
+                >
+                    <strong>
+                        Unable to load emergency requests
+                    </strong>
+
+                    <div style="
+                        margin-top:8px;
+                        font-size:11px;
+                        color:#7b8595;
+                    ">
+                        ${escapeHtml(
+                            response.error.message ||
+                            "Supabase query failed."
+                        )}
+                    </div>
+                </div>
+            `;
+
+            return;
         }
-    }
 
+
+        /*
+         * =====================================================
+         * REAL DATABASE RESULTS ONLY
+         * =====================================================
+         */
+
+        const requests =
+            response.data || [];
+
+
+        console.log(
+            "Hospital emergency requests:",
+            requests
+        );
+
+
+        /*
+         * =====================================================
+         * RENDER
+         * =====================================================
+         */
+
+        renderIncomingRequests(
+            requests
+        );
+
+
+    } catch (error) {
+
+        console.error(
+            "Incoming patient request loading error:",
+            error
+        );
+
+
+        list.innerHTML = `
+            <div
+                class="incoming-request-empty"
+                style="
+                    color:#c72535;
+                    border-color:#f5c2c7;
+                    background:#fff5f5;
+                "
+            >
+                <strong>
+                    Unable to load emergency requests
+                </strong>
+
+                <div style="
+                    margin-top:8px;
+                    font-size:11px;
+                    color:#7b8595;
+                ">
+                    ${escapeHtml(
+                        error.message ||
+                        "Unknown error."
+                    )}
+                </div>
+            </div>
+        `;
+    }
+}
 
     /* =====================================================
        REALTIME EMERGENCY SYNCHRONIZATION
@@ -6612,104 +6706,17 @@
     }
 
     async function ensurePrototypePatientsAndVitals() {
-        const db = window.supabaseClient;
-        const userResult = await db.auth.getUser();
-        const user = userResult?.data?.user;
-        if (!user) return;
-
-        const emergencyResult = await db.from("emergencies")
-            .select("id,patient_id,emergency_type,priority,status,patients(id,name,age,gender,blood_group,allergies,medical_conditions,consent_given)")
-            .eq("hospital_id", hospitalId)
-            .not("patients.user_id", "is", null)
-            .not("status", "in", "(COMPLETED,CANCELLED)");
-
-        if (emergencyResult.error) {
-            console.warn("Prototype emergency lookup skipped:", emergencyResult.error);
-            return;
-        }
-
-        let emergencies = emergencyResult.data || [];
-
-        for (const demo of PROTOTYPE_PATIENTS) {
-            let emergency = emergencies.find(e => String(e.patients?.name || "").toLowerCase() === demo.name.toLowerCase());
-            let patientId = emergency?.patient_id || null;
-
-            if (!patientId) {
-                const patientLookup = await db.from("patients")
-                    .select("id,name,age,gender,blood_group,allergies,medical_conditions,consent_given")
-                    .eq("user_id", user.id)
-                    .eq("name", demo.name)
-                    .limit(1);
-
-                if (!patientLookup.error && patientLookup.data?.[0]) patientId = patientLookup.data[0].id;
-            }
-
-            if (!patientId) {
-                const patientInsert = await db.from("patients").insert({
-                    user_id: user.id,
-                    name: demo.name,
-                    age: demo.age,
-                    gender: demo.gender,
-                    blood_group: demo.blood_group,
-                    allergies: demo.allergies,
-                    medical_conditions: demo.medical_conditions,
-                    consent_given: true,
-                    consent_timestamp: new Date().toISOString()
-                }).select("id,name,age,gender,blood_group,allergies,medical_conditions,consent_given").single();
-
-                if (patientInsert.error) {
-                    console.warn("Prototype patient seed skipped:", demo.name, patientInsert.error);
-                    continue;
-                }
-                patientId = patientInsert.data.id;
-            }
-
-            if (!emergency) {
-                const emergencyInsert = await db.from("emergencies").insert({
-                    patient_id: patientId,
-                    requester_id: user.id,
-                    emergency_type: demo.emergency_type,
-                    priority: demo.priority,
-                    latitude: 30.9010,
-                    longitude: 75.8573,
-                    hospital_id: hospitalId,
-                    status: "ARRIVED_AT_HOSPITAL"
-                }).select("id,patient_id,emergency_type,priority,status,created_at,updated_at,patients(id,name,age,gender,blood_group,allergies,medical_conditions,consent_given)").single();
-
-                if (emergencyInsert.error) {
-                    console.warn("Prototype emergency seed skipped:", demo.name, emergencyInsert.error);
-                    continue;
-                }
-                emergency = emergencyInsert.data;
-                emergencies.push(emergency);
-            }
-
-            const vitalCheck = await db.from("patient_vitals")
-                .select("id")
-                .eq("emergency_id", emergency.id)
-                .limit(1);
-
-            if (!vitalCheck.error && !(vitalCheck.data || []).length) {
-                const vitalInsert = await db.from("patient_vitals").insert({
-                    emergency_id: emergency.id,
-                    heart_rate: demo.heart_rate,
-                    spo2: demo.spo2,
-                    blood_pressure: demo.blood_pressure,
-                    temperature: demo.temperature,
-                    ecg_status: demo.ecg_status
-                });
-                if (vitalInsert.error) console.warn("Prototype vital seed skipped:", demo.name, vitalInsert.error);
-            }
-        }
+        // Disabled for evaluation: do not seed fake emergency patients.
+        return [];
     }
 
     async function ensurePrototypeData() {
+        // Evaluation mode: never create demo patients, demo emergencies,
+        // or fake vitals. Only real authenticated requests may appear.
         try {
             await ensurePrototypeBeds();
-            await ensurePrototypePatientsAndVitals();
-            console.log("ResQ-Route prototype data check completed.");
         } catch (error) {
-            console.warn("Prototype data setup did not fully complete:", error);
+            console.warn("Bed setup skipped:", error);
         }
     }
 
@@ -7122,6 +7129,8 @@ document.addEventListener("DOMContentLoaded", function () {
             .select(`
                 id,
                 patient_id,
+                ambulance_id,
+                driver_id,
                 emergency_type,
                 priority,
                 status,
@@ -7143,6 +7152,7 @@ document.addEventListener("DOMContentLoaded", function () {
             `)
             .eq("hospital_id", hospitalId)
             .not("patients.user_id", "is", null)
+            .not("driver_id", "is", null)
             .not("status", "in", "(COMPLETED,CANCELLED)")
             .order("created_at", { ascending: false });
 
@@ -7661,20 +7671,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 getEmergencyEvents(emergency.id)
             ]);
 
-            if (!vitals) {
-                const demo = PROTOTYPE_PATIENTS.find(item => String(item.name).toLowerCase() === String(emergency.patients?.name || "").toLowerCase());
-                if (demo) {
-                    vitals = {
-                        heart_rate: demo.heart_rate,
-                        spo2: demo.spo2,
-                        blood_pressure: demo.blood_pressure,
-                        temperature: demo.temperature,
-                        ecg_status: demo.ecg_status,
-                        recorded_at: new Date().toISOString()
-                    };
-                }
-            }
-
+            // Never invent patient vitals. If the ambulance has not written
+            // vitals yet, the monitoring workspace keeps those fields blank.
             renderPatientDashboard(emergency, vitals, allocations, events);
 
             // Start live synchronization for this exact emergency.

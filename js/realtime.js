@@ -599,6 +599,17 @@ function handleEmergencyUpdate(
         );
 
 
+    if (
+        typeof window.updateFamilyPatientLocation === "function" &&
+        Number.isFinite(Number(emergency.latitude)) &&
+        Number.isFinite(Number(emergency.longitude))
+    ) {
+        window.updateFamilyPatientLocation(
+            Number(emergency.latitude),
+            Number(emergency.longitude)
+        );
+    }
+
     triggerRealtimeCallbacks(
         "emergency",
         payload
@@ -714,6 +725,13 @@ function handleAmbulanceLocationUpdate(
                 longitude
             );
 
+        }
+
+        if (typeof window.updateFamilyAmbulanceLocation === "function") {
+            window.updateFamilyAmbulanceLocation(
+                latitude,
+                longitude
+            );
         }
     }
 
