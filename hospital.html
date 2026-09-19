@@ -2679,35 +2679,9 @@
                         <a class="small-btn primary" href="emergency-patients.html?v=2" style="text-decoration:none;display:inline-flex;align-items:center;justify-content:center;">VIEW ALL</a>
                     </div>
                     <div class="card-body">
-                        <div class="patient-cards">
-                            <div class="emergency-patient-card">
-                                <div class="patient-card-top">
-                                    <div>
-                                        <div class="patient-card-name">Rahul Sharma</div>
-                                        <div class="patient-card-meta">RQ-2026-1048 • Road Accident • ETA 08 min</div>
-                                    </div>
-                                    <span class="status-pill red">CRITICAL</span>
-                                </div>
-                                <div class="patient-card-details">
-                                    <div class="patient-metric"><span>HEART RATE</span><strong>118 BPM</strong></div>
-                                    <div class="patient-metric"><span>SpO₂</span><strong>91%</strong></div>
-                                    <div class="patient-metric"><span>BLOOD</span><strong>B+</strong></div>
-                                </div>
-                            </div>
-
-                            <div class="emergency-patient-card">
-                                <div class="patient-card-top">
-                                    <div>
-                                        <div class="patient-card-name">Aman Singh</div>
-                                        <div class="patient-card-meta">RQ-2026-1044 • Chest Pain • Treatment in progress</div>
-                                    </div>
-                                    <span class="status-pill orange">HIGH</span>
-                                </div>
-                                <div class="patient-card-details">
-                                    <div class="patient-metric"><span>HEART RATE</span><strong>104 BPM</strong></div>
-                                    <div class="patient-metric"><span>SpO₂</span><strong>95%</strong></div>
-                                    <div class="patient-metric"><span>BLOOD</span><strong>O+</strong></div>
-                                </div>
+                        <div class="patient-cards" id="hospitalEmergencyPatientsPreview">
+                            <div class="incoming-request-empty">
+                                Loading actual emergency patients...
                             </div>
                         </div>
                     </div>
@@ -5781,6 +5755,125 @@
         });
     }
 
+    async function loadHospitalEmergencyPatientsPreview() {
+        const container = document.getElementById("hospitalEmergencyPatientsPreview");
+        if (!container || !hospitalId || !supabaseClient) return;
+
+        try {
+            const response = await supabaseClient
+                .from("emergencies")
+                .select(`
+                    id,
+                    patient_id,
+                    ambulance_id,
+                    emergency_type,
+                    priority,
+                    status,
+                    created_at,
+                    updated_at,
+                    patients!inner (
+                        id,
+                        user_id,
+                        name,
+                        age,
+                        gender,
+                        blood_group
+                    )
+                `)
+                .eq("hospital_id", hospitalId)
+                .not("ambulance_id", "is", null)
+                .not("patients.user_id", "is", null)
+                .in("status", [
+                    "DRIVER_ACCEPTED",
+                    "EN_ROUTE_TO_PATIENT",
+                    "ARRIVED_AT_PATIENT",
+                    "PATIENT_ONBOARD",
+                    "EN_ROUTE_TO_HOSPITAL",
+                    "ARRIVED_AT_HOSPITAL"
+                ])
+                .order("created_at", { ascending: false })
+                .limit(6);
+
+            if (response.error) throw response.error;
+
+            const emergencies = response.data || [];
+
+            if (!emergencies.length) {
+                container.innerHTML = `
+                    <div class="incoming-request-empty">
+                        <strong>No active ambulance requests</strong>
+                        No emergency has been accepted by an ambulance for this hospital.
+                    </div>
+                `;
+                return;
+            }
+
+            const vitalsResults = await Promise.all(
+                emergencies.map(async function (emergency) {
+                    const vitalResponse = await supabaseClient
+                        .from("patient_vitals")
+                        .select("heart_rate,spo2,blood_pressure,recorded_at")
+                        .eq("emergency_id", emergency.id)
+                        .order("recorded_at", { ascending: false })
+                        .limit(1)
+                        .maybeSingle();
+
+                    return vitalResponse.error ? null : vitalResponse.data;
+                })
+            );
+
+            container.innerHTML = emergencies.map(function (emergency, index) {
+                const patient = emergency.patients || {};
+                const vitals = vitalsResults[index] || {};
+                const priority = String(emergency.priority || "medium").toLowerCase();
+                const priorityClass = priority === "critical" ? "red" : priority === "high" ? "orange" : "";
+                const emergencyShortId = String(emergency.id || "").slice(0, 8);
+                const statusLabel = String(emergency.status || "")
+                    .replace(/_/g, " ")
+                    .toLowerCase()
+                    .replace(/\b\w/g, function (c) { return c.toUpperCase(); });
+
+                return `
+                    <div class="emergency-patient-card" data-patient="${escapeHtml(patient.name || "")}">
+                        <div class="patient-card-top">
+                            <div>
+                                <div class="patient-card-name">${escapeHtml(patient.name || "Patient")}</div>
+                                <div class="patient-card-meta">
+                                    Emergency #${escapeHtml(emergencyShortId)} •
+                                    ${escapeHtml(emergency.emergency_type || "Emergency")} •
+                                    ${escapeHtml(statusLabel)}
+                                </div>
+                            </div>
+                            <span class="status-pill ${priorityClass}">${escapeHtml(priority.toUpperCase())}</span>
+                        </div>
+                        <div class="patient-card-details">
+                            <div class="patient-metric"><span>HEART RATE</span><strong>${escapeHtml(vitals.heart_rate != null ? vitals.heart_rate + " BPM" : "Not available")}</strong></div>
+                            <div class="patient-metric"><span>SpO₂</span><strong>${escapeHtml(vitals.spo2 != null ? vitals.spo2 + "%" : "Not available")}</strong></div>
+                            <div class="patient-metric"><span>BLOOD</span><strong>${escapeHtml(patient.blood_group || "Not available")}</strong></div>
+                        </div>
+                    </div>
+                `;
+            }).join("");
+
+            container.querySelectorAll("[data-patient]").forEach(function (card) {
+                card.addEventListener("click", function () {
+                    const patientName = card.dataset.patient || "";
+                    window.location.href =
+                        "emergency-patients.html?v=2&patient=" +
+                        encodeURIComponent(patientName);
+                });
+            });
+        } catch (error) {
+            console.error("Hospital emergency patient preview loading error:", error);
+            container.innerHTML = `
+                <div class="incoming-request-empty">
+                    <strong>Unable to load emergency patients</strong>
+                    Please refresh the dashboard.
+                </div>
+            `;
+        }
+    }
+
     async function loadIncomingPatientRequests() {
         const list = document.getElementById("incomingRequestList");
 
@@ -5820,6 +5913,7 @@
                     )
                 `)
                 .eq("hospital_id", hospitalId)
+                .not("ambulance_id", "is", null)
                 .not("patients.user_id", "is", null)
                 .in("status", [
                     "DRIVER_ACCEPTED",
@@ -5870,6 +5964,7 @@
 
         emergencyRefreshTimer = setTimeout(function () {
             loadIncomingPatientRequests();
+            loadHospitalEmergencyPatientsPreview();
         }, 200);
     }
 
@@ -5970,6 +6065,7 @@
          * There is intentionally no 15-second polling loop.
          */
         loadIncomingPatientRequests();
+        loadHospitalEmergencyPatientsPreview();
         startEmergencyRealtime();
     }
 

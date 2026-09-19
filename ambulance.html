@@ -2506,6 +2506,65 @@
             status.innerHTML = "<strong>" + title + "</strong><span>" + message + "</span>";
         }
 
+        /*
+         * =====================================================
+         * LIVE GPS -> SUPABASE
+         * Writes the ambulance's current GPS position to the
+         * shared ambulance_locations table so the hospital
+         * dashboard can receive the same position in realtime.
+         * =====================================================
+         */
+        let lastLocationUploadAt = 0;
+        const LOCATION_UPLOAD_INTERVAL = 5000;
+
+        async function publishAmbulanceLocation(lat, lng, speed) {
+            if (!acceptedRequestId || !driverAmbulanceId) {
+                return;
+            }
+
+            const now = Date.now();
+
+            // Prevent excessive database writes while keeping the
+            // hospital map effectively live.
+            if (now - lastLocationUploadAt < LOCATION_UPLOAD_INTERVAL) {
+                return;
+            }
+
+            const supabase = window.supabaseClient ||
+                (window.resqRoute && window.resqRoute.supabase);
+
+            if (!supabase) {
+                console.warn("GPS upload skipped: Supabase client unavailable.");
+                return;
+            }
+
+            lastLocationUploadAt = now;
+
+            const payload = {
+                ambulance_id: driverAmbulanceId,
+                emergency_id: acceptedRequestId,
+                latitude: Number(lat),
+                longitude: Number(lng),
+                speed: Number.isFinite(Number(speed)) ? Number(speed) : null,
+                timestamp: new Date().toISOString()
+            };
+
+            try {
+                const result = await supabase
+                    .from("ambulance_locations")
+                    .insert(payload);
+
+                if (result.error) {
+                    console.error("Ambulance GPS upload failed:", result.error);
+                    return;
+                }
+
+                console.log("Ambulance GPS synced:", payload);
+            } catch (error) {
+                console.error("Ambulance GPS upload error:", error);
+            }
+        }
+
         function startLiveLocation() {
             if (!navigator.geolocation) {
                 updateMapStatus("GPS Unavailable", "Browser geolocation is not supported.");
@@ -2520,8 +2579,18 @@
                     const lat = position.coords.latitude;
                     const lng = position.coords.longitude;
                     const accuracy = Math.round(position.coords.accuracy);
+                    const speed = position.coords.speed;
 
-                    driverPosition = { lat: lat, lng: lng, accuracy: accuracy };
+                    driverPosition = {
+                        lat: lat,
+                        lng: lng,
+                        accuracy: accuracy,
+                        speed: speed
+                    };
+
+                    // Once a request is accepted, publish this GPS
+                    // position to Supabase for hospital realtime tracking.
+                    publishAmbulanceLocation(lat, lng, speed);
 
                     ambulanceMarker.setLatLng([lat, lng]);
                     ambulanceMarker.bindPopup(
