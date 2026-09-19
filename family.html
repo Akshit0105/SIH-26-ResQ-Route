@@ -2125,8 +2125,28 @@
 
 
                                 <div
+                                    id="timelineReadyState"
+                                    style="
+                                        padding:32px 20px;
+                                        text-align:center;
+                                        border:1px solid #e4e9ef;
+                                        border-radius:12px;
+                                        background:#f8fbf9;
+                                        color:#172033;
+                                    "
+                                >
+                                    <div style="font-size:34px;margin-bottom:10px;">✓</div>
+                                    <h3 style="font-size:16px;margin-bottom:6px;">Everything is fine</h3>
+                                    <p style="font-size:12px;color:#5f6f82;line-height:1.6;">
+                                        No emergency has been reported. Your dashboard is ready and your location is being monitored for emergency assistance.
+                                    </p>
+                                </div>
+
+
+                                <div
                                     class="timeline"
                                     id="timeline"
+                                    style="display:none;"
                                 >
 
 
@@ -4200,17 +4220,12 @@
         };
 
 
-        const current =
+        const normalizedStatus=String(status||"").toUpperCase();
+        if(!normalizedStatus || order[normalizedStatus]===undefined){
+            return;
+        }
 
-            order[
-                String(
-                    status || ""
-                ).toUpperCase()
-            ]
-
-            ??
-
-            0;
+        const current=order[normalizedStatus];
 
 
         const items =
@@ -4317,6 +4332,11 @@
 
         currentEmergency =
             data;
+
+        const timeline=document.getElementById("timeline");
+        const timelineReadyState=document.getElementById("timelineReadyState");
+        if(timeline)timeline.style.display="block";
+        if(timelineReadyState)timelineReadyState.style.display="none";
 
         setText("emergencyCardTitle","Active Emergency");
 
@@ -5109,6 +5129,19 @@
 
     function resetPreEmergencyUI(){
         currentEmergency=null;
+
+        const timeline=document.getElementById("timeline");
+        const timelineReadyState=document.getElementById("timelineReadyState");
+        if(timeline)timeline.style.display="none";
+        if(timelineReadyState)timelineReadyState.style.display="block";
+
+        document.querySelectorAll("#timeline .timeline-item").forEach(function(item){
+            item.classList.add("pending");
+            const marker=item.querySelector(".timeline-marker");
+            if(marker)marker.style.background="#d9dee6";
+            const time=item.querySelector(".timeline-time");
+            if(time)time.textContent="--:--";
+        });
         setText("emergencyCardTitle","Emergency Ready");
         setText("emergencyStatus","READY");
         setText("emergencyId","No active emergency reported");
@@ -5133,7 +5166,151 @@
     async function prefillEmergencyPersonalDetails(){const client=window.resqRoute?.supabase||window.supabaseClient;if(!client)return;try{const {data:authData}=await client.auth.getUser();const user=authData?.user;if(!user)return;const profileResponse=await client.from("profiles").select("name,email,phone").eq("id",user.id).maybeSingle();const profile=profileResponse.data||{};const patientResponse=await client.from("patients").select("name,age,gender,blood_group,allergies,medical_conditions").eq("user_id",user.id).order("created_at",{ascending:false}).limit(1).maybeSingle();const patient=patientResponse.error?null:patientResponse.data;const values={patientName:patient?.name||profile.name||user.user_metadata?.name||"",patientAge:patient?.age||"",patientGender:patient?.gender||"",bloodGroup:patient?.blood_group||"",allergies:patient?.allergies||"",medicalConditions:patient?.medical_conditions||""};Object.keys(values).forEach(function(id){if($(id))$(id).value=values[id];});}catch(error){console.warn("Could not prefill emergency details:",error);}}
     function openSosModal(){if(currentEmergency)return;const modal=$("sosModal");if(!modal)return;modal.classList.add("open");modal.setAttribute("aria-hidden","false");prefillEmergencyPersonalDetails();requestUserLocationForMap();setTimeout(function(){$("sosDetails")?.focus();},100);}
     function closeSosModal(){const modal=$("sosModal");if(!modal)return;modal.classList.remove("open");modal.setAttribute("aria-hidden","true");}
-    async function submitFamilySos(event){event.preventDefault();const button=$("sosSubmit"),message=$("sosMessage"),type=document.querySelector('input[name="sosEmergencyType"]:checked')?.value||"medical",condition=$("sosCondition")?.value||"Stable",details=$("sosDetails")?.value.trim()||"";if(!details){if(message){message.style.display="block";message.style.background="#fff1f2";message.style.color="#991b1b";message.textContent="Please briefly tell us what happened.";}return;}if(!navigator.geolocation){if(message){message.style.display="block";message.style.background="#fff1f2";message.style.color="#991b1b";message.textContent="Location services are required for emergency dispatch.";}return;}button.disabled=true;button.textContent="Locating you...";try{const location=await new Promise(function(resolve,reject){navigator.geolocation.getCurrentPosition(function(position){resolve({latitude:position.coords.latitude,longitude:position.coords.longitude});},reject,{enableHighAccuracy:true,timeout:15000,maximumAge:0});});await prefillEmergencyPersonalDetails();const patient={name:$("patientName")?.value||"",age:$("patientAge")?.value||"",gender:$("patientGender")?.value||"",bloodGroup:$("bloodGroup")?.value||"",allergies:$("allergies")?.value||"",medicalConditions:$("medicalConditions")?.value||"",consentGiven:true};if(!patient.name)throw new Error("Your account does not have a saved name. Please update your profile first.");if(!window.resqEmergency||typeof window.resqEmergency.create!=="function")throw new Error("Emergency service is not loaded.");button.textContent="Sending emergency request...";const result=await window.resqEmergency.create({patient:patient,emergencyType:type,condition:condition,priority:"high",description:details,location:location});if(!result||!result.success||!result.emergency)throw new Error("Emergency request could not be created.");localStorage.setItem("resq_active_emergency_id",result.emergency.id);localStorage.setItem("resq_emergency_id",result.emergency.id);applyEmergency({...result.emergency,patient:result.patient,ambulance:result.ambulance,hospital:result.hospital,condition:condition,latitude:location.latitude,longitude:location.longitude,patient_latitude:location.latitude,patient_longitude:location.longitude,ambulance_latitude:result.ambulance?.latitude,ambulance_longitude:result.ambulance?.longitude,hospital_latitude:result.hospital?.latitude,hospital_longitude:result.hospital?.longitude});if(message){message.style.display="block";message.style.background="#ecfdf3";message.style.color="#166534";message.textContent=result.ambulance?"Emergency reported. An ambulance has been assigned.":"Emergency reported. We are finding an available ambulance.";}setTimeout(closeSosModal,900);}catch(error){console.error("SOS emergency submission failed:",error);if(message){message.style.display="block";message.style.background="#fff1f2";message.style.color="#991b1b";message.textContent=error?.message||"Unable to send the emergency request.";}button.disabled=false;button.textContent="🚑 Send Emergency Request";}}
+    async function getFamilyProfileForEmergency(){
+        const client = window.resqRoute?.supabase || window.supabaseClient;
+        if(!client) throw new Error("Supabase is not configured.");
+
+        const { data: authData, error: authError } = await client.auth.getUser();
+        if(authError || !authData?.user) throw new Error("Please sign in again before reporting an emergency.");
+
+        const user = authData.user;
+        const { data: profile, error: profileError } = await client
+            .from("profiles")
+            .select("name,email,phone")
+            .eq("id", user.id)
+            .maybeSingle();
+
+        if(profileError) throw profileError;
+
+        const { data: patientProfile, error: patientError } = await client
+            .from("patients")
+            .select("id,name,age,gender,blood_group,allergies,medical_conditions,consent_given")
+            .eq("user_id", user.id)
+            .order("created_at", { ascending:false })
+            .limit(1)
+            .maybeSingle();
+
+        if(patientError) throw patientError;
+
+        const patient = {
+            name: patientProfile?.name || profile?.name || user.user_metadata?.name || "",
+            age: patientProfile?.age ?? null,
+            gender: patientProfile?.gender || null,
+            bloodGroup: patientProfile?.blood_group || null,
+            allergies: patientProfile?.allergies || null,
+            medicalConditions: patientProfile?.medical_conditions || null,
+            consentGiven: true
+        };
+
+        if(!patient.name){
+            throw new Error("No saved patient profile was found. Please complete your profile before using SOS.");
+        }
+
+        return { user, profile: profile || {}, patient, patientProfile: patientProfile || null };
+    }
+
+    async function submitFamilySos(event){
+        event.preventDefault();
+        const button=$("sosSubmit"),message=$("sosMessage"),type=document.querySelector('input[name="sosEmergencyType"]:checked')?.value||"medical",condition=$("sosCondition")?.value||"Stable",details=$("sosDetails")?.value.trim()||"";
+
+        if(!details){
+            if(message){message.style.display="block";message.style.background="#fff1f2";message.style.color="#991b1b";message.textContent="Please briefly tell us what happened.";}
+            return;
+        }
+
+        if(!navigator.geolocation){
+            if(message){message.style.display="block";message.style.background="#fff1f2";message.style.color="#991b1b";message.textContent="Location services are required for emergency dispatch.";}
+            return;
+        }
+
+        button.disabled=true;
+        button.textContent="Loading your profile...";
+
+        try{
+            const location=await new Promise(function(resolve,reject){
+                navigator.geolocation.getCurrentPosition(
+                    function(position){resolve({latitude:position.coords.latitude,longitude:position.coords.longitude});},
+                    reject,
+                    {enableHighAccuracy:true,timeout:15000,maximumAge:0}
+                );
+            });
+
+            /*
+             * Personal/medical information is ALWAYS read from the
+             * authenticated user's saved profile. Nothing typed into
+             * hidden SOS fields is trusted for identity or medical data.
+             */
+            const profileData=await getFamilyProfileForEmergency();
+            const patient=profileData.patient;
+
+            if(!window.resqEmergency||typeof window.resqEmergency.create!=="function"){
+                throw new Error("Emergency service is not loaded.");
+            }
+
+            button.textContent="Sending emergency request...";
+
+            /*
+             * Use the exact same emergency creation API as emergency.html.
+             * This creates a normal emergencies record, assigns an available
+             * ambulance when possible, selects a hospital, creates events,
+             * and triggers the existing ambulance/hospital workflow.
+             */
+            const result=await window.resqEmergency.create({
+                patient:patient,
+                emergencyType:type,
+                condition:condition,
+                priority:"high",
+                description:details,
+                location:location
+            });
+
+            if(!result||!result.success||!result.emergency){
+                throw new Error("Emergency request could not be created.");
+            }
+
+            localStorage.setItem("resq_active_emergency_id",result.emergency.id);
+            localStorage.setItem("resq_emergency_id",result.emergency.id);
+
+            applyEmergency({
+                ...result.emergency,
+                patient:result.patient,
+                ambulance:result.ambulance,
+                hospital:result.hospital,
+                condition:condition,
+                description:details,
+                latitude:location.latitude,
+                longitude:location.longitude,
+                patient_latitude:location.latitude,
+                patient_longitude:location.longitude,
+                ambulance_latitude:result.ambulance?.latitude,
+                ambulance_longitude:result.ambulance?.longitude,
+                hospital_latitude:result.hospital?.latitude,
+                hospital_longitude:result.hospital?.longitude
+            });
+
+            if(message){
+                message.style.display="block";
+                message.style.background="#ecfdf3";
+                message.style.color="#166534";
+                message.textContent=result.ambulance
+                    ?"Emergency reported. The request is now available to the assigned ambulance."
+                    :"Emergency reported. The request is now in dispatch and will appear to an available ambulance.";
+            }
+
+            setTimeout(closeSosModal,900);
+
+        }catch(error){
+            console.error("SOS emergency submission failed:",error);
+            if(message){
+                message.style.display="block";
+                message.style.background="#fff1f2";
+                message.style.color="#991b1b";
+                message.textContent=error?.message||"Unable to send the emergency request.";
+            }
+            button.disabled=false;
+            button.textContent="🚑 Send Emergency Request";
+        }
+    }
 
     /* =====================================================
        INITIALIZE
