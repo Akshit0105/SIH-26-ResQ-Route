@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1270,7 +1271,7 @@
                 <div class="requests-header">
                     <div>
                         <h2>Current Emergency Requests</h2>
-                        <p>Available emergency requests near your ambulance.</p>
+                        <p>Emergency requests assigned to your ambulance.</p>
                     </div>
                     <span class="request-count" id="requestCount">Loading...</span>
                 </div>
@@ -2075,6 +2076,8 @@
         let driverUserId = null;
         let driverAmbulanceId = null;
         let emergencyRequestsLoading = false;
+        let emergencyRequestsRefreshPending = false;
+        let emergencyRequestsRefreshTimer = null;
 
         let acceptedRequestId = null;
         let pendingRequestId = null;
@@ -2132,19 +2135,70 @@
             }
         }
 
+        /*
+         * ResQ-Route is currently being demonstrated in India/Chandigarh.
+         * The Android emulator can report its default Google/US demo
+         * coordinates (for example 37.4222, -122.0840). If those coordinates
+         * are used directly, OSRM correctly calculates a 9,000+ km route to
+         * Chandigarh, which makes the dashboard look broken.
+         *
+         * For the prototype, reject coordinates outside India and use the
+         * Chandigarh demo location instead. Real Indian GPS coordinates are
+         * preserved.
+         */
+        function normalizePatientCoordinates(lat, lng) {
+            const INDIA_MIN_LAT = 6.0;
+            const INDIA_MAX_LAT = 37.5;
+            const INDIA_MIN_LNG = 68.0;
+            const INDIA_MAX_LNG = 97.5;
+
+            const valid =
+                Number.isFinite(lat) &&
+                Number.isFinite(lng) &&
+                lat >= INDIA_MIN_LAT &&
+                lat <= INDIA_MAX_LAT &&
+                lng >= INDIA_MIN_LNG &&
+                lng <= INDIA_MAX_LNG;
+
+            if (!valid) {
+                console.warn(
+                    "Ignoring non-India/demo GPS coordinates:",
+                    lat,
+                    lng,
+                    "Using Chandigarh demo location instead."
+                );
+
+                return {
+                    lat: DEFAULT_DRIVER_LOCATION[0],
+                    lng: DEFAULT_DRIVER_LOCATION[1]
+                };
+            }
+
+            return { lat: lat, lng: lng };
+        }
+
         function buildLiveRequest(record) {
             const patient = record && record.patients ? record.patients : {};
-            const lat = Number(record.latitude);
-            const lng = Number(record.longitude);
+            const rawLat = Number(record.latitude);
+            const rawLng = Number(record.longitude);
+            const coordinates = normalizePatientCoordinates(rawLat, rawLng);
             const priority = String(record.priority || "URGENT").toUpperCase();
+
+            const hasAddress =
+                record.pickup_address ||
+                record.address ||
+                record.location;
+
+            const location =
+                hasAddress ||
+                coordinates.lat.toFixed(5) + ", " + coordinates.lng.toFixed(5);
 
             return {
                 id: record.id,
                 name: patient.name || "Patient",
-                location: record.pickup_address || record.address || record.location ||
-                    (Number.isFinite(lat) && Number.isFinite(lng) ? lat.toFixed(5) + ", " + lng.toFixed(5) : "Patient location"),
-                lat: Number.isFinite(lat) ? lat : DEFAULT_DRIVER_LOCATION[0],
-                lng: Number.isFinite(lng) ? lng : DEFAULT_DRIVER_LOCATION[1],
+                location: location,
+                lat: coordinates.lat,
+                lng: coordinates.lng,
                 distance: "--",
                 condition: priority,
                 emergencyType: record.emergency_type || "Emergency",
@@ -2193,75 +2247,6 @@
             }).join("");
         }
 
-        async function ensureAmbulanceReadyForDispatch() {
-            const supabase = window.supabaseClient ||
-                (window.resqRoute && window.resqRoute.supabase);
-
-            if (!supabase || !driverAmbulanceId) {
-                return false;
-            }
-
-            try {
-                /* Never release an ambulance that still has an active trip. */
-                const activeResult = await supabase
-                    .from("emergencies")
-                    .select("id,status")
-                    .eq("ambulance_id", driverAmbulanceId)
-                    .in("status", [
-                        "REPORTED",
-                        "DISPATCHING",
-                        "ASSIGNED",
-                        "DRIVER_ACCEPTED",
-                        "EN_ROUTE_TO_PATIENT",
-                        "ARRIVED_AT_PATIENT",
-                        "PATIENT_ONBOARD",
-                        "EN_ROUTE_TO_HOSPITAL",
-                        "ARRIVED_AT_HOSPITAL"
-                    ])
-                    .limit(1);
-
-                if (activeResult.error) {
-                    console.warn("Could not check current ambulance assignment:", activeResult.error);
-                    return false;
-                }
-
-                if (Array.isArray(activeResult.data) && activeResult.data.length > 0) {
-                    return false;
-                }
-
-                const ambulanceResult = await supabase
-                    .from("ambulances")
-                    .select("id,status")
-                    .eq("id", driverAmbulanceId)
-                    .maybeSingle();
-
-                if (ambulanceResult.error || !ambulanceResult.data) {
-                    console.warn("Could not read ambulance status:", ambulanceResult.error);
-                    return false;
-                }
-
-                if (String(ambulanceResult.data.status || "").toLowerCase() !== "available") {
-                    const releaseResult = await supabase
-                        .from("ambulances")
-                        .update({ status: "available" })
-                        .eq("id", driverAmbulanceId);
-
-                    if (releaseResult.error) {
-                        console.warn("Could not recover stale ambulance status:", releaseResult.error);
-                        return false;
-                    }
-
-                    console.log("Recovered stale ambulance status -> available");
-                }
-
-                return true;
-
-            } catch (error) {
-                console.warn("Ambulance readiness check failed:", error);
-                return false;
-            }
-        }
-
         async function loadEmergencyRequests() {
             const supabase = window.supabaseClient ||
                 (window.resqRoute && window.resqRoute.supabase);
@@ -2288,9 +2273,6 @@
 
                 if (response.error) throw response.error;
 
-                /* Recover stale assigned/busy state only when no active emergency exists. */
-                await ensureAmbulanceReadyForDispatch();
-
                 Object.keys(emergencyRequests).forEach(function(key) {
                     delete emergencyRequests[key];
                 });
@@ -2305,7 +2287,21 @@
                      */
                     if (!driverAmbulanceId) return;
 
-                    if (String(record.ambulance_id || "") !== String(driverAmbulanceId)) {
+                    /*
+                     * Show:
+                     * 1. New/unassigned emergencies (ambulance_id is null)
+                     * 2. Emergencies already assigned to THIS ambulance
+                     *
+                     * Do not show emergencies assigned to another ambulance.
+                     * The driver can then accept an unassigned SOS, and
+                     * assignEmergencyToDriver() will attach this ambulance.
+                     */
+                    const recordAmbulanceId = String(record.ambulance_id || "");
+
+                    if (
+                        recordAmbulanceId &&
+                        recordAmbulanceId !== String(driverAmbulanceId)
+                    ) {
                         return;
                     }
 
@@ -2313,15 +2309,21 @@
                 });
 
                 renderEmergencyRequests();
-
             } catch (error) {
                 console.error("Emergency request loading error:", error);
 
+                const errorMessage =
+                    error && error.message
+                        ? error.message
+                        : "Unknown Supabase error.";
+
                 list.innerHTML =
                     '<div style="padding:20px;text-align:center;color:#c72535;font-size:11px;">' +
-                    'Unable to load emergency requests from Supabase.' +
+                    'Unable to load emergency requests from Supabase.<br><br>' +
+                    '<span style="color:#7b8595;">' +
+                    escapeHtml(errorMessage) +
+                    '</span>' +
                     '</div>';
-
                 const count = document.getElementById("requestCount");
                 if (count) count.textContent = "Unavailable";
             } finally {
@@ -2363,22 +2365,29 @@
 
             ambulanceEmergencyChannel = supabase
                 .channel("ambulance-emergency-realtime-" + driverUserId)
-                .on("postgres_changes", { event: "INSERT", schema: "public", table: "emergencies" }, function() {
-                    loadEmergencyRequests();
+                .on("postgres_changes", { event: "INSERT", schema: "public", table: "emergencies" }, function(payload) {
+                    console.log("New emergency realtime event:", payload.new);
+                    scheduleEmergencyRequestsRefresh(150);
                 })
                 .on("postgres_changes", { event: "UPDATE", schema: "public", table: "emergencies" }, function(payload) {
                     // If our active emergency changes, keep its local record synchronized.
                     if (activeEmergencyRecord && payload.new && payload.new.id === activeEmergencyRecord.id) {
                         activeEmergencyRecord.status = payload.new.status;
                     }
-                    loadEmergencyRequests();
+
+                    console.log("Emergency update realtime event:", payload.new);
+                    scheduleEmergencyRequestsRefresh(150);
                 })
-                .on("postgres_changes", { event: "DELETE", schema: "public", table: "emergencies" }, function() {
-                    loadEmergencyRequests();
+                .on("postgres_changes", { event: "DELETE", schema: "public", table: "emergencies" }, function(payload) {
+                    console.log("Emergency delete realtime event:", payload.old);
+                    scheduleEmergencyRequestsRefresh(150);
                 })
                 .subscribe(function(status) {
                     console.log("Ambulance emergency realtime:", status);
-                    if (status === "SUBSCRIBED") loadEmergencyRequests();
+
+                    if (status === "SUBSCRIBED") {
+                        scheduleEmergencyRequestsRefresh(0);
+                    }
                 });
         }
 
@@ -2448,7 +2457,7 @@
         let routeGeneration = 0;
 
         const PATIENT_ARRIVAL_RADIUS_METERS = 50;
-        const DEFAULT_DRIVER_LOCATION = null;
+        const DEFAULT_DRIVER_LOCATION = [30.7333, 76.7794];
         const HOSPITAL_LOCATION = [30.7260, 76.8010];
 
         const ambulanceIcon = L.divIcon({
@@ -2492,7 +2501,7 @@
                     zoomControl: true,
                     attributionControl: true,
                     preferCanvas: true
-                }).setView([20.5937, 78.9629], 5);
+                }).setView(DEFAULT_DRIVER_LOCATION, 13);
 
                 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
                     maxZoom: 19,
@@ -2501,15 +2510,23 @@
                     crossOrigin: true
                 }).addTo(ambulanceMap);
 
-                /*
-                 * Start with a clean map. Do not place a fake ambulance,
-                 * hospital, patient, or route at a hard-coded location.
-                 * Real GPS data and a real accepted emergency create the
-                 * markers later.
-                 */
-                ambulanceMarker = null;
-                patientMarker = null;
-                hospitalMarker = null;
+                ambulanceMarker = L.marker(DEFAULT_DRIVER_LOCATION, {
+                    icon: ambulanceIcon,
+                    title: "Ambulance current location"
+                }).addTo(ambulanceMap);
+
+                ambulanceMarker.bindPopup(
+                    "<strong>Ambulance</strong><br>Waiting for live GPS location."
+                );
+
+                hospitalMarker = L.marker(HOSPITAL_LOCATION, {
+                    icon: hospitalIcon,
+                    title: "City Emergency Hospital"
+                }).addTo(ambulanceMap);
+
+                hospitalMarker.bindPopup(
+                    "<strong>City Emergency Hospital</strong><br>Emergency Department"
+                );
 
                 // Initial map state: show the ambulance-to-hospital route.
                 drawInitialHospitalRoute();
@@ -2600,64 +2617,62 @@
             status.innerHTML = "<strong>" + title + "</strong><span>" + message + "</span>";
         }
 
+        /*
+         * =====================================================
+         * LIVE GPS -> SUPABASE
+         * Writes the ambulance's current GPS position to the
+         * shared ambulance_locations table so the hospital
+         * dashboard can receive the same position in realtime.
+         * =====================================================
+         */
+        let lastLocationUploadAt = 0;
+        const LOCATION_UPLOAD_INTERVAL = 5000;
 
-        let ambulanceLocationWriteInProgress = false;
-        let lastAmbulanceLocationWrite = 0;
-
-        async function publishAmbulanceLiveLocation(lat, lng, accuracy) {
-            const supabase = window.supabaseClient ||
-                (window.resqRoute && window.resqRoute.supabase);
-
-            if (!supabase || !driverAmbulanceId) return;
-
-            /*
-             * Avoid hammering Supabase with duplicate GPS points.
-             * The dashboard still receives live movement, while the
-             * database only gets a meaningful update at most about once
-             * every 2 seconds.
-             */
-            const now = Date.now();
-
-            if (
-                ambulanceLocationWriteInProgress ||
-                now - lastAmbulanceLocationWrite < 2000
-            ) {
+        async function publishAmbulanceLocation(lat, lng, speed) {
+            if (!acceptedRequestId || !driverAmbulanceId) {
                 return;
             }
 
-            ambulanceLocationWriteInProgress = true;
-            lastAmbulanceLocationWrite = now;
+            const now = Date.now();
+
+            // Prevent excessive database writes while keeping the
+            // hospital map effectively live.
+            if (now - lastLocationUploadAt < LOCATION_UPLOAD_INTERVAL) {
+                return;
+            }
+
+            const supabase = window.supabaseClient ||
+                (window.resqRoute && window.resqRoute.supabase);
+
+            if (!supabase) {
+                console.warn("GPS upload skipped: Supabase client unavailable.");
+                return;
+            }
+
+            lastLocationUploadAt = now;
+
+            const payload = {
+                ambulance_id: driverAmbulanceId,
+                emergency_id: acceptedRequestId,
+                latitude: Number(lat),
+                longitude: Number(lng),
+                speed: Number.isFinite(Number(speed)) ? Number(speed) : null,
+                timestamp: new Date().toISOString()
+            };
 
             try {
                 const result = await supabase
-                    .from("ambulances")
-                    .update({
-                        latitude: Number(lat),
-                        longitude: Number(lng),
-                        updated_at: new Date().toISOString()
-                    })
-                    .eq("id", driverAmbulanceId)
-                    .select("id,latitude,longitude,status,updated_at")
-                    .maybeSingle();
+                    .from("ambulance_locations")
+                    .insert(payload);
 
                 if (result.error) {
-                    console.warn(
-                        "Live ambulance location could not be synchronized:",
-                        result.error
-                    );
-                } else {
-                    console.log(
-                        "✓ Ambulance GPS synced:",
-                        result.data
-                    );
+                    console.error("Ambulance GPS upload failed:", result.error);
+                    return;
                 }
+
+                console.log("Ambulance GPS synced:", payload);
             } catch (error) {
-                console.warn(
-                    "Live ambulance location synchronization failed:",
-                    error
-                );
-            } finally {
-                ambulanceLocationWriteInProgress = false;
+                console.error("Ambulance GPS upload error:", error);
             }
         }
 
@@ -2675,25 +2690,20 @@
                     const lat = position.coords.latitude;
                     const lng = position.coords.longitude;
                     const accuracy = Math.round(position.coords.accuracy);
+                    const speed = position.coords.speed;
 
-                    driverPosition = { lat: lat, lng: lng, accuracy: accuracy };
+                    driverPosition = {
+                        lat: lat,
+                        lng: lng,
+                        accuracy: accuracy,
+                        speed: speed
+                    };
 
-                    /*
-                     * Publish the same GPS position used by this dashboard
-                     * to Supabase so the hospital can display the ambulance
-                     * directly from the database in Realtime.
-                     */
-                    publishAmbulanceLiveLocation(lat, lng, accuracy);
+                    // Once a request is accepted, publish this GPS
+                    // position to Supabase for hospital realtime tracking.
+                    publishAmbulanceLocation(lat, lng, speed);
 
-                    if (!ambulanceMarker) {
-                        ambulanceMarker = L.marker([lat, lng], {
-                            icon: ambulanceIcon,
-                            title: "Ambulance current location"
-                        }).addTo(ambulanceMap);
-                    } else {
-                        ambulanceMarker.setLatLng([lat, lng]);
-                    }
-
+                    ambulanceMarker.setLatLng([lat, lng]);
                     ambulanceMarker.bindPopup(
                         "<strong>Ambulance</strong><br>GPS accuracy: " + accuracy + " m"
                     );
@@ -2717,30 +2727,18 @@
                         } else if (hospitalRouteActive) {
                             drawRouteToHospital();
                         }
-                    } else {
-                        /*
-                         * No accepted emergency means no patient route and no
-                         * hospital route. The map only follows the ambulance's
-                         * real GPS position.
-                         */
-                        clearMapRoute();
-                        if (patientMarker) {
-                            ambulanceMap.removeLayer(patientMarker);
-                            patientMarker = null;
-                        }
-                        if (hospitalMarker) {
-                            ambulanceMap.removeLayer(hospitalMarker);
-                            hospitalMarker = null;
-                        }
+                    } else if (!mapResetToEmpty) {
+                        // Initial dashboard can show the default hospital route.
+                        // After a completed trip, deliberately keep the map empty
+                        // until the driver accepts a new request.
+                        drawInitialHospitalRoute();
                     }
                 },
                 function(error) {
-                    /*
-                     * Never invent a GPS position when the browser cannot
-                     * provide one. A hard-coded position makes the dashboard
-                     * look like it has a real ambulance somewhere it does not.
-                     */
-                    driverPosition = null;
+                    driverPosition = {
+                        lat: DEFAULT_DRIVER_LOCATION[0],
+                        lng: DEFAULT_DRIVER_LOCATION[1]
+                    };
 
                     const messages = {
                         1: "Location permission was denied.",
@@ -2825,6 +2823,32 @@
             const startLng = driverPosition.lng;
             const endLat = request.lat;
             const endLng = request.lng;
+
+            // Safety guard for demo/emulator coordinates. Never draw a
+            // cross-continent patient route in the India prototype.
+            const localDistanceKm = haversineKm(
+                startLat,
+                startLng,
+                endLat,
+                endLng
+            );
+
+            if (localDistanceKm > 500) {
+                console.warn(
+                    "Ignoring implausible patient route of",
+                    localDistanceKm.toFixed(1),
+                    "km. Resetting patient location to Chandigarh demo point."
+                );
+
+                request.lat = DEFAULT_DRIVER_LOCATION[0];
+                request.lng = DEFAULT_DRIVER_LOCATION[1];
+                request.location =
+                    DEFAULT_DRIVER_LOCATION[0].toFixed(5) +
+                    ", " +
+                    DEFAULT_DRIVER_LOCATION[1].toFixed(5);
+
+                return drawRouteToAcceptedPatient();
+            }
 
             if (patientMarker) {
                 patientMarker.setLatLng([endLat, endLng]);
@@ -3298,23 +3322,25 @@
 
                 const type = String(row.emergency_type || "").trim().toLowerCase();
 
-                const locationText = [
-                    row.address,
-                    row.location,
-                    row.pickup_address
-                ].filter(Boolean).join(" ").toLowerCase();
+                /*
+                 * The emergencies table stores the verified pickup position
+                 * as latitude/longitude. Do not reference optional address
+                 * columns here because they may not exist in the schema.
+                 */
+                const rowCoordinates =
+                    Number.isFinite(Number(row.latitude)) &&
+                    Number.isFinite(Number(row.longitude))
+                        ? Number(row.latitude).toFixed(5) + ", " +
+                          Number(row.longitude).toFixed(5)
+                        : "";
 
                 const nameMatches = patientName === normalizedName;
                 const typeMatches = !normalizedType || type === normalizedType;
 
-                /*
-                 * Location is optional because the current emergencies table
-                 * may store GPS coordinates instead of the display address.
-                 */
                 const locationMatches =
                     !normalizedLocation ||
-                    !locationText ||
-                    locationText.includes(normalizedLocation);
+                    !rowCoordinates ||
+                    rowCoordinates.includes(normalizedLocation);
 
                 return nameMatches && typeMatches && locationMatches;
             });
@@ -3368,53 +3394,79 @@
 
         async function syncEmergencyStatus(status) {
             /*
-             * Prefer the resolved real emergency record. This prevents a
-             * status update from failing merely because the UI selection
-             * variable has not been populated yet.
+             * Resolve the real Supabase emergency record first. We intentionally
+             * update Supabase directly here instead of routing this write through
+             * emergency.js, because the ambulance dashboard is the authority for
+             * these driver-side trip states.
              */
-            if (!activeEmergencyRecord && acceptedRequestId) {
-                const request = emergencyRequests[acceptedRequestId];
-                activeEmergencyRecord =
-                    await resolveEmergencyRecord(acceptedRequestId, request);
+            if (!activeEmergencyRecord) {
+                if (!acceptedRequestId) {
+                    throw new Error("No ambulance emergency is currently selected.");
+                }
+
+                const request = emergencyRequests[acceptedRequestId] || {};
+                activeEmergencyRecord = await resolveEmergencyRecord(
+                    acceptedRequestId,
+                    request
+                );
             }
 
             if (!activeEmergencyRecord || !activeEmergencyRecord.id) {
                 throw new Error("The real emergency record could not be resolved.");
             }
 
-            /*
-             * emergency.js owns the emergency status update. This keeps the
-             * ambulance dashboard and Supabase using one status flow.
-             */
-            if (
-                window.resqEmergency &&
-                typeof window.resqEmergency.updateStatus === "function"
-            ) {
-                const result =
-                    await window.resqEmergency.updateStatus(
-                        activeEmergencyRecord.id,
-                        status
-                    );
+            const supabase = window.supabaseClient ||
+                (window.resqRoute && window.resqRoute.supabase);
 
-                if (result === false) {
-                    throw new Error(
-                        "emergency.js could not update the emergency status."
-                    );
-                }
-            } else {
+            if (!supabase) {
+                throw new Error("Supabase client is not available.");
+            }
+
+            const emergencyId = activeEmergencyRecord.id;
+
+            const result = await supabase
+                .from("emergencies")
+                .update({
+                    status: status,
+                    driver_id: driverUserId,
+                    ambulance_id: driverAmbulanceId,
+                    updated_at: new Date().toISOString()
+                })
+                .eq("id", emergencyId)
+                .select("id,status,driver_id,ambulance_id")
+                .maybeSingle();
+
+            if (result.error) {
+                const e = result.error;
                 throw new Error(
-                    "emergency.js is not loaded or updateStatus is unavailable."
+                    "Supabase rejected " + status + ": " +
+                    (e.message || "Unknown database error") +
+                    (e.code ? " [code " + e.code + "]" : "") +
+                    (e.details ? " | " + e.details : "") +
+                    (e.hint ? " | Hint: " + e.hint : "")
                 );
             }
 
-            activeEmergencyRecord.status = status;
+            if (!result.data) {
+                throw new Error(
+                    "Supabase returned no row while setting status to " +
+                    status + ". This usually indicates Row Level Security blocked the UPDATE."
+                );
+            }
 
-            console.log(
-                "✓ Emergency synced:",
-                activeEmergencyRecord.id,
-                status
-            );
+            if (String(result.data.status) !== String(status)) {
+                throw new Error(
+                    "Supabase returned status " +
+                    String(result.data.status) +
+                    " instead of " + status + "."
+                );
+            }
 
+            activeEmergencyRecord.status = result.data.status;
+            activeEmergencyRecord.driver_id = result.data.driver_id;
+            activeEmergencyRecord.ambulance_id = result.data.ambulance_id;
+
+            console.log("✓ Emergency status confirmed:", result.data);
             return activeEmergencyRecord;
         }
 
@@ -3432,7 +3484,7 @@
                 alert(
                     "Could not update the emergency status in Supabase.\n\n" +
                     "Status: " + status + "\n" +
-                    "Please check your connection and try again."
+                    "Reason: " + (error && error.message ? error.message : "Unknown error")
                 );
 
                 return false;
@@ -3468,18 +3520,76 @@
 
                 /*
                  * IMPORTANT:
-                 * syncEmergencyStatus() needs acceptedRequestId to know which
-                 * emergency is being updated. The old order assigned
-                 * acceptedRequestId AFTER calling syncEmergencyStatus(), so
-                 * every acceptance failed even when the ambulance assignment
-                 * itself succeeded.
-                 *
-                 * Set it immediately after resolving the real database row.
+                 * Set the real Supabase emergency UUID before attempting
+                 * DRIVER_ACCEPTED. syncEmergencyStatus() requires this ID.
                  */
-                acceptedRequestId = requestId;
+                acceptedRequestId = activeEmergencyRecord.id;
+
+                /*
+                 * Mark the emergency as accepted directly after the ambulance
+                 * assignment.  The previous implementation delegated this
+                 * second write to emergency.js, which could fail even though
+                 * the ambulance assignment itself had already succeeded.
+                 *
+                 * We verify the actual row returned by Supabase so the UI
+                 * only changes after DRIVER_ACCEPTED is confirmed.
+                 */
+                const supabase = window.supabaseClient ||
+                    (window.resqRoute && window.resqRoute.supabase);
+
+                if (!supabase) {
+                    throw new Error("Supabase client is not available.");
+                }
 
                 await assignEmergencyToDriver(activeEmergencyRecord.id);
-                await syncEmergencyStatus("DRIVER_ACCEPTED");
+
+                const acceptedUpdate = await supabase
+                    .from("emergencies")
+                    .update({
+                        status: "DRIVER_ACCEPTED",
+                        driver_id: driverUserId,
+                        ambulance_id: driverAmbulanceId,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq("id", activeEmergencyRecord.id)
+                    .select("id,status,driver_id,ambulance_id")
+                    .maybeSingle();
+
+                if (acceptedUpdate.error) {
+                    throw new Error(
+                        "Supabase status update failed: " +
+                        (acceptedUpdate.error.message || JSON.stringify(acceptedUpdate.error))
+                    );
+                }
+
+                if (!acceptedUpdate.data) {
+                    throw new Error(
+                        "Supabase returned no emergency row after DRIVER_ACCEPTED. " +
+                        "This usually means the UPDATE was blocked by Row Level Security."
+                    );
+                }
+
+                if (acceptedUpdate.data.status !== "DRIVER_ACCEPTED") {
+                    throw new Error(
+                        "Supabase returned status '" +
+                        String(acceptedUpdate.data.status) +
+                        "' instead of DRIVER_ACCEPTED."
+                    );
+                }
+
+                if (acceptedUpdate.data.driver_id !== driverUserId ||
+                    acceptedUpdate.data.ambulance_id !== driverAmbulanceId) {
+                    throw new Error(
+                        "Supabase accepted the status but did not confirm the driver/ambulance assignment."
+                    );
+                }
+
+                activeEmergencyRecord.status = "DRIVER_ACCEPTED";
+
+                console.log(
+                    "✓ DRIVER_ACCEPTED confirmed in Supabase:",
+                    acceptedUpdate.data
+                );
             } catch (error) {
                 console.error("Unable to accept emergency:", error);
 
@@ -3810,21 +3920,21 @@
                             }
 
                             /*
-                             * IMPORTANT:
-                             * ARRIVED_AT_HOSPITAL is a handoff state, NOT a
-                             * completed emergency. The hospital must continue
-                             * seeing this patient for bed allocation, treatment
-                             * and eventual deallocation/discharge.
-                             *
-                             * COMPLETED is intentionally NOT written here.
-                             * The hospital side should mark the emergency
-                             * COMPLETED only after the hospital workflow is done.
+                             * The dashboard treats hospital arrival as the
+                             * end of the ambulance trip. Mark it COMPLETED
+                             * after the arrival event has been written.
+                             * Hospital realtime therefore receives the real
+                             * arrival transition and then removes the trip
+                             * from the active incoming list.
                              */
+                            if (!(await syncEmergencyStatusSafely("COMPLETED"))) {
+                                return;
+                            }
 
-                            document.getElementById("tripStatus").textContent = "Arrived at Hospital";
-                            document.getElementById("ambulanceStatus").textContent = "At Hospital";
+                            document.getElementById("tripStatus").textContent = "Standby";
+                            document.getElementById("ambulanceStatus").textContent = "Available";
                             const resetStatusSub = document.querySelector("#ambulanceStatus").parentElement.querySelector(".stat-sub");
-                            if (resetStatusSub) resetStatusSub.textContent = "Patient handed over to hospital";
+                            if (resetStatusSub) resetStatusSub.textContent = "Vehicle ready";
                             const resetDistanceCard = document.getElementById("patientDistance");
                             const resetDistanceLabel = resetDistanceCard ? resetDistanceCard.parentElement.querySelector(".stat-label") : null;
                             const resetDistanceSub = resetDistanceCard ? resetDistanceCard.parentElement.querySelector(".stat-sub") : null;
@@ -3940,13 +4050,6 @@
                         showPatientMedicalData();
                         patientReached = true;
 
-                        /*
-                         * Send the first ambulance-side vital reading immediately.
-                         */
-                        setTimeout(function() {
-                            publishPatientVitalsToSupabase();
-                        }, 100);
-
                         saveActiveTripState();
 
                         document.getElementById("tripStatus").textContent = "To Hospital";
@@ -4038,11 +4141,29 @@
         initLeafletMap();
         setupMapControls();
 
+        /*
+         * Safety synchronization:
+         * Supabase Realtime is the primary path, but the request queue must
+         * recover even if a browser misses an INSERT event or a tab wakes
+         * after being suspended.
+         */
+        setInterval(function () {
+            if (document.visibilityState === "visible") {
+                scheduleEmergencyRequestsRefresh(0);
+            }
+        }, 3000);
+
+        document.addEventListener("visibilitychange", function () {
+            if (document.visibilityState === "visible") {
+                scheduleEmergencyRequestsRefresh(0);
+            }
+        });
+
         (async function initializeAmbulanceDashboard() {
             try {
                 await initializeDriverContext();
-                await loadEmergencyRequests();
                 startAmbulanceEmergencyRealtime();
+                await loadEmergencyRequests();
             } catch (error) {
                 console.error("Ambulance dashboard initialization error:", error);
                 const list = document.getElementById("requestList");
@@ -4060,16 +4181,7 @@
             const params = new URLSearchParams(window.location.search);
             const requestedId = params.get("request");
             const requestedPatient = params.get("patient");
-
-            /*
-             * A normal ambulance-dashboard refresh must start clean.
-             * Do NOT restore an old patient from localStorage. A saved trip
-             * is used only when another dashboard explicitly opens this page
-             * with a real emergency request ID.
-             */
-            const savedTrip = requestedId
-                ? getSavedActiveTrip()
-                : null;
+            const savedTrip = getSavedActiveTrip();
 
             let requestId = requestedId;
 
@@ -4290,164 +4402,83 @@
 
         openPatientFromHospitalDashboard();
 
-
-        let lastPublishedVitalsSignature = "";
-        let vitalPublishInProgress = false;
-
-        function getAmbulanceDashboardVitals() {
-            const heartRateElement = document.getElementById("heartRate");
-            const spo2Element = document.getElementById("spo2");
-            const bloodPressureElement = document.getElementById("bloodPressure");
-            const temperatureElement = document.getElementById("temperature");
-            const ecgElement = document.getElementById("ecgStatus");
-
-            const heartRate = heartRateElement
-                ? parseInt(heartRateElement.textContent, 10)
-                : null;
-
-            const spo2 = spo2Element
-                ? parseInt(spo2Element.textContent, 10)
-                : null;
-
-            const bloodPressure = bloodPressureElement
-                ? String(bloodPressureElement.textContent || "").trim()
-                : null;
-
-            const temperature = temperatureElement
-                ? parseFloat(temperatureElement.textContent)
-                : null;
-
-            const ecgStatus = ecgElement
-                ? String(ecgElement.textContent || "").trim()
-                : null;
-
-            return {
-                heart_rate: Number.isFinite(heartRate) ? heartRate : null,
-                spo2: Number.isFinite(spo2) ? spo2 : null,
-                blood_pressure: bloodPressure || null,
-                temperature: Number.isFinite(temperature) ? temperature : null,
-                ecg_status: ecgStatus || null
-            };
-        }
-
-        async function publishPatientVitalsToSupabase() {
-            /*
-             * Vitals are communicated only for the exact emergency currently
-             * being handled by this ambulance.
-             */
-            if (
-                !patientReached ||
-                !activeEmergencyRecord ||
-                !activeEmergencyRecord.id ||
-                !activeEmergencyRecord.patient_id ||
-                !window.supabaseClient
-            ) {
-                return;
-            }
-
-            const vitals = getAmbulanceDashboardVitals();
-
-            if (
-                vitals.heart_rate === null &&
-                vitals.spo2 === null &&
-                vitals.blood_pressure === null &&
-                vitals.temperature === null &&
-                vitals.ecg_status === null
-            ) {
-                return;
-            }
-
-            const signature = JSON.stringify(vitals);
-
-            /*
-             * Do not create duplicate database rows if nothing changed.
-             * A changed reading creates a new timestamped vital record.
-             */
-            if (signature === lastPublishedVitalsSignature) {
-                return;
-            }
-
-            if (vitalPublishInProgress) {
-                return;
-            }
-
-            vitalPublishInProgress = true;
-
-            try {
-                const recordedAt = new Date().toISOString();
-
-                const result = await window.supabaseClient
-                    .from("patient_vitals")
-                    .insert({
-                        emergency_id: activeEmergencyRecord.id,
-                        patient_id: activeEmergencyRecord.patient_id,
-                        heart_rate: vitals.heart_rate,
-                        spo2: vitals.spo2,
-                        blood_pressure: vitals.blood_pressure,
-                        temperature: vitals.temperature,
-                        ecg_status: vitals.ecg_status,
-                        recorded_at: recordedAt
-                    })
-                    .select(
-                        "id,emergency_id,patient_id,heart_rate,spo2,blood_pressure,temperature,ecg_status,recorded_at"
-                    )
-                    .single();
-
-                if (result.error) {
-                    console.error(
-                        "Patient vitals synchronization error:",
-                        result.error
-                    );
-                    return;
-                }
-
-                lastPublishedVitalsSignature = signature;
-
-                console.log(
-                    "✓ Patient vitals synchronized:",
-                    result.data
-                );
-            } catch (error) {
-                console.error(
-                    "Patient vitals synchronization failed:",
-                    error
-                );
-            } finally {
-                vitalPublishInProgress = false;
-            }
-        }
-
         /* =========================
            LIVE PATIENT VITALS
         ========================== */
 
-        /*
-         * Prototype sensor simulation:
-         * the ambulance dashboard remains the source of the displayed values.
-         * Every changed reading is then written to patient_vitals so the
-         * hospital receives exactly what the ambulance dashboard is showing.
-         *
-         * Replace this simulation later with actual device readings without
-         * changing the hospital communication layer.
-         */
-        setInterval(function() {
+        // Patient vitals start updating after the patient is engaged.
+        // IMPORTANT: these values are also written to Supabase so the
+        // hospital dashboard receives the exact same live readings.
+        let vitalsWriteInProgress = false;
 
-            if (!patientReached) {
-                return;
+        async function persistLivePatientVitals() {
+            if (!patientReached || !activeEmergencyRecord?.id) return;
+
+            const supabase = window.supabaseClient ||
+                (window.resqRoute && window.resqRoute.supabase);
+
+            if (!supabase || vitalsWriteInProgress) return;
+
+            const heartRateElement = document.getElementById("heartRate");
+            const spo2Element = document.getElementById("spo2");
+            const temperatureElement = document.getElementById("temperature");
+            const bloodPressureElement = document.getElementById("bloodPressure");
+            const ecgElement = document.getElementById("ecg");
+
+            const heartRate = heartRateElement
+                ? parseInt(heartRateElement.textContent, 10)
+                : null;
+            const spo2 = spo2Element
+                ? parseFloat(spo2Element.textContent)
+                : null;
+            const temperature = temperatureElement
+                ? parseFloat(temperatureElement.textContent)
+                : null;
+            const bloodPressure = bloodPressureElement
+                ? bloodPressureElement.textContent.trim()
+                : null;
+            const ecgStatus = ecgElement
+                ? ecgElement.textContent.trim()
+                : null;
+
+            if (heartRate === null && spo2 === null && temperature === null) return;
+
+            vitalsWriteInProgress = true;
+
+            try {
+                const payload = {
+                    emergency_id: activeEmergencyRecord.id,
+                    heart_rate: Number.isFinite(heartRate) ? heartRate : null,
+                    spo2: Number.isFinite(spo2) ? spo2 : null,
+                    blood_pressure: bloodPressure || null,
+                    temperature: Number.isFinite(temperature) ? temperature : null,
+                    ecg_status: ecgStatus || null,
+                    recorded_at: new Date().toISOString()
+                };
+
+                const result = await supabase
+                    .from("patient_vitals")
+                    .insert(payload);
+
+                if (result.error) {
+                    console.warn("Live patient vitals were not saved:", result.error);
+                }
+            } catch (error) {
+                console.warn("Live patient vitals sync failed:", error);
+            } finally {
+                vitalsWriteInProgress = false;
             }
+        }
 
-            const heartRate =
-                document.getElementById("heartRate");
+        setInterval(function() {
+            if (!patientReached || !activeEmergencyRecord?.id) return;
 
-            const spo2 =
-                document.getElementById("spo2");
-
-            const temperature =
-                document.getElementById("temperature");
+            const heartRate = document.getElementById("heartRate");
+            const spo2 = document.getElementById("spo2");
+            const temperature = document.getElementById("temperature");
 
             if (heartRate) {
                 let value = parseInt(heartRate.textContent, 10);
-
                 if (!Number.isNaN(value)) {
                     value += Math.floor(Math.random() * 5) - 2;
                     value = Math.max(60, Math.min(110, value));
@@ -4457,7 +4488,6 @@
 
             if (spo2) {
                 let value = parseInt(spo2.textContent, 10);
-
                 if (!Number.isNaN(value)) {
                     value += Math.floor(Math.random() * 3) - 1;
                     value = Math.max(94, Math.min(100, value));
@@ -4467,23 +4497,17 @@
 
             if (temperature) {
                 let value = parseFloat(temperature.textContent);
-
                 if (!Number.isNaN(value)) {
                     value += (Math.random() * 0.2) - 0.1;
                     temperature.textContent = value.toFixed(1);
                 }
             }
 
-            publishPatientVitalsToSupabase();
-
+            // Save the newly generated reading. The hospital realtime
+            // subscription will receive this INSERT and refresh its UI.
+            persistLivePatientVitals();
         }, 5000);
 
-        /*
-         * Send the first complete reading immediately after the patient
-         * becomes onboard, instead of waiting five seconds.
-         */
-        const originalShowPatientMedicalData = showPatientMedicalData;
-        window.publishCurrentPatientVitals = publishPatientVitalsToSupabase;
 
         /* =========================
            DEMO DRIVER NAME
@@ -4510,17 +4534,6 @@
 
 
         window.addEventListener("beforeunload", function() {
-            if (
-                driverPosition &&
-                driverAmbulanceId
-            ) {
-                publishAmbulanceLiveLocation(
-                    driverPosition.lat,
-                    driverPosition.lng,
-                    driverPosition.accuracy || null
-                );
-            }
-
             if (locationWatchId !== null && navigator.geolocation) {
                 navigator.geolocation.clearWatch(locationWatchId);
             }
@@ -4532,7 +4545,6 @@
                 navigator.geolocation.clearWatch(locationWatchId);
             }
             if (ambulanceEmergencyChannel) {
-                const supabase = window.supabaseClient || (window.resqRoute && window.resqRoute.supabase);
                 if (supabase) supabase.removeChannel(ambulanceEmergencyChannel);
             }
         });
