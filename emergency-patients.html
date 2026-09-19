@@ -921,6 +921,14 @@
                 Manage Bed / Resources
             </button>
 
+            <button
+                class="danger-btn"
+                id="dischargePatientButton"
+                type="button"
+                style="margin-top:0;">
+                DISCHARGE PATIENT
+            </button>
+
         </div>
 
     </div>
@@ -1114,6 +1122,9 @@
 
     const manageBedFromDetails =
         document.getElementById("manageBedFromDetails");
+
+    const dischargePatientButton =
+        document.getElementById("dischargePatientButton");
 
 
     /* =====================================================
@@ -2460,6 +2471,11 @@
             return;
         }
 
+        // Store the ID of the patient whose details popup is actually open.
+        // Do NOT set this while rendering cards, because rendering every card
+        // would leave the variable pointing to the last patient in the list.
+        currentDetailEmergencyId = emergency.id;
+
 
         const patient =
             emergency.patients || {};
@@ -2697,6 +2713,168 @@
     }
 
 
+    /* =====================================================
+       DISCHARGE PATIENT
+    ===================================================== */
+
+    async function dischargePatient() {
+
+        const emergencyId = currentDetailEmergencyId;
+
+        if (!emergencyId) {
+            alert("No patient selected.");
+            return;
+        }
+
+        const emergency = allEmergencies.find(
+            item => String(item.id) === String(emergencyId)
+        );
+
+        if (!emergency) {
+            alert("Patient record could not be found.");
+            return;
+        }
+
+        const patientName = emergency.patients?.name || "this patient";
+        const currentBed = getCurrentAllocation(emergencyId);
+
+        if (!window.confirm(
+            "Discharge " + patientName + "?\n\n" +
+            "This will complete the emergency and release the currently allocated bed."
+        )) {
+            return;
+        }
+
+        dischargePatientButton.disabled = true;
+        dischargePatientButton.textContent = "DISCHARGING...";
+
+        try {
+            const userResult = await supabaseClient.auth.getUser();
+            const user = userResult.data?.user;
+
+            if (!user) {
+                throw new Error("Please sign in again.");
+            }
+
+            // Release the patient's currently occupied bed first, if one exists.
+            let bedToRelease = currentBed;
+
+            if (!bedToRelease) {
+                const bedLookup = await supabaseClient
+                    .from("hospital_resource_slots")
+                    .select("id,slot_code,status")
+                    .eq("hospital_id", hospitalId)
+                    .eq("resource_type", "Bed")
+                    .eq("emergency_id", emergencyId)
+                    .eq("status", "occupied")
+                    .maybeSingle();
+
+                if (bedLookup.error) throw bedLookup.error;
+                bedToRelease = bedLookup.data || null;
+            }
+
+            if (bedToRelease) {
+                const bedUpdate = await supabaseClient
+                    .from("hospital_resource_slots")
+                    .update({
+                        status: "available",
+                        patient_id: null,
+                        emergency_id: null,
+                        notes: null
+                    })
+                    .eq("id", bedToRelease.id)
+                    .eq("hospital_id", hospitalId)
+                    .eq("resource_type", "Bed")
+                    .eq("status", "occupied");
+
+                if (bedUpdate.error) throw bedUpdate.error;
+
+                const allocationUpdate = await supabaseClient
+                    .from("resource_allocations")
+                    .update({
+                        status: "inactive",
+                        notes: "Bed released after patient discharge."
+                    })
+                    .eq("resource_slot_id", bedToRelease.id)
+                    .eq("emergency_id", emergencyId)
+                    .eq("status", "active");
+
+                if (allocationUpdate.error) {
+                    console.warn(
+                        "Bed released, but allocation history could not be updated:",
+                        allocationUpdate.error
+                    );
+                }
+
+                delete currentAllocations[String(emergencyId)];
+            }
+
+            // Complete the emergency so it no longer appears in active patients.
+            // Complete the emergency and VERIFY that the database actually
+            // changed. Supabase can return no error when an UPDATE matches
+            // zero rows (for example because of an RLS policy), so treating
+            // that response as success can leave the patient visible.
+            const emergencyUpdate = await supabaseClient
+                .from("emergencies")
+                .update({ status: "COMPLETED" })
+                .eq("id", emergencyId)
+                .eq("hospital_id", hospitalId)
+                .select("id,status")
+                .maybeSingle();
+
+            if (emergencyUpdate.error) {
+                throw emergencyUpdate.error;
+            }
+
+            if (
+                !emergencyUpdate.data ||
+                String(emergencyUpdate.data.status).toUpperCase() !== "COMPLETED"
+            ) {
+                throw new Error(
+                    "The emergency was not marked COMPLETED in the database. Check the emergencies UPDATE/RLS policy in Supabase."
+                );
+            }
+
+            // Remove it from the current page immediately. This makes the UI
+            // correct even before the realtime event or refresh finishes.
+            allEmergencies = allEmergencies.filter(
+                item => String(item.id) !== String(emergencyId)
+            );
+            updateStats();
+            renderPatients();
+
+            const eventResponse = await supabaseClient
+                .from("emergency_events")
+                .insert({
+                    emergency_id: emergencyId,
+                    event_type: "PATIENT_DISCHARGED",
+                    description: "Patient discharged and emergency completed.",
+                    created_by: user.id
+                });
+
+            if (eventResponse.error) {
+                console.warn(
+                    "Patient discharged, but timeline event could not be saved:",
+                    eventResponse.error
+                );
+            }
+
+            closeModal();
+            currentDetailEmergencyId = null;
+            await loadEmergencyPatients();
+
+            alert(patientName + " has been discharged successfully.");
+
+        } catch (error) {
+            console.error("Patient discharge error:", error);
+            alert(error.message || "Unable to discharge patient.");
+        } finally {
+            dischargePatientButton.disabled = false;
+            dischargePatientButton.textContent = "DISCHARGE PATIENT";
+        }
+    }
+
+
     function closeModal() {
 
         document.getElementById(
@@ -2826,6 +3004,12 @@
             }
 
         }
+    );
+
+
+    dischargePatientButton.addEventListener(
+        "click",
+        dischargePatient
     );
 
 
