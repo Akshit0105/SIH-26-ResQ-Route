@@ -4104,27 +4104,79 @@
            LIVE PATIENT VITALS
         ========================== */
 
-        // Patient vitals remain unchanged while the ambulance is travelling
-        // to the patient. They start updating only after automatic engagement
-        // occurs within the 50 m patient-arrival radius.
-        setInterval(function() {
+        // Patient vitals start updating after the patient is engaged.
+        // IMPORTANT: these values are also written to Supabase so the
+        // hospital dashboard receives the exact same live readings.
+        let vitalsWriteInProgress = false;
 
-            if (!patientReached) {
-                return;
+        async function persistLivePatientVitals() {
+            if (!patientReached || !activeEmergencyRecord?.id) return;
+
+            const supabase = window.supabaseClient ||
+                (window.resqRoute && window.resqRoute.supabase);
+
+            if (!supabase || vitalsWriteInProgress) return;
+
+            const heartRateElement = document.getElementById("heartRate");
+            const spo2Element = document.getElementById("spo2");
+            const temperatureElement = document.getElementById("temperature");
+            const bloodPressureElement = document.getElementById("bloodPressure");
+            const ecgElement = document.getElementById("ecg");
+
+            const heartRate = heartRateElement
+                ? parseInt(heartRateElement.textContent, 10)
+                : null;
+            const spo2 = spo2Element
+                ? parseFloat(spo2Element.textContent)
+                : null;
+            const temperature = temperatureElement
+                ? parseFloat(temperatureElement.textContent)
+                : null;
+            const bloodPressure = bloodPressureElement
+                ? bloodPressureElement.textContent.trim()
+                : null;
+            const ecgStatus = ecgElement
+                ? ecgElement.textContent.trim()
+                : null;
+
+            if (heartRate === null && spo2 === null && temperature === null) return;
+
+            vitalsWriteInProgress = true;
+
+            try {
+                const payload = {
+                    emergency_id: activeEmergencyRecord.id,
+                    heart_rate: Number.isFinite(heartRate) ? heartRate : null,
+                    spo2: Number.isFinite(spo2) ? spo2 : null,
+                    blood_pressure: bloodPressure || null,
+                    temperature: Number.isFinite(temperature) ? temperature : null,
+                    ecg_status: ecgStatus || null,
+                    recorded_at: new Date().toISOString()
+                };
+
+                const result = await supabase
+                    .from("patient_vitals")
+                    .insert(payload);
+
+                if (result.error) {
+                    console.warn("Live patient vitals were not saved:", result.error);
+                }
+            } catch (error) {
+                console.warn("Live patient vitals sync failed:", error);
+            } finally {
+                vitalsWriteInProgress = false;
             }
+        }
 
-            const heartRate =
-                document.getElementById("heartRate");
+        setInterval(function() {
+            if (!patientReached || !activeEmergencyRecord?.id) return;
 
-            const spo2 =
-                document.getElementById("spo2");
-
-            const temperature =
-                document.getElementById("temperature");
+            const heartRate = document.getElementById("heartRate");
+            const spo2 = document.getElementById("spo2");
+            const temperature = document.getElementById("temperature");
 
             if (heartRate) {
                 let value = parseInt(heartRate.textContent, 10);
-
                 if (!Number.isNaN(value)) {
                     value += Math.floor(Math.random() * 5) - 2;
                     value = Math.max(60, Math.min(110, value));
@@ -4134,7 +4186,6 @@
 
             if (spo2) {
                 let value = parseInt(spo2.textContent, 10);
-
                 if (!Number.isNaN(value)) {
                     value += Math.floor(Math.random() * 3) - 1;
                     value = Math.max(94, Math.min(100, value));
@@ -4144,13 +4195,15 @@
 
             if (temperature) {
                 let value = parseFloat(temperature.textContent);
-
                 if (!Number.isNaN(value)) {
                     value += (Math.random() * 0.2) - 0.1;
                     temperature.textContent = value.toFixed(1);
                 }
             }
 
+            // Save the newly generated reading. The hospital realtime
+            // subscription will receive this INSERT and refresh its UI.
+            persistLivePatientVitals();
         }, 5000);
 
 

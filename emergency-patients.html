@@ -981,7 +981,7 @@
         <div class="room-list" id="roomList"><div class="bed-empty">Loading rooms...</div></div>
 
         <div class="bed-toolbar">
-            <div class="allocation-section-title" id="availableBedsTitle" style="margin:0">Select a bed</div>
+            <div class="allocation-section-title" style="margin:0">Select a bed</div>
             <small id="bedResultCount">0 beds</small>
         </div>
         <div class="bed-list" id="allocationBedList">
@@ -1436,14 +1436,14 @@
                         blood_pressure,
                         temperature,
                         ecg_status,
-                        created_at
+                        recorded_at
                     `)
                     .eq(
                         "emergency_id",
                         emergency.id
                     )
                     .order(
-                        "created_at",
+                        "recorded_at",
                         {
                             ascending: false
                         }
@@ -2667,23 +2667,19 @@
     // Use event delegation so ALLOCATE BED / MANAGE BED always work
     // even after patient cards are re-rendered by search, refresh or realtime.
     patientGrid.addEventListener("click", function (event) {
-        const bedButton = event.target.closest("button[data-bed-id]");
+        const bedButton = event.target.closest("[data-bed-id]");
         if (bedButton && patientGrid.contains(bedButton)) {
             event.preventDefault();
             event.stopPropagation();
-            const emergencyId = bedButton.getAttribute("data-bed-id");
-            openBedAllocationModal(emergencyId).catch(function (error) {
-                console.error("Unable to open bed allocation modal:", error);
-                alert(error.message || "Unable to open bed allocation.");
-            });
+            openBedAllocationModal(bedButton.dataset.bedId);
             return;
         }
 
-        const viewButton = event.target.closest("button[data-view-id]");
+        const viewButton = event.target.closest("[data-view-id]");
         if (viewButton && patientGrid.contains(viewButton)) {
             event.preventDefault();
             event.stopPropagation();
-            openPatientModal(viewButton.getAttribute("data-view-id"));
+            openPatientModal(viewButton.dataset.viewId);
         }
     });
 
@@ -2857,7 +2853,35 @@
                         schema: "public",
                         table: "patient_vitals"
                     },
-                    function () {
+                    function (payload) {
+
+                        // Update the matching emergency card immediately from
+                        // the same patient_vitals row written by the ambulance.
+                        // This keeps the hospital card synchronized without
+                        // depending on a second database query.
+                        const row = payload && (payload.new || payload.record);
+                        const emergencyId = row && row.emergency_id;
+
+                        if (emergencyId) {
+                            const emergency = allEmergencies.find(
+                                item => String(item.id) === String(emergencyId)
+                            );
+
+                            if (emergency && row) {
+                                emergency.latestVitals = {
+                                    id: row.id,
+                                    heart_rate: row.heart_rate,
+                                    spo2: row.spo2,
+                                    blood_pressure: row.blood_pressure,
+                                    temperature: row.temperature,
+                                    ecg_status: row.ecg_status,
+                                    recorded_at: row.recorded_at
+                                };
+
+                                renderPatients();
+                                return;
+                            }
+                        }
 
                         loadEmergencyPatients()
                             .catch(
