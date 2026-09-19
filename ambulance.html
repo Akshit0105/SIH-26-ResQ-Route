@@ -1271,7 +1271,7 @@
                 <div class="requests-header">
                     <div>
                         <h2>Current Emergency Requests</h2>
-                        <p>Available emergency requests near your ambulance.</p>
+                        <p>Emergency requests assigned to your ambulance.</p>
                     </div>
                     <span class="request-count" id="requestCount">Loading...</span>
                 </div>
@@ -2076,6 +2076,8 @@
         let driverUserId = null;
         let driverAmbulanceId = null;
         let emergencyRequestsLoading = false;
+        let emergencyRequestsRefreshPending = false;
+        let emergencyRequestsRefreshTimer = null;
 
         let acceptedRequestId = null;
         let pendingRequestId = null;
@@ -2194,11 +2196,85 @@
             }).join("");
         }
 
+        async function ensureAmbulanceReadyForDispatch() {
+            const supabase = window.supabaseClient ||
+                (window.resqRoute && window.resqRoute.supabase);
+
+            if (!supabase || !driverAmbulanceId) {
+                return false;
+            }
+
+            try {
+                /* Never release an ambulance that still has an active trip. */
+                const activeResult = await supabase
+                    .from("emergencies")
+                    .select("id,status")
+                    .eq("ambulance_id", driverAmbulanceId)
+                    .in("status", [
+                        "REPORTED",
+                        "DISPATCHING",
+                        "ASSIGNED",
+                        "DRIVER_ACCEPTED",
+                        "EN_ROUTE_TO_PATIENT",
+                        "ARRIVED_AT_PATIENT",
+                        "PATIENT_ONBOARD",
+                        "EN_ROUTE_TO_HOSPITAL",
+                        "ARRIVED_AT_HOSPITAL"
+                    ])
+                    .limit(1);
+
+                if (activeResult.error) {
+                    console.warn("Could not check current ambulance assignment:", activeResult.error);
+                    return false;
+                }
+
+                if (Array.isArray(activeResult.data) && activeResult.data.length > 0) {
+                    return false;
+                }
+
+                const ambulanceResult = await supabase
+                    .from("ambulances")
+                    .select("id,status")
+                    .eq("id", driverAmbulanceId)
+                    .maybeSingle();
+
+                if (ambulanceResult.error || !ambulanceResult.data) {
+                    console.warn("Could not read ambulance status:", ambulanceResult.error);
+                    return false;
+                }
+
+                if (String(ambulanceResult.data.status || "").toLowerCase() !== "available") {
+                    const releaseResult = await supabase
+                        .from("ambulances")
+                        .update({ status: "available" })
+                        .eq("id", driverAmbulanceId);
+
+                    if (releaseResult.error) {
+                        console.warn("Could not recover stale ambulance status:", releaseResult.error);
+                        return false;
+                    }
+
+                    console.log("Recovered stale ambulance status -> available");
+                }
+
+                return true;
+
+            } catch (error) {
+                console.warn("Ambulance readiness check failed:", error);
+                return false;
+            }
+        }
+
         async function loadEmergencyRequests() {
             const supabase = window.supabaseClient ||
                 (window.resqRoute && window.resqRoute.supabase);
             const list = document.getElementById("requestList");
-            if (!supabase || !list || emergencyRequestsLoading) return;
+            if (!supabase || !list) return;
+
+            if (emergencyRequestsLoading) {
+                emergencyRequestsRefreshPending = true;
+                return;
+            }
 
             emergencyRequestsLoading = true;
             try {
@@ -2215,13 +2291,27 @@
 
                 if (response.error) throw response.error;
 
+                /* Recover stale assigned/busy state only when no active emergency exists. */
+                await ensureAmbulanceReadyForDispatch();
+
                 Object.keys(emergencyRequests).forEach(function(key) {
                     delete emergencyRequests[key];
                 });
 
                 (response.data || []).forEach(function(record) {
-                    // A request assigned to another ambulance is not offered here.
-                    if (record.ambulance_id && driverAmbulanceId && record.ambulance_id !== driverAmbulanceId) return;
+                    /*
+                     * IMPORTANT:
+                     * Only show emergencies assigned to THIS ambulance.
+                     * Unassigned emergencies and emergencies belonging to
+                     * another ambulance must never appear in this driver's
+                     * request queue.
+                     */
+                    if (!driverAmbulanceId) return;
+
+                    if (String(record.ambulance_id || "") !== String(driverAmbulanceId)) {
+                        return;
+                    }
+
                     emergencyRequests[record.id] = buildLiveRequest(record);
                 });
 
@@ -2245,7 +2335,28 @@
                 if (count) count.textContent = "Unavailable";
             } finally {
                 emergencyRequestsLoading = false;
+
+                if (emergencyRequestsRefreshPending) {
+                    emergencyRequestsRefreshPending = false;
+
+                    setTimeout(function () {
+                        loadEmergencyRequests();
+                    }, 100);
+                }
             }
+        }
+
+        function scheduleEmergencyRequestsRefresh(delay) {
+            const wait = Number.isFinite(Number(delay)) ? Number(delay) : 250;
+
+            if (emergencyRequestsRefreshTimer) {
+                clearTimeout(emergencyRequestsRefreshTimer);
+            }
+
+            emergencyRequestsRefreshTimer = setTimeout(function () {
+                emergencyRequestsRefreshTimer = null;
+                loadEmergencyRequests();
+            }, wait);
         }
 
         let ambulanceEmergencyChannel = null;
@@ -2261,22 +2372,29 @@
 
             ambulanceEmergencyChannel = supabase
                 .channel("ambulance-emergency-realtime-" + driverUserId)
-                .on("postgres_changes", { event: "INSERT", schema: "public", table: "emergencies" }, function() {
-                    loadEmergencyRequests();
+                .on("postgres_changes", { event: "INSERT", schema: "public", table: "emergencies" }, function(payload) {
+                    console.log("New emergency realtime event:", payload.new);
+                    scheduleEmergencyRequestsRefresh(150);
                 })
                 .on("postgres_changes", { event: "UPDATE", schema: "public", table: "emergencies" }, function(payload) {
                     // If our active emergency changes, keep its local record synchronized.
                     if (activeEmergencyRecord && payload.new && payload.new.id === activeEmergencyRecord.id) {
                         activeEmergencyRecord.status = payload.new.status;
                     }
-                    loadEmergencyRequests();
+
+                    console.log("Emergency update realtime event:", payload.new);
+                    scheduleEmergencyRequestsRefresh(150);
                 })
-                .on("postgres_changes", { event: "DELETE", schema: "public", table: "emergencies" }, function() {
-                    loadEmergencyRequests();
+                .on("postgres_changes", { event: "DELETE", schema: "public", table: "emergencies" }, function(payload) {
+                    console.log("Emergency delete realtime event:", payload.old);
+                    scheduleEmergencyRequestsRefresh(150);
                 })
                 .subscribe(function(status) {
                     console.log("Ambulance emergency realtime:", status);
-                    if (status === "SUBSCRIBED") loadEmergencyRequests();
+
+                    if (status === "SUBSCRIBED") {
+                        scheduleEmergencyRequestsRefresh(0);
+                    }
                 });
         }
 
@@ -3926,11 +4044,29 @@
         initLeafletMap();
         setupMapControls();
 
+        /*
+         * Safety synchronization:
+         * Supabase Realtime is the primary path, but the request queue must
+         * recover even if a browser misses an INSERT event or a tab wakes
+         * after being suspended.
+         */
+        setInterval(function () {
+            if (document.visibilityState === "visible") {
+                scheduleEmergencyRequestsRefresh(0);
+            }
+        }, 3000);
+
+        document.addEventListener("visibilitychange", function () {
+            if (document.visibilityState === "visible") {
+                scheduleEmergencyRequestsRefresh(0);
+            }
+        });
+
         (async function initializeAmbulanceDashboard() {
             try {
                 await initializeDriverContext();
-                await loadEmergencyRequests();
                 startAmbulanceEmergencyRealtime();
+                await loadEmergencyRequests();
             } catch (error) {
                 console.error("Ambulance dashboard initialization error:", error);
                 const list = document.getElementById("requestList");

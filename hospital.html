@@ -372,6 +372,26 @@
             color: white;
         }
 
+        .incoming-request-btn.complete {
+            background: #172033;
+            color: white;
+            border-color: #172033;
+        }
+
+        .incoming-request-btn.complete:hover {
+            background: #29344a;
+            color: white;
+            border-color: #29344a;
+        }
+
+        .incoming-request-btn:disabled {
+            opacity: .5;
+            cursor: not-allowed;
+            border-color: #dce2ea;
+            color: #8a94a3;
+            background: #f8fafc;
+        }
+
         .incoming-request-empty {
             padding: 32px 20px;
             text-align: center;
@@ -5712,31 +5732,79 @@
                         >
                             PREPARE ER
                         </button>
+
+                        <button
+                            class="incoming-request-btn complete"
+                            type="button"
+                            data-incoming-patient="${escapeHtml(name)}"
+                            data-incoming-request-id="${escapeHtml(emergencyId)}"
+                            data-incoming-action="complete"
+                            ${String(emergency.status || "").toUpperCase() !== "ARRIVED_AT_HOSPITAL" ? "disabled title=\"Available after ambulance arrival at hospital\"" : ""}
+                        >
+                            ${String(emergency.status || "").toUpperCase() === "ARRIVED_AT_HOSPITAL" ? "COMPLETE CASE" : "AWAIT ARRIVAL"}
+                        </button>
                     </div>
                 </div>
             `;
         }).join("");
 
         list.querySelectorAll("[data-incoming-patient]").forEach(button => {
-            button.addEventListener("click", function () {
+            button.addEventListener("click", async function () {
                 const patientName = this.dataset.incomingPatient || "";
                 const requestId = this.dataset.incomingRequestId || "";
+                const action = this.dataset.incomingAction || "view";
 
                 /*
-                 * VIEW REQUEST -> open the real Emergency Patients page.
-                 * The emergency/patient identifiers are passed along so the
-                 * next page can use them if patient-specific routing is added.
+                 * COMPLETE CASE -> update the real emergency record to
+                 * COMPLETED through the shared emergency service.
+                 * The hospital realtime listener will then reload this
+                 * list and the completed case will disappear automatically
+                 * because completed emergencies are not active requests.
                  */
-                if (this.dataset.incomingAction !== "prepare") {
-                    let url =
-                        "emergency-patients.html?patient=" +
-                        encodeURIComponent(patientName);
+                if (action === "complete") {
+                    if (!requestId || this.disabled) return;
 
-                    if (requestId) {
-                        url += "&emergency=" + encodeURIComponent(requestId);
+                    const confirmed = window.confirm(
+                        `Mark the emergency for ${patientName || "this patient"} as completed?\n\n` +
+                        "This will close the active hospital request and remove it from the incoming queue."
+                    );
+
+                    if (!confirmed) return;
+
+                    const button = this;
+                    button.disabled = true;
+                    button.textContent = "COMPLETING...";
+
+                    try {
+                        if (
+                            !window.resqEmergency ||
+                            typeof window.resqEmergency.updateStatus !== "function"
+                        ) {
+                            throw new Error("Emergency status service is not available.");
+                        }
+
+                        const success = await window.resqEmergency.updateStatus(
+                            requestId,
+                            "COMPLETED",
+                            "Emergency case completed by the hospital."
+                        );
+
+                        if (!success) {
+                            throw new Error("The emergency status could not be updated.");
+                        }
+
+                        await loadIncomingPatientRequests();
+                        await loadHospitalEmergencyPatientsPreview();
+                    } catch (error) {
+                        console.error("Hospital emergency completion error:", error);
+                        alert(
+                            "Unable to complete this emergency.\n\n" +
+                            (error?.message || "Please try again.")
+                        );
+                        button.disabled = false;
+                        button.textContent = "COMPLETE CASE";
                     }
 
-                    window.location.href = url;
                     return;
                 }
 
@@ -5745,12 +5813,30 @@
                  * Staff can then activate the appropriate response team
                  * for this incoming patient.
                  */
-                showSection("teams");
+                if (action === "prepare") {
+                    showSection("teams");
 
-                const teamsSection = document.getElementById("teamsSection");
-                if (teamsSection) {
-                    teamsSection.scrollIntoView({ behavior: "smooth", block: "start" });
+                    const teamsSection = document.getElementById("teamsSection");
+                    if (teamsSection) {
+                        teamsSection.scrollIntoView({ behavior: "smooth", block: "start" });
+                    }
+                    return;
                 }
+
+                /*
+                 * VIEW REQUEST -> open the real Emergency Patients page.
+                 * The emergency/patient identifiers are passed along so the
+                 * next page can use them if patient-specific routing is added.
+                 */
+                let url =
+                    "emergency-patients.html?patient=" +
+                    encodeURIComponent(patientName);
+
+                if (requestId) {
+                    url += "&emergency=" + encodeURIComponent(requestId);
+                }
+
+                window.location.href = url;
             });
         });
     }

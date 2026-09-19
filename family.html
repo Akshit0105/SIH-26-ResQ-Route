@@ -1194,6 +1194,10 @@
         .sos-top-button{border:none;background:#e63946;color:#fff;width:min(520px,100%);min-height:76px;padding:18px 28px;border-radius:18px;cursor:pointer;font-size:20px;font-weight:900;letter-spacing:.2px;box-shadow:0 12px 30px rgba(230,57,70,.24);display:flex;align-items:center;justify-content:center;gap:12px;}
         .sos-top-button:hover{background:#cf2938;transform:translateY(-1px);}
         .sos-top-button:disabled{background:#aeb7c4;cursor:not-allowed;box-shadow:none;transform:none;}
+        .sos-action-stack{display:flex;flex-direction:column;align-items:center;gap:8px;width:min(520px,100%);}
+        .cancel-request-button{border:1px solid #f0b7bd;background:#fff7f8;color:#c72535;padding:7px 15px;border-radius:8px;cursor:pointer;font-size:10px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;min-width:155px;}
+        .cancel-request-button:hover{background:#fff0f1;border-color:#e63946;}
+        .cancel-request-button:disabled{background:#f5f6f8;border-color:#dfe3e8;color:#9aa3af;cursor:not-allowed;opacity:1;}
         .sos-top-icon{font-size:27px;line-height:1;}
         .sos-modal{position:fixed;inset:0;z-index:5000;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(23,32,51,.55);backdrop-filter:blur(4px);}
         .sos-modal.open{display:flex;}
@@ -1483,10 +1487,15 @@
 
             <!-- BIG SOS ACTION -->
             <div class="sos-top-area">
-                <button class="sos-top-button" id="sosButton" type="button">
-                    <span class="sos-top-icon">🚨</span>
-                    <span>SOS • REPORT EMERGENCY</span>
-                </button>
+                <div class="sos-action-stack">
+                    <button class="sos-top-button" id="sosButton" type="button">
+                        <span class="sos-top-icon">🚨</span>
+                        <span>SOS • REPORT EMERGENCY</span>
+                    </button>
+                    <button class="cancel-request-button" id="cancelRequestButton" type="button">
+                        Cancel Emergency Request
+                    </button>
+                </div>
             </div>
 
 
@@ -4329,9 +4338,30 @@
             return;
         }
 
+        const incomingStatus =
+            String(data.status || "").toUpperCase();
+
+        if (
+            incomingStatus === "COMPLETED" ||
+            incomingStatus === "CANCELLED"
+        ) {
+            currentEmergency = null;
+
+            try {
+                localStorage.removeItem("resq_active_emergency_id");
+                localStorage.removeItem("resq_emergency_id");
+            } catch (storageError) {
+                console.warn("Could not clear terminal emergency IDs:", storageError);
+            }
+
+            resetPreEmergencyUI();
+            return;
+        }
 
         currentEmergency =
             data;
+
+        updateCancelRequestButton();
 
         const timeline=document.getElementById("timeline");
         const timelineReadyState=document.getElementById("timelineReadyState");
@@ -5127,6 +5157,28 @@
     }
 
 
+    function updateCancelRequestButton(){
+        const button = $("cancelRequestButton");
+        if(!button) return;
+
+        const status = String(currentEmergency?.status || "").toUpperCase();
+        const terminalStatuses = ["COMPLETED", "CANCELLED"];
+        const canCancel = !!currentEmergency && !terminalStatuses.includes(status);
+
+        button.style.display = "inline-flex";
+        button.disabled = !canCancel;
+
+        if(status === "CANCELLED"){
+            button.textContent = "Request Cancelled";
+        }else if(status === "COMPLETED"){
+            button.textContent = "Request Completed";
+        }else if(currentEmergency){
+            button.textContent = "Cancel Emergency Request";
+        }else{
+            button.textContent = "No Active Request";
+        }
+    }
+
     function resetPreEmergencyUI(){
         currentEmergency=null;
 
@@ -5145,6 +5197,7 @@
         setText("emergencyCardTitle","Emergency Ready");
         setText("emergencyStatus","READY");
         setText("emergencyId","No active emergency reported");
+        updateCancelRequestButton();
         setText("eta","-- min");
         setText("etaSub","Available when an emergency is reported");
         setText("condition","Stable");
@@ -5164,8 +5217,58 @@
     }
 
     async function prefillEmergencyPersonalDetails(){const client=window.resqRoute?.supabase||window.supabaseClient;if(!client)return;try{const {data:authData}=await client.auth.getUser();const user=authData?.user;if(!user)return;const profileResponse=await client.from("profiles").select("name,email,phone").eq("id",user.id).maybeSingle();const profile=profileResponse.data||{};const patientResponse=await client.from("patients").select("name,age,gender,blood_group,allergies,medical_conditions").eq("user_id",user.id).order("created_at",{ascending:false}).limit(1).maybeSingle();const patient=patientResponse.error?null:patientResponse.data;const values={patientName:patient?.name||profile.name||user.user_metadata?.name||"",patientAge:patient?.age||"",patientGender:patient?.gender||"",bloodGroup:patient?.blood_group||"",allergies:patient?.allergies||"",medicalConditions:patient?.medical_conditions||""};Object.keys(values).forEach(function(id){if($(id))$(id).value=values[id];});}catch(error){console.warn("Could not prefill emergency details:",error);}}
-    function openSosModal(){if(currentEmergency)return;const modal=$("sosModal");if(!modal)return;modal.classList.add("open");modal.setAttribute("aria-hidden","false");prefillEmergencyPersonalDetails();requestUserLocationForMap();setTimeout(function(){$("sosDetails")?.focus();},100);}
-    function closeSosModal(){const modal=$("sosModal");if(!modal)return;modal.classList.remove("open");modal.setAttribute("aria-hidden","true");}
+    function resetSosModalState(){
+        const form = $("familySosForm");
+        const button = $("sosSubmit");
+        const message = $("sosMessage");
+
+        if(form){
+            form.reset();
+        }
+
+        if(button){
+            button.disabled = false;
+            button.textContent = "🚑 Send Emergency Request";
+        }
+
+        if(message){
+            message.style.display = "none";
+            message.textContent = "";
+            message.style.background = "";
+            message.style.color = "";
+        }
+    }
+
+    function openSosModal(){
+        if(currentEmergency)return;
+
+        const modal=$("sosModal");
+        if(!modal)return;
+
+        /* Never reopen the SOS form with the previous submission state. */
+        resetSosModalState();
+
+        modal.classList.add("open");
+        modal.setAttribute("aria-hidden","false");
+
+        prefillEmergencyPersonalDetails();
+        requestUserLocationForMap();
+
+        setTimeout(function(){
+            $("sosDetails")?.focus();
+        },100);
+    }
+
+    function closeSosModal(){
+        const modal=$("sosModal");
+        if(!modal)return;
+
+        modal.classList.remove("open");
+        modal.setAttribute("aria-hidden","true");
+
+        /* Clear transient submit/loading/success state for the next SOS. */
+        resetSosModalState();
+    }
     async function getFamilyProfileForEmergency(){
         const client = window.resqRoute?.supabase || window.supabaseClient;
         if(!client) throw new Error("Supabase is not configured.");
@@ -5309,6 +5412,303 @@
             }
             button.disabled=false;
             button.textContent="🚑 Send Emergency Request";
+        }
+    }
+
+    async function cancelCurrentEmergency(){
+        if(!currentEmergency?.id) return;
+
+        const emergencyId = String(currentEmergency.id);
+        const status = String(currentEmergency.status || "").toUpperCase();
+
+        const activeStatuses = [
+            "REPORTED",
+            "DISPATCHING",
+            "ASSIGNED",
+            "DRIVER_ACCEPTED",
+            "EN_ROUTE_TO_PATIENT",
+            "ARRIVED_AT_PATIENT",
+            "PATIENT_ONBOARD",
+            "EN_ROUTE_TO_HOSPITAL",
+            "ARRIVED_AT_HOSPITAL"
+        ];
+
+        if(!activeStatuses.includes(status)) return;
+
+        const confirmed = window.confirm(
+            "Cancel this emergency request? The ambulance and hospital will be notified that the request is no longer active."
+        );
+
+        if(!confirmed) return;
+
+        const button = $("cancelRequestButton");
+
+        if(button){
+            button.disabled = true;
+            button.textContent = "Cancelling...";
+        }
+
+        try{
+            /*
+             * IMPORTANT:
+             * Cancel directly through the same authenticated Supabase
+             * client used by this dashboard.
+             *
+             * The previous flow called emergency.js -> updateStatus().
+             * That function performs UPDATE + SELECT .single(). If the
+             * database RLS policy allows the UPDATE but does not allow
+             * returning the updated row, .single() can fail and the family
+             * dashboard incorrectly reports that cancellation failed.
+             *
+             * Here we perform the UPDATE without requesting the updated
+             * row. The requester_id condition also guarantees that this
+             * family account can only cancel its own emergency.
+             */
+            const client =
+                window.resqRoute?.supabase ||
+                window.supabaseClient;
+
+            if(!client){
+                throw new Error("Supabase client is not available.");
+            }
+
+            const {
+                data: authData,
+                error: authError
+            } = await client.auth.getUser();
+
+            if(authError){
+                throw authError;
+            }
+
+            const user = authData?.user;
+
+            if(!user){
+                throw new Error(
+                    "Your session has expired. Please sign in again."
+                );
+            }
+
+            const updateResult = await client
+                .from("emergencies")
+                .update({
+                    status: "CANCELLED",
+                    updated_at: new Date().toISOString()
+                })
+                .eq("id", emergencyId)
+                .eq("requester_id", user.id)
+                .in("status", activeStatuses);
+
+            if(updateResult.error){
+                throw updateResult.error;
+            }
+
+            /*
+             * Confirm the same emergency now reports CANCELLED.
+             * This uses the existing read API already used by the family
+             * dashboard, so we do not depend on UPDATE ... RETURNING.
+             */
+            let cancelledEmergency = null;
+
+            try{
+                if(
+                    window.resqEmergency &&
+                    typeof window.resqEmergency.getById === "function"
+                ){
+                    cancelledEmergency =
+                        await window.resqEmergency.getById(emergencyId);
+                }
+            }catch(verifyError){
+                console.warn(
+                    "Cancellation was sent, but confirmation read failed:",
+                    verifyError
+                );
+            }
+
+            if(
+                cancelledEmergency &&
+                String(cancelledEmergency.status || "").toUpperCase() !==
+                    "CANCELLED"
+            ){
+                throw new Error(
+                    "Supabase did not confirm the emergency as CANCELLED."
+                );
+            }
+
+            /*
+             * Keep the existing event system when available.
+             * Event logging must never undo an already successful
+             * cancellation.
+             */
+            try{
+                if(
+                    window.resqEmergency &&
+                    typeof window.resqEmergency.addEvent === "function"
+                ){
+                    await window.resqEmergency.addEvent(
+                        emergencyId,
+                        "CANCELLED",
+                        "Emergency request cancelled by the family/patient."
+                    );
+                }
+            }catch(eventError){
+                console.warn(
+                    "Emergency cancelled, but cancellation event logging failed:",
+                    eventError
+                );
+            }
+
+            /*
+             * Update the local UI immediately. Supabase realtime will also
+             * propagate the same CANCELLED status to the ambulance and
+             * hospital dashboards.
+             */
+            currentEmergency = {
+                ...currentEmergency,
+                status: "CANCELLED",
+                updated_at: new Date().toISOString()
+            };
+
+            try{
+                localStorage.removeItem("resq_active_emergency_id");
+                localStorage.removeItem("resq_emergency_id");
+            }catch(storageError){
+                console.warn(
+                    "Could not clear stored emergency ID:",
+                    storageError
+                );
+            }
+
+            applyEmergency(currentEmergency);
+            updateCancelRequestButton();
+
+            console.log(
+                "Emergency cancelled successfully:",
+                emergencyId
+            );
+
+        }catch(error){
+            console.error(
+                "Cancel emergency failed:",
+                error
+            );
+
+            if(button){
+                button.disabled = false;
+                button.textContent = "Cancel Emergency Request";
+            }
+
+            const reason =
+                error?.message ||
+                "Supabase rejected the cancellation request.";
+
+            window.alert(
+                "The emergency request could not be cancelled.\n\n" +
+                "Reason: " + reason
+            );
+        }
+    }
+    let familyEmergencyChannel = null;
+
+    async function refreshFamilyEmergencyFromDatabase(emergencyId) {
+        if (!emergencyId || !window.resqEmergency) return;
+
+        try {
+            const latest = await window.resqEmergency.getById(emergencyId);
+
+            if (!latest) {
+                return;
+            }
+
+            const status = String(latest.status || "").toUpperCase();
+
+            if (status === "COMPLETED" || status === "CANCELLED") {
+                currentEmergency = null;
+
+                try {
+                    localStorage.removeItem("resq_active_emergency_id");
+                    localStorage.removeItem("resq_emergency_id");
+                } catch (storageError) {
+                    console.warn("Could not clear terminal emergency IDs:", storageError);
+                }
+
+                resetPreEmergencyUI();
+                return;
+            }
+
+            if (currentEmergency && currentEmergency.id === emergencyId) {
+                applyEmergency({
+                    ...currentEmergency,
+                    ...latest
+                });
+            }
+        } catch (error) {
+            console.warn("Family emergency refresh failed:", error);
+        }
+    }
+
+    async function startFamilyEmergencyRealtime() {
+        const client =
+            window.resqRoute?.supabase ||
+            window.supabaseClient;
+
+        if (!client || !client.channel) {
+            return;
+        }
+
+        try {
+            const {
+                data: {
+                    user
+                }
+            } = await client.auth.getUser();
+
+            if (!user) {
+                return;
+            }
+
+            if (familyEmergencyChannel) {
+                try {
+                    await client.removeChannel(familyEmergencyChannel);
+                } catch (removeError) {
+                    console.warn("Could not remove previous family emergency channel:", removeError);
+                }
+            }
+
+            familyEmergencyChannel = client
+                .channel("family-emergency-sync-" + user.id)
+                .on(
+                    "postgres_changes",
+                    {
+                        event: "UPDATE",
+                        schema: "public",
+                        table: "emergencies",
+                        filter: "requester_id=eq." + user.id
+                    },
+                    function (payload) {
+                        const updated = payload?.new;
+
+                        if (!updated?.id) {
+                            return;
+                        }
+
+                        const trackedId =
+                            currentEmergency?.id ||
+                            localStorage.getItem("resq_active_emergency_id");
+
+                        if (trackedId && updated.id !== trackedId) {
+                            return;
+                        }
+
+                        refreshFamilyEmergencyFromDatabase(updated.id);
+                    }
+                )
+                .subscribe(function (status) {
+                    console.log("Family emergency realtime:", status);
+                });
+
+        } catch (error) {
+            console.warn("Family emergency realtime setup failed:", error);
         }
     }
 
@@ -5540,19 +5940,45 @@
 
             resetPreEmergencyUI();
 
-            const sosButton=$("sosButton"),sosClose=$("sosClose"),sosModal=$("sosModal"),sosForm=$("familySosForm");
+            const sosButton=$("sosButton"),sosClose=$("sosClose"),sosModal=$("sosModal"),sosForm=$("familySosForm"),cancelRequestButton=$("cancelRequestButton");
             if(sosButton)sosButton.addEventListener("click",openSosModal);
+            if(cancelRequestButton)cancelRequestButton.addEventListener("click",cancelCurrentEmergency);
             if(sosClose)sosClose.addEventListener("click",closeSosModal);
             if(sosForm)sosForm.addEventListener("submit",submitFamilySos);
             if(sosModal)sosModal.addEventListener("click",function(event){if(event.target===sosModal)closeSosModal();});
             document.addEventListener("keydown",function(event){if(event.key==="Escape")closeSosModal();});
-            try{if(window.resqEmergency&&typeof window.resqEmergency.getStoredActive==="function"){const existingEmergency=await window.resqEmergency.getStoredActive();if(existingEmergency)applyEmergency(existingEmergency);}}catch(error){console.warn("Unable to restore active emergency:",error);}
+            try{
+                if(window.resqEmergency&&typeof window.resqEmergency.getStoredActive==="function"){
+                    const existingEmergency=await window.resqEmergency.getStoredActive();
+
+                    if(existingEmergency){
+                        applyEmergency(existingEmergency);
+                    }
+                }
+            }catch(error){
+                console.warn("Unable to restore active emergency:",error);
+            }
+
+            await startFamilyEmergencyRealtime();
 
             updateClock();
 
             setInterval(
                 updateClock,
                 30000
+            );
+
+            setInterval(
+                function () {
+                    const trackedId =
+                        currentEmergency?.id ||
+                        localStorage.getItem("resq_active_emergency_id");
+
+                    if (trackedId) {
+                        refreshFamilyEmergencyFromDatabase(trackedId);
+                    }
+                },
+                5000
             );
 
             const logoutButton = $("logoutButton");

@@ -1381,9 +1381,23 @@
             </div>
         `;
 
+        /*
+         * If hospital.html opened this page for one specific emergency,
+         * show ONLY that emergency.
+         *
+         * Previously this page ignored ?emergency=<id> while loading the
+         * grid, so every active emergency belonging to the hospital was
+         * displayed. That made unrelated/older patients look like random
+         * patients for the request the staff had just opened.
+         */
+        const pageUrl = new URL(window.location.href);
+        const requestedEmergencyId =
+            pageUrl.searchParams.get("emergency");
+        const requestedPatientName =
+            pageUrl.searchParams.get("patient");
 
-        const response =
-            await supabaseClient
+        let query =
+            supabaseClient
                 .from("emergencies")
                 .select(`
                     id,
@@ -1418,13 +1432,31 @@
                     "status",
                     "in",
                     "(COMPLETED,CANCELLED)"
-                )
-                .order(
-                    "created_at",
-                    {
-                        ascending: false
-                    }
                 );
+
+        if (requestedEmergencyId) {
+            // Primary routing: the hospital dashboard passes the exact
+            // emergency row ID, so this must return one request only.
+            query = query.eq(
+                "id",
+                requestedEmergencyId
+            );
+        } else if (requestedPatientName) {
+            // Fallback routing: older hospital.html links may pass only
+            // the patient name. Keep the page scoped to that request
+            // instead of displaying unrelated active patients.
+            query = query.eq(
+                "patients.name",
+                requestedPatientName
+            );
+        }
+
+        const response = await query.order(
+            "created_at",
+            {
+                ascending: false
+            }
+        );
 
 
         if (response.error) {
