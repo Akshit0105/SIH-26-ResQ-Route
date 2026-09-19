@@ -981,7 +981,7 @@
         <div class="room-list" id="roomList"><div class="bed-empty">Loading rooms...</div></div>
 
         <div class="bed-toolbar">
-            <div class="allocation-section-title" style="margin:0">Select a bed</div>
+            <div class="allocation-section-title" id="availableBedsTitle" style="margin:0">Select a bed</div>
             <small id="bedResultCount">0 beds</small>
         </div>
         <div class="bed-list" id="allocationBedList">
@@ -1052,6 +1052,7 @@
     let selectedRoomId = "all";
     let currentDetailEmergencyId = null;
     let currentAllocations = {};
+    let initialUrlEmergencyHandled = false;
 
 
     /* =====================================================
@@ -1382,8 +1383,9 @@
                     created_at,
                     updated_at,
 
-                    patients (
+                    patients!inner (
                         id,
+                        user_id,
                         name,
                         age,
                         gender,
@@ -1395,6 +1397,11 @@
                 .eq(
                     "hospital_id",
                     hospitalId
+                )
+                .not(
+                    "patients.user_id",
+                    "is",
+                    null
                 )
                 .not(
                     "status",
@@ -1483,6 +1490,41 @@
         updateStats();
 
         renderPatients();
+
+        /*
+         * If the hospital dashboard sent us here for a specific emergency,
+         * open that patient's details popup automatically instead of making
+         * staff search the full patient list again.
+         *
+         * The URL parameters are removed after opening so realtime refreshes
+         * do not keep reopening the same popup.
+         */
+        if (!initialUrlEmergencyHandled) {
+            const url = new URL(window.location.href);
+            const requestedEmergencyId =
+                url.searchParams.get("emergency");
+
+            if (requestedEmergencyId) {
+                const requestedEmergency = emergencies.find(
+                    emergency =>
+                        String(emergency.id) ===
+                        String(requestedEmergencyId)
+                );
+
+                if (requestedEmergency) {
+                    initialUrlEmergencyHandled = true;
+                    openPatientModal(requestedEmergency.id);
+
+                    url.searchParams.delete("emergency");
+                    url.searchParams.delete("patient");
+                    window.history.replaceState(
+                        {},
+                        document.title,
+                        url.pathname + url.search + url.hash
+                    );
+                }
+            }
+        }
 
     }
 
