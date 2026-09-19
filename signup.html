@@ -2172,20 +2172,53 @@
            TERMS LINK
         ========================== */
 
-        document
-            .getElementById("termsLink")
-            .addEventListener(
+        /* =========================
+           TERMS & CONDITIONS LINK
+           ========================== */
+
+        const termsLink =
+            document.getElementById("termsLink");
+
+        if (termsLink) {
+
+            function updateTermsLink() {
+
+                const role =
+                    getSelectedRole() || "family";
+
+                termsLink.href =
+                    "terms.html?role=" +
+                    encodeURIComponent(role);
+            }
+
+            updateTermsLink();
+
+            document
+                .querySelectorAll('input[name="role"]')
+                .forEach(function(radio) {
+
+                    radio.addEventListener(
+                        "change",
+                        updateTermsLink
+                    );
+
+                });
+
+            termsLink.addEventListener(
                 "click",
                 function(event) {
 
                     event.preventDefault();
 
-                    alert(
-                        "Terms & Conditions will be added to the final ResQ-Route deployment."
-                    );
+                    const role =
+                        getSelectedRole() || "family";
 
+                    window.location.href =
+                        "terms.html?role=" +
+                        encodeURIComponent(role);
                 }
             );
+        }
 
     </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>

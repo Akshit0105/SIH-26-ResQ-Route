@@ -1,1460 +1,1181 @@
-
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>Emergency Assistance | ResQ-Route</title>
 
     <style>
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-      }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
 
-      body {
-        font-family: Arial, Helvetica, sans-serif;
-        background: #f4f7fb;
-        color: #172033;
-        min-height: 100vh;
-      }
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background: #f4f7fb;
+            color: #172033;
+            min-height: 100vh;
+        }
 
-      /* =========================
+        /* =========================
            NAVBAR
         ========================== */
 
-      nav {
-        height: 72px;
-        background: #ffffff;
-        border-bottom: 1px solid #e6eaf0;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 0 7%;
-      }
-
-      .logo {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        text-decoration: none;
-        color: #172033;
-      }
-
-      .logo-icon {
-        width: 42px;
-        height: 42px;
-        border-radius: 10px;
-        background: #e63946;
-        color: white;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 21px;
-        font-weight: bold;
-      }
-
-      .logo-text {
-        font-size: 21px;
-        font-weight: 800;
-      }
-
-      .logo-text span {
-        color: #e63946;
-      }
-
-      .nav-links {
-        display: flex;
-        align-items: center;
-        gap: 22px;
-      }
-
-      .nav-link {
-        text-decoration: none;
-        color: #596579;
-        font-size: 14px;
-        font-weight: 600;
-      }
-
-      .nav-link:hover {
-        color: #e63946;
-      }
-
-      /* =========================
-           PAGE
-        ========================== */
-
-      .page {
-        padding: 42px 20px 60px;
-      }
-
-      .emergency-container {
-        width: 100%;
-        max-width: 1050px;
-        margin: auto;
-      }
-
-      /* =========================
-           WARNING HEADER
-        ========================== */
-
-      .warning-banner {
-        background: #fff3f3;
-        border: 1px solid #ffd4d7;
-        border-radius: 14px;
-        padding: 18px 20px;
-        display: flex;
-        align-items: flex-start;
-        gap: 14px;
-        margin-bottom: 24px;
-      }
-
-      .warning-icon {
-        width: 38px;
-        height: 38px;
-        border-radius: 9px;
-        background: #e63946;
-        color: white;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 800;
-        flex-shrink: 0;
-      }
-
-      .warning-banner h3 {
-        font-size: 14px;
-        margin-bottom: 5px;
-        color: #9f1d29;
-      }
-
-      .warning-banner p {
-        font-size: 12px;
-        line-height: 1.5;
-        color: #7b4a50;
-      }
-
-      /* =========================
-           MAIN CARD
-        ========================== */
-
-      .main-card {
-        background: white;
-        border-radius: 22px;
-        box-shadow: 0 20px 60px rgba(25, 42, 70, 0.1);
-        overflow: hidden;
-      }
-
-      .card-header {
-        padding: 38px 45px;
-        border-bottom: 1px solid #edf0f4;
-      }
-
-      .card-header h1 {
-        font-size: 30px;
-        margin-bottom: 9px;
-      }
-
-      .card-header p {
-        color: #6c7789;
-        font-size: 14px;
-        line-height: 1.6;
-      }
-
-      .form-section {
-        padding: 38px 45px 45px;
-      }
-
-      /* =========================
-           SECTION TITLES
-        ========================== */
-
-      .section-title {
-        font-size: 17px;
-        font-weight: 800;
-        margin-bottom: 20px;
-      }
-
-      .section-title:not(:first-child) {
-        margin-top: 36px;
-      }
-
-      /* =========================
-           FORM GRID
-        ========================== */
-
-      .form-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 20px;
-      }
-
-      .form-group {
-        margin-bottom: 2px;
-      }
-
-      .form-group.full {
-        grid-column: 1 / -1;
-      }
-
-      .form-group label {
-        display: block;
-        font-size: 13px;
-        font-weight: 700;
-        color: #364152;
-        margin-bottom: 8px;
-      }
-
-      .required {
-        color: #e63946;
-      }
-
-      input,
-      select,
-      textarea {
-        width: 100%;
-        border: 1px solid #dce2ea;
-        border-radius: 10px;
-        padding: 0 14px;
-        font-family: inherit;
-        font-size: 14px;
-        color: #172033;
-        background: white;
-        outline: none;
-        transition: 0.2s ease;
-      }
-
-      input,
-      select {
-        height: 48px;
-      }
-
-      textarea {
-        min-height: 95px;
-        padding-top: 13px;
-        padding-bottom: 13px;
-        resize: vertical;
-      }
-
-      input:focus,
-      select:focus,
-      textarea:focus {
-        border-color: #e63946;
-        box-shadow: 0 0 0 3px rgba(230, 57, 70, 0.08);
-      }
-
-      .help-text {
-        margin-top: 6px;
-        font-size: 11px;
-        color: #818b9b;
-        line-height: 1.5;
-      }
-
-      /* =========================
-           LOCATION
-        ========================== */
-
-      .location-box {
-        background: #f8fafc;
-        border: 1px solid #e2e7ee;
-        border-radius: 14px;
-        padding: 20px;
-      }
-
-      .location-status {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        margin-bottom: 16px;
-      }
-
-      .location-dot {
-        width: 10px;
-        height: 10px;
-        border-radius: 50%;
-        background: #9aa4b2;
-      }
-
-      .location-dot.active {
-        background: #1fa463;
-        box-shadow: 0 0 0 4px rgba(31, 164, 99, 0.12);
-      }
-
-      .location-status span {
-        font-size: 13px;
-        font-weight: 700;
-        color: #596579;
-      }
-
-      .location-buttons {
-        display: flex;
-        gap: 12px;
-      }
-
-      .location-btn {
-        height: 44px;
-        padding: 0 18px;
-        border: 1px solid #dce2ea;
-        border-radius: 9px;
-        background: white;
-        color: #364152;
-        font-size: 13px;
-        font-weight: 700;
-        cursor: pointer;
-      }
-
-      .location-btn:hover {
-        border-color: #e63946;
-        color: #e63946;
-      }
-
-      .location-btn.primary {
-        background: #172033;
-        color: white;
-        border-color: #172033;
-      }
-
-      .location-btn.primary:hover {
-        background: #263149;
-        color: white;
-      }
-
-      .coordinates {
-        display: none;
-        margin-top: 15px;
-        padding: 12px;
-        background: white;
-        border: 1px solid #e2e7ee;
-        border-radius: 8px;
-        font-size: 12px;
-        color: #647084;
-      }
-
-      .coordinates.active {
-        display: block;
-      }
-
-      /* =========================
-           MANUAL LOCATION DASHBOARD
-        ========================== */
-
-      .manual-location-panel {
-        display: none;
-        margin-top: 16px;
-        padding: 20px;
-        background: #ffffff;
-        border: 1px solid #dce2ea;
-        border-radius: 12px;
-      }
-
-      .manual-location-panel.active {
-        display: block;
-      }
-
-      .manual-location-title {
-        font-size: 14px;
-        font-weight: 800;
-        color: #172033;
-        margin-bottom: 5px;
-      }
-
-      .manual-location-subtitle {
-        font-size: 11px;
-        color: #818b9b;
-        line-height: 1.5;
-        margin-bottom: 16px;
-      }
-
-      .manual-location-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 14px;
-      }
-
-      .manual-location-grid .full {
-        grid-column: 1 / -1;
-      }
-
-      .manual-location-panel input {
-        height: 46px;
-      }
-
-      .manual-location-actions {
-        display: flex;
-        justify-content: flex-end;
-        gap: 10px;
-        margin-top: 16px;
-      }
-
-      .manual-location-save {
-        height: 44px;
-        padding: 0 18px;
-        border: none;
-        border-radius: 9px;
-        background: #172033;
-        color: white;
-        font-size: 13px;
-        font-weight: 700;
-        cursor: pointer;
-      }
-
-      .manual-location-save:hover {
-        background: #263149;
-      }
-
-      .manual-location-cancel {
-        height: 44px;
-        padding: 0 18px;
-        border: 1px solid #dce2ea;
-        border-radius: 9px;
-        background: white;
-        color: #364152;
-        font-size: 13px;
-        font-weight: 700;
-        cursor: pointer;
-      }
-
-      .manual-location-cancel:hover {
-        border-color: #e63946;
-        color: #e63946;
-      }
-
-      @media (max-width: 600px) {
-        .manual-location-grid {
-          grid-template-columns: 1fr;
-        }
-
-        .manual-location-grid .full {
-          grid-column: auto;
-        }
-
-        .manual-location-actions {
-          flex-direction: column;
-        }
-
-        .manual-location-save,
-        .manual-location-cancel {
-          width: 100%;
-        }
-      }
-
-      /* =========================
-           PRIORITY
-        ========================== */
-
-      .priority-grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 12px;
-      }
-
-      .priority-option {
-        position: relative;
-      }
-
-      .priority-option input {
-        position: absolute;
-        opacity: 0;
-        pointer-events: none;
-      }
-
-      .priority-card {
-        display: block;
-        border: 1px solid #dce2ea;
-        border-radius: 11px;
-        padding: 15px;
-        cursor: pointer;
-        transition: 0.2s ease;
-      }
-
-      .priority-card:hover {
-        border-color: #e63946;
-      }
-
-      .priority-option input:checked + .priority-card {
-        border-color: #e63946;
-        background: #fff5f6;
-      }
-
-      .priority-card strong {
-        display: block;
-        font-size: 13px;
-        margin-bottom: 4px;
-      }
-
-      .priority-card span {
-        display: block;
-        font-size: 11px;
-        color: #7b8595;
-        line-height: 1.4;
-      }
-
-      /* =========================
-           SUBMIT AREA
-        ========================== */
-
-      .submit-area {
-        margin-top: 35px;
-        padding-top: 25px;
-        border-top: 1px solid #edf0f4;
-      }
-
-      .submit-note {
-        text-align: center;
-        font-size: 12px;
-        color: #747f90;
-        line-height: 1.6;
-        margin-bottom: 18px;
-      }
-
-      .request-btn {
-        width: 100%;
-        height: 58px;
-        border: none;
-        border-radius: 11px;
-        background: #e63946;
-        color: white;
-        font-size: 16px;
-        font-weight: 800;
-        cursor: pointer;
-        transition: 0.2s ease;
-      }
-
-      .request-btn:hover {
-        background: #cf2938;
-        transform: translateY(-1px);
-      }
-
-      .request-btn:disabled {
-        opacity: 0.65;
-        cursor: not-allowed;
-        transform: none;
-      }
-
-      /* =========================
-           STATUS MESSAGE
-        ========================== */
-
-      .status-message {
-        display: none;
-        margin-bottom: 20px;
-        padding: 14px 16px;
-        border-radius: 9px;
-        font-size: 13px;
-        line-height: 1.5;
-      }
-
-      .status-message.error {
-        display: block;
-        background: #fff0f1;
-        color: #b4232f;
-        border: 1px solid #ffd1d5;
-      }
-
-      .status-message.success {
-        display: block;
-        background: #eefbf3;
-        color: #16733a;
-        border: 1px solid #c8efd7;
-      }
-
-      /* =========================
-           LOADING
-        ========================== */
-
-      .spinner {
-        display: none;
-        width: 19px;
-        height: 19px;
-        border: 2px solid rgba(255, 255, 255, 0.4);
-        border-top-color: white;
-        border-radius: 50%;
-        animation: spin 0.7s linear infinite;
-        margin: auto;
-      }
-
-      .request-btn.loading .button-text {
-        display: none;
-      }
-
-      .request-btn.loading .spinner {
-        display: block;
-      }
-
-      @keyframes spin {
-        to {
-          transform: rotate(360deg);
-        }
-      }
-
-      /* =========================
-           LOGIN NOTICE
-        ========================== */
-
-      .login-notice {
-        margin-top: 22px;
-        padding: 15px;
-        background: #f8fafc;
-        border: 1px solid #e2e7ee;
-        border-radius: 10px;
-        text-align: center;
-        font-size: 12px;
-        color: #687385;
-        line-height: 1.6;
-      }
-
-      .login-notice a {
-        color: #e63946;
-        font-weight: 700;
-        text-decoration: none;
-      }
-
-      /* =========================
-           RESPONSIVE
-        ========================== */
-
-      @media (max-width: 750px) {
         nav {
-          padding: 0 5%;
+            height: 68px;
+            background: #ffffff;
+            border-bottom: 1px solid #e6eaf0;
+
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            padding: 0 6%;
+        }
+
+        .logo {
+            font-size: 21px;
+            font-weight: 800;
+            text-decoration: none;
+            color: #172033;
+        }
+
+        .logo span {
+            color: #e63946;
         }
 
         .nav-links {
-          gap: 12px;
+            display: flex;
+            gap: 18px;
         }
+
+        .nav-links a {
+            color: #596579;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .nav-links a:hover {
+            color: #e63946;
+        }
+
+        /* =========================
+           PAGE
+        ========================== */
 
         .page {
-          padding: 25px 12px 40px;
+            padding: 30px 15px 50px;
         }
 
-        .card-header,
-        .form-section {
-          padding-left: 30px;
-          padding-right: 30px;
+        .card {
+            width: 100%;
+            max-width: 850px;
+            margin: auto;
+
+            background: #ffffff;
+            border-radius: 20px;
+
+            box-shadow:
+                0 18px 55px rgba(25, 42, 70, .1);
+
+            overflow: hidden;
         }
 
-        .form-grid {
-          grid-template-columns: 1fr;
+        /* =========================
+           HEADER
+        ========================== */
+
+        .head {
+            padding: 32px 36px;
+            border-bottom: 1px solid #edf0f4;
         }
 
-        .form-group.full {
-          grid-column: auto;
+        .head h1 {
+            font-size: 29px;
+            margin-bottom: 8px;
         }
 
-        .priority-grid {
-          grid-template-columns: 1fr;
-        }
-      }
-
-      @media (max-width: 500px) {
-        nav {
-          height: 65px;
+        .head p {
+            color: #687385;
+            font-size: 14px;
+            line-height: 1.6;
         }
 
-        .logo-text {
-          font-size: 18px;
+        /* =========================
+           WARNING
+        ========================== */
+
+        .warning {
+            margin: 24px 36px 0;
+
+            padding: 14px 16px;
+
+            background: #fff4f4;
+
+            border: 1px solid #ffd5d8;
+
+            border-radius: 11px;
+
+            color: #8f2630;
+
+            font-size: 12px;
+
+            line-height: 1.5;
         }
 
-        .logo-icon {
-          width: 36px;
-          height: 36px;
+        /* =========================
+           FORM
+        ========================== */
+
+        .form {
+            padding: 30px 36px;
         }
 
-        .nav-link {
-          font-size: 12px;
+        /* =========================
+           BIG EMERGENCY BUTTON
+        ========================== */
+
+        .emergency-action {
+            margin-bottom: 28px;
         }
 
-        .warning-banner {
-          padding: 14px;
+        .emergency-button {
+            width: 100%;
+
+            min-height: 82px;
+
+            border: none;
+
+            border-radius: 14px;
+
+            background: #e63946;
+
+            color: #ffffff;
+
+            font-size: 21px;
+
+            font-weight: 900;
+
+            cursor: pointer;
+
+            box-shadow:
+                0 10px 25px rgba(230, 57, 70, .25);
+
+            transition:
+                transform .15s ease,
+                background .15s ease,
+                box-shadow .15s ease;
         }
 
-        .main-card {
-          border-radius: 16px;
+        .emergency-button:hover {
+            background: #d62839;
+
+            transform: translateY(-2px);
+
+            box-shadow:
+                0 13px 30px rgba(230, 57, 70, .30);
         }
 
-        .card-header,
-        .form-section {
-          padding: 25px 20px;
+        .emergency-button:active {
+            transform: translateY(0);
         }
 
-        .card-header h1 {
-          font-size: 26px;
+        .emergency-button:disabled {
+            opacity: .6;
+
+            cursor: not-allowed;
+
+            transform: none;
+
+            box-shadow: none;
         }
 
-        .location-buttons {
-          flex-direction: column;
+        .emergency-note {
+            text-align: center;
+
+            margin-top: 9px;
+
+            color: #7a8494;
+
+            font-size: 11px;
         }
 
-        .location-btn {
-          width: 100%;
+        /* =========================
+           TEMPORARY ID
+        ========================== */
+
+        .temporary {
+            margin-bottom: 28px;
+
+            padding: 16px;
+
+            border-radius: 12px;
+
+            background: #f8fafc;
+
+            border: 1px solid #e2e7ee;
+
+            display: flex;
+
+            gap: 14px;
+
+            align-items: center;
         }
-      }
+
+        .temporary-icon {
+            font-size: 27px;
+        }
+
+        .temporary-id {
+            font-size: 20px;
+
+            font-weight: 900;
+
+            letter-spacing: 1px;
+
+            margin-top: 4px;
+
+            color: #e63946;
+        }
+
+        .temporary-description {
+            font-size: 11px;
+
+            color: #748093;
+
+            margin-top: 4px;
+
+            line-height: 1.5;
+        }
+
+        /* =========================
+           SECTION
+        ========================== */
+
+        .section {
+            font-size: 16px;
+
+            font-weight: 800;
+
+            margin: 28px 0 16px;
+        }
+
+        .section:first-child {
+            margin-top: 0;
+        }
+
+        /* =========================
+           GRID
+        ========================== */
+
+        .grid {
+            display: grid;
+
+            grid-template-columns: 1fr 1fr;
+
+            gap: 15px;
+        }
+
+        .group {
+            margin-bottom: 14px;
+        }
+
+        .group.full {
+            grid-column: 1 / -1;
+        }
+
+        .group label {
+            display: block;
+
+            font-size: 12px;
+
+            font-weight: 800;
+
+            color: #364152;
+
+            margin-bottom: 7px;
+        }
+
+        .group input,
+        .group select,
+        .group textarea {
+            width: 100%;
+
+            border: 1px solid #dce2ea;
+
+            border-radius: 9px;
+
+            background: #ffffff;
+
+            padding: 0 13px;
+
+            height: 46px;
+
+            font: inherit;
+
+            font-size: 13px;
+
+            outline: none;
+        }
+
+        .group textarea {
+            height: 90px;
+
+            padding-top: 12px;
+
+            resize: vertical;
+        }
+
+        .group input:focus,
+        .group select:focus,
+        .group textarea:focus {
+            border-color: #e63946;
+
+            box-shadow:
+                0 0 0 3px rgba(230, 57, 70, .08);
+        }
+
+        /* =========================
+           PRIORITY
+        ========================== */
+
+        .priority {
+            display: grid;
+
+            grid-template-columns:
+                repeat(3, 1fr);
+
+            gap: 10px;
+        }
+
+        .priority-option {
+            position: relative;
+        }
+
+        .priority-option input {
+            position: absolute;
+
+            opacity: 0;
+        }
+
+        .priority-option label {
+            display: block;
+
+            border: 1px solid #dce2ea;
+
+            border-radius: 10px;
+
+            padding: 13px;
+
+            cursor: pointer;
+
+            transition: .15s;
+        }
+
+        .priority-option label:hover {
+            border-color: #e63946;
+        }
+
+        .priority-option input:checked + label {
+            border-color: #e63946;
+
+            background: #fff5f6;
+        }
+
+        .priority-option strong {
+            display: block;
+
+            font-size: 12px;
+        }
+
+        .priority-option span {
+            font-size: 10px;
+
+            color: #7a8494;
+        }
+
+        /* =========================
+           LOCATION
+        ========================== */
+
+        .location {
+            padding: 17px;
+
+            background: #f8fafc;
+
+            border: 1px solid #e2e7ee;
+
+            border-radius: 12px;
+        }
+
+        .loc-status {
+            font-size: 12px;
+
+            font-weight: 700;
+
+            margin-bottom: 12px;
+        }
+
+        .loc-buttons {
+            display: flex;
+
+            gap: 10px;
+        }
+
+        .loc-btn {
+            height: 43px;
+
+            border: 1px solid #dce2ea;
+
+            border-radius: 9px;
+
+            background: #ffffff;
+
+            padding: 0 15px;
+
+            font-weight: 700;
+
+            cursor: pointer;
+
+            transition: .15s;
+        }
+
+        .loc-btn:hover {
+            border-color: #e63946;
+        }
+
+        .loc-btn.primary {
+            background: #172033;
+
+            color: #ffffff;
+
+            border-color: #172033;
+        }
+
+        .loc-btn.primary:hover {
+            background: #0e1524;
+        }
+
+        .coords {
+            margin-top: 12px;
+
+            padding: 10px;
+
+            background: #ffffff;
+
+            border: 1px solid #e2e7ee;
+
+            border-radius: 8px;
+
+            font-size: 11px;
+
+            color: #687385;
+
+            display: none;
+        }
+
+        .coords.active {
+            display: block;
+        }
+
+        /* =========================
+           MANUAL LOCATION
+        ========================== */
+
+        .manual {
+            display: none;
+
+            margin-top: 13px;
+        }
+
+        .manual.active {
+            display: block;
+        }
+
+        /* =========================
+           MESSAGE
+        ========================== */
+
+        .message {
+            display: none;
+
+            margin-bottom: 18px;
+
+            padding: 13px;
+
+            border-radius: 9px;
+
+            font-size: 12px;
+
+            line-height: 1.5;
+        }
+
+        .message.show {
+            display: block;
+        }
+
+        .message.error {
+            background: #fff0f1;
+
+            color: #a5212c;
+
+            border: 1px solid #ffd1d5;
+        }
+
+        .message.success {
+            background: #eefbf3;
+
+            color: #16733a;
+
+            border: 1px solid #c8efd7;
+        }
+
+        /* =========================
+           SUCCESS BOX
+        ========================== */
+
+        .status-box {
+            display: none;
+
+            margin-top: 16px;
+
+            padding: 15px;
+
+            border-radius: 11px;
+
+            background: #eefbf3;
+
+            border: 1px solid #c8efd7;
+
+            color: #166534;
+
+            line-height: 1.5;
+        }
+
+        .status-box.show {
+            display: block;
+        }
+
+        .status-box strong {
+            display: block;
+
+            margin-bottom: 5px;
+        }
+
+        .status-box code {
+            font-size: 12px;
+        }
+
+        /* =========================
+           MOBILE
+        ========================== */
+
+        @media (max-width: 650px) {
+
+            .head,
+            .form {
+                padding-left: 20px;
+                padding-right: 20px;
+            }
+
+            .warning {
+                margin-left: 20px;
+                margin-right: 20px;
+            }
+
+            .grid,
+            .priority {
+                grid-template-columns: 1fr;
+            }
+
+            .loc-buttons {
+                flex-direction: column;
+            }
+
+            .nav-links {
+                gap: 10px;
+            }
+
+            .nav-links a {
+                font-size: 11px;
+            }
+
+            .emergency-button {
+                font-size: 18px;
+            }
+
+        }
     </style>
-  </head>
+</head>
 
-  <body>
+
+<body>
+
     <!-- =========================
          NAVBAR
     ========================== -->
 
     <nav>
-      <a href="index.html" class="logo">
-        <div class="logo-icon">R</div>
 
-        <div class="logo-text">ResQ<span>-Route</span></div>
-      </a>
+        <a
+            href="index.html"
+            class="logo"
+        >
+            ResQ<span>-Route</span>
+        </a>
 
-      <div class="nav-links">
-        <a href="signin.html" class="nav-link"> Sign In </a>
 
-        <a href="signup.html" class="nav-link"> Create Account </a>
-      </div>
+        <div class="nav-links">
+
+            <a href="signin.html">
+                Sign In
+            </a>
+
+            <a href="signup.html">
+                Create Account
+            </a>
+
+        </div>
+
     </nav>
 
+
     <!-- =========================
-         MAIN
+         PAGE
     ========================== -->
 
     <main class="page">
-      <div class="emergency-container">
-        <!-- WARNING -->
 
-        <div class="warning-banner">
-          <div class="warning-icon">!</div>
+        <div class="card">
 
-          <div>
-            <h3>For genuine emergencies only</h3>
 
-            <p>
-              If you are experiencing a life-threatening emergency, contact your
-              local emergency service immediately. ResQ-Route is a coordination
-              prototype and does not replace emergency services.
-            </p>
-          </div>
-        </div>
+            <!-- HEADER -->
 
-        <!-- MAIN CARD -->
+            <div class="head">
 
-        <div class="main-card">
-          <div class="card-header">
-            <h1>Request Emergency Assistance</h1>
+                <h1>
+                    🚨 Request Emergency Assistance
+                </h1>
 
-            <p>
-              Provide the information below so the system can coordinate an
-              ambulance and suitable hospital.
-            </p>
-          </div>
-
-          <form class="form-section" id="emergencyForm">
-            <!-- STATUS -->
-
-            <div id="statusMessage" class="status-message"></div>
-
-            <!-- =========================
-                         PATIENT INFORMATION
-                    ========================== -->
-
-            <h2 class="section-title">Patient Information</h2>
-
-            <div class="form-grid">
-              <div class="form-group">
-                <label for="patientName">
-                  Patient Name
-                  <span class="required">*</span>
-                </label>
-
-                <input
-                  type="text"
-                  id="patientName"
-                  name="patientName"
-                  placeholder="Enter patient's name"
-                  required
-                />
-              </div>
-
-              <div class="form-group">
-                <label for="patientPhone">
-                  Contact Number
-                  <span class="required">*</span>
-                </label>
-
-                <input
-                  type="tel"
-                  id="patientPhone"
-                  name="patientPhone"
-                  placeholder="Enter 10-digit mobile number"
-                  inputmode="numeric"
-                  autocomplete="tel"
-                  maxlength="10"
-                  minlength="10"
-                  pattern="[6-9][0-9]{9}"
-                  title="Enter a valid 10-digit Indian mobile number starting with 6, 7, 8, or 9"
-                  required
-                />
-              </div>
-
-              <div class="form-group">
-                <label for="patientAge">
-                  Approx. Age
-                  <span class="required">*</span>
-                </label>
-
-                <input
-                  type="number"
-                  id="patientAge"
-                  name="patientAge"
-                  placeholder="Enter approximate age"
-                  min="1"
-                  max="120"
-                  step="1"
-                  oninput="
-                    this.value = this.value.replace(/[^0-9]/g, '').slice(0, 3)
-                  "
-                  inputmode="numeric"
-                  required
-                />
-
-                <p class="help-text">
-                  Enter the patient's approximate age in whole years (1–120).
+                <p>
+                    Get emergency help without creating
+                    an account. ResQ-Route creates a
+                    temporary patient ID and connects
+                    the request to the emergency network.
                 </p>
-              </div>
 
-              <div class="form-group">
-                <label for="patientSex">
-                  Sex
-                  <span class="required">*</span>
-                </label>
-
-                <select id="patientSex" name="patientSex" required>
-                  <option value="">Select sex</option>
-
-                  <option value="male">Male</option>
-
-                  <option value="female">Female</option>
-
-                  <option value="other">Other</option>
-                </select>
-              </div>
             </div>
 
-            <!-- =========================
-                         EMERGENCY TYPE
-                    ========================== -->
 
-            <h2 class="section-title">Emergency Details</h2>
+            <!-- WARNING -->
 
-            <div class="form-grid">
-              <div class="form-group">
-                <label for="emergencyType">
-                  Emergency Type
-                  <span class="required">*</span>
-                </label>
+            <div class="warning">
 
-                <select id="emergencyType" name="emergencyType" required>
-                  <option value="">Select emergency type</option>
+                <strong>
+                    For genuine emergencies only.
+                </strong>
 
-                  <option value="accident">Road / Vehicle Accident</option>
+                ResQ-Route is a coordination prototype
+                and does not replace local emergency
+                services.
 
-                  <option value="cardiac">Cardiac Emergency</option>
-
-                  <option value="breathing">Breathing Difficulty</option>
-
-                  <option value="stroke">Stroke Symptoms</option>
-
-                  <option value="trauma">Serious Injury / Trauma</option>
-
-                  <option value="unconscious">
-                    Unconscious / Unresponsive
-                  </option>
-
-                  <option value="pregnancy">
-                    Pregnancy / Maternity Emergency
-                  </option>
-
-                  <option value="other">Other Emergency</option>
-                </select>
-              </div>
-
-              <div class="form-group">
-                <label for="patientCondition"> Current Condition </label>
-
-                <select id="patientCondition" name="patientCondition">
-                  <option value="">Select condition</option>
-
-                  <option value="conscious">Conscious</option>
-
-                  <option value="unconscious">Unconscious</option>
-
-                  <option value="breathing">Difficulty Breathing</option>
-
-                  <option value="bleeding">Severe Bleeding</option>
-
-                  <option value="critical">Critical</option>
-
-                  <option value="unknown">Unknown</option>
-                </select>
-              </div>
-
-              <div class="form-group full">
-                <label for="description"> Additional Details </label>
-
-                <textarea
-                  id="description"
-                  name="description"
-                  placeholder="Describe the situation, injuries, symptoms or other important information..."
-                ></textarea>
-              </div>
             </div>
 
-            <!-- =========================
-                         PRIORITY
-                    ========================== -->
 
-            <h2 class="section-title">Emergency Priority</h2>
+            <!-- FORM -->
 
-            <div class="priority-grid">
-              <div class="priority-option">
-                <input
-                  type="radio"
-                  id="priorityHigh"
-                  name="priority"
-                  value="high"
-                  required
-                />
+            <form
+                id="emergencyForm"
+                class="form"
+                novalidate
+            >
 
-                <label for="priorityHigh" class="priority-card">
-                  <strong> High </strong>
 
-                  <span> Serious condition requiring urgent response. </span>
-                </label>
-              </div>
+                <!-- MESSAGE -->
 
-              <div class="priority-option">
-                <input
-                  type="radio"
-                  id="priorityCritical"
-                  name="priority"
-                  value="critical"
-                />
+                <div
+                    id="statusMessage"
+                    class="message"
+                ></div>
 
-                <label for="priorityCritical" class="priority-card">
-                  <strong> Critical </strong>
 
-                  <span>
-                    Life-threatening condition requiring immediate response.
-                  </span>
-                </label>
-              </div>
+                <!-- =========================
+                     EMERGENCY BUTTON
+                ========================== -->
 
-              <div class="priority-option">
-                <input
-                  type="radio"
-                  id="priorityUnknown"
-                  name="priority"
-                  value="unknown"
-                />
+                <div class="emergency-action">
 
-                <label for="priorityUnknown" class="priority-card">
-                  <strong> Unknown </strong>
+                    <button
+                        id="requestButton"
+                        class="emergency-button"
+                        type="submit"
+                    >
+                        🚨 EMERGENCY HELP
+                    </button>
 
-                  <span> Condition cannot currently be determined. </span>
-                </label>
-              </div>
-            </div>
+                    <div class="emergency-note">
+                        Press once to request emergency
+                        assistance.
+                    </div>
 
-            <!-- =========================
-                         LOCATION
-                    ========================== -->
-
-            <h2 class="section-title">Emergency Location</h2>
-
-            <div class="location-box">
-              <div class="location-status">
-                <div class="location-dot" id="locationDot"></div>
-
-                <span id="locationStatus"> Location not detected </span>
-              </div>
-
-              <div class="location-buttons">
-                <button
-                  type="button"
-                  class="location-btn primary"
-                  id="detectLocation"
-                >
-                  📍 Use My Current Location
-                </button>
-
-                <button type="button" class="location-btn" id="manualLocation">
-                  Enter Manually
-                </button>
-              </div>
-
-              <!-- MANUAL LOCATION DASHBOARD -->
-
-              <div class="manual-location-panel" id="manualLocationPanel">
-                <div class="manual-location-title">
-                  Enter Emergency Location
                 </div>
 
-                <div class="manual-location-subtitle">
-                  Enter the patient's current location manually. Provide as much
-                  detail as possible so the emergency team can locate the
-                  patient.
+
+                <!-- =========================
+                     TEMPORARY PATIENT ID
+                ========================== -->
+
+                <div class="temporary">
+
+                    <div class="temporary-icon">
+                        🆔
+                    </div>
+
+
+                    <div>
+
+                        <strong>
+                            Temporary Patient ID
+                        </strong>
+
+
+                        <div
+                            class="temporary-id"
+                            id="temporaryPatientId"
+                        >
+                            Generating...
+                        </div>
+
+
+                        <div class="temporary-description">
+                            This ID is shared with the
+                            ambulance and hospital until
+                            the patient is identified.
+                        </div>
+
+                    </div>
+
                 </div>
 
-                <div class="manual-location-grid">
-                  <div class="form-group full">
-                    <label for="manualAddress">
-                      Address
-                      <span class="required">*</span>
-                    </label>
 
-                    <input
-                      type="text"
-                      id="manualAddress"
-                      placeholder="House / Street / Locality"
-                      autocomplete="street-address"
-                    />
-                  </div>
+                <!-- =========================
+                     EMERGENCY DETAILS
+                ========================== -->
 
-                  <div class="form-group">
-                    <label for="manualCity">
-                      City
-                      <span class="required">*</span>
-                    </label>
+                <h2 class="section">
+                    Emergency details
+                </h2>
 
-                    <input
-                      type="text"
-                      id="manualCity"
-                      placeholder="Enter city"
-                      autocomplete="address-level2"
-                    />
-                  </div>
 
-                  <div class="form-group">
-                    <label for="manualState">
-                      State
-                      <span class="required">*</span>
-                    </label>
+                <div class="grid">
 
-                    <input
-                      type="text"
-                      id="manualState"
-                      placeholder="Enter state"
-                      autocomplete="address-level1"
-                    />
-                  </div>
 
-                  <div class="form-group">
-                    <label for="manualPincode">
-                      Pincode
-                      <span class="required">*</span>
-                    </label>
+                    <!-- EMERGENCY TYPE -->
 
-                    <input
-                      type="text"
-                      id="manualPincode"
-                      placeholder="Enter 6-digit pincode"
-                      inputmode="numeric"
-                      maxlength="6"
-                      pattern="[0-9]{6}"
-                      autocomplete="postal-code"
-                    />
-                  </div>
+                    <div class="group">
 
-                  <div class="form-group">
-                    <label for="manualLandmark"> Landmark </label>
+                        <label for="emergencyType">
+                            What is happening? *
+                        </label>
 
-                    <input
-                      type="text"
-                      id="manualLandmark"
-                      placeholder="Nearby landmark (optional)"
-                    />
-                  </div>
+
+                        <select
+                            id="emergencyType"
+                            required
+                        >
+
+                            <option value="">
+                                Select emergency
+                            </option>
+
+                            <option value="accident">
+                                Road accident
+                            </option>
+
+                            <option value="cardiac">
+                                Chest pain / cardiac emergency
+                            </option>
+
+                            <option value="breathing">
+                                Breathing difficulty
+                            </option>
+
+                            <option value="unconscious">
+                                Unconscious / unresponsive
+                            </option>
+
+                            <option value="injury">
+                                Serious injury / bleeding
+                            </option>
+
+                            <option value="stroke">
+                                Possible stroke
+                            </option>
+
+                            <option value="pregnancy">
+                                Pregnancy emergency
+                            </option>
+
+                            <option value="other">
+                                Other emergency
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                    <!-- CONDITION -->
+
+                    <div class="group">
+
+                        <label for="patientCondition">
+                            Condition (optional)
+                        </label>
+
+
+                        <input
+                            id="patientCondition"
+                            placeholder="e.g. unconscious, bleeding"
+                        >
+
+                    </div>
+
+
+                    <!-- DESCRIPTION -->
+
+                    <div class="group full">
+
+                        <label for="description">
+                            Additional information (optional)
+                        </label>
+
+
+                        <textarea
+                            id="description"
+                            placeholder="Anything the ambulance team should know"
+                        ></textarea>
+
+                    </div>
+
                 </div>
 
-                <div class="manual-location-actions">
-                  <button
-                    type="button"
-                    class="manual-location-cancel"
-                    id="cancelManualLocation"
-                  >
-                    Cancel
-                  </button>
 
-                  <button
-                    type="button"
-                    class="manual-location-save"
-                    id="saveManualLocation"
-                  >
-                    Save Location
-                  </button>
+                <!-- =========================
+                     PRIORITY
+                ========================== -->
+
+                <h2 class="section">
+                    Priority
+                </h2>
+
+
+                <div class="priority">
+
+
+                    <!-- HIGH -->
+
+                    <div class="priority-option">
+
+                        <input
+                            type="radio"
+                            id="priorityHigh"
+                            name="priority"
+                            value="high"
+                            checked
+                        >
+
+
+                        <label for="priorityHigh">
+
+                            <strong>
+                                High
+                            </strong>
+
+                            <span>
+                                Urgent assistance
+                            </span>
+
+                        </label>
+
+                    </div>
+
+
+                    <!-- CRITICAL -->
+
+                    <div class="priority-option">
+
+                        <input
+                            type="radio"
+                            id="priorityCritical"
+                            name="priority"
+                            value="critical"
+                        >
+
+
+                        <label for="priorityCritical">
+
+                            <strong>
+                                Critical
+                            </strong>
+
+                            <span>
+                                Life-threatening
+                            </span>
+
+                        </label>
+
+                    </div>
+
+
+                    <!-- NOT SURE -->
+
+                    <div class="priority-option">
+
+                        <input
+                            type="radio"
+                            id="priorityUnknown"
+                            name="priority"
+                            value="high"
+                        >
+
+
+                        <label for="priorityUnknown">
+
+                            <strong>
+                                Not sure
+                            </strong>
+
+                            <span>
+                                Let dispatch decide
+                            </span>
+
+                        </label>
+
+                    </div>
+
                 </div>
-              </div>
 
-              <div class="coordinates" id="coordinates">
-                Coordinates will appear here.
-              </div>
 
-              <input type="hidden" id="latitude" name="latitude" />
+                <!-- =========================
+                     LOCATION
+                ========================== -->
 
-              <input type="hidden" id="longitude" name="longitude" />
-            </div>
+                <h2 class="section">
+                    Emergency location
+                </h2>
 
-            <!-- =========================
-                         SUBMIT
+
+                <div class="location">
+
+
+                    <div
+                        id="locationStatus"
+                        class="loc-status"
+                    >
+                        📍 Location not detected yet.
+                    </div>
+
+
+                    <div class="loc-buttons">
+
+
+                        <!-- CURRENT LOCATION -->
+
+                        <button
+                            type="button"
+                            class="loc-btn primary"
+                            id="detectLocation"
+                        >
+                            📍 Use my current location
+                        </button>
+
+
+                        <!-- MANUAL -->
+
+                        <button
+                            type="button"
+                            class="loc-btn"
+                            id="showManualLocation"
+                        >
+                            Enter location manually
+                        </button>
+
+                    </div>
+
+
+                    <!-- COORDINATES -->
+
+                    <div
+                        id="coordinates"
+                        class="coords"
+                    >
+                        Coordinates will appear here.
+                    </div>
+
+
+                    <!-- =========================
+                         MANUAL LOCATION
                     ========================== -->
 
-            <div class="submit-area">
-              <p class="submit-note">
-                By submitting this request, the emergency information will be
-                processed for ambulance dispatch and hospital coordination.
-              </p>
+                    <div
+                        id="manualLocationPanel"
+                        class="manual"
+                    >
 
-              <button type="submit" class="request-btn" id="requestButton">
-                <span class="button-text">
-                  🚑 REQUEST EMERGENCY ASSISTANCE
-                </span>
+                        <div class="grid">
 
-                <span class="spinner"></span>
-              </button>
-            </div>
 
-            <!-- LOGIN NOTICE -->
+                            <div class="group full">
 
-            <div class="login-notice">
-              Already registered with ResQ-Route?
+                                <label for="manualAddress">
+                                    Address / landmark
+                                </label>
 
-              <a href="signin.html"> Sign in </a>
 
-              for access to your saved medical information and emergency
-              contacts.
-            </div>
-          </form>
+                                <input
+                                    id="manualAddress"
+                                    placeholder="Street, landmark, area"
+                                >
+
+                            </div>
+
+
+                            <div class="group">
+
+                                <label for="manualCity">
+                                    City
+                                </label>
+
+
+                                <input
+                                    id="manualCity"
+                                    placeholder="City"
+                                >
+
+                            </div>
+
+
+                            <div class="group">
+
+                                <label for="manualState">
+                                    State
+                                </label>
+
+
+                                <input
+                                    id="manualState"
+                                    value="Punjab"
+                                    placeholder="State"
+                                >
+
+                            </div>
+
+
+                            <div class="group">
+
+                                <label for="manualPincode">
+                                    Pincode
+                                </label>
+
+
+                                <input
+                                    id="manualPincode"
+                                    inputmode="numeric"
+                                    maxlength="6"
+                                    placeholder="6-digit pincode"
+                                >
+
+                            </div>
+
+                        </div>
+
+
+                        <div
+                            style="
+                                display:flex;
+                                gap:10px;
+                                margin-top:5px;
+                            "
+                        >
+
+
+                            <button
+                                type="button"
+                                class="loc-btn"
+                                id="saveManualLocation"
+                            >
+                                Save manual location
+                            </button>
+
+
+                            <button
+                                type="button"
+                                class="loc-btn"
+                                id="cancelManualLocation"
+                            >
+                                Cancel
+                            </button>
+
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- HIDDEN LOCATION -->
+
+                    <input
+                        type="hidden"
+                        id="latitude"
+                    >
+
+
+                    <input
+                        type="hidden"
+                        id="longitude"
+                    >
+
+                </div>
+
+
+                <!-- =========================
+                     ACTIVE EMERGENCY
+                ========================== -->
+
+                <div
+                    id="successBox"
+                    class="status-box"
+                ></div>
+
+
+            </form>
+
         </div>
-      </div>
+
     </main>
 
+
     <!-- =========================
-         SCRIPT
-         Emergency processing will
-         later move to js/emergency.js
+         SCRIPTS
     ========================== -->
 
-    <script>
-      const emergencyForm = document.getElementById("emergencyForm");
-
-      const requestButton = document.getElementById("requestButton");
-
-      const statusMessage = document.getElementById("statusMessage");
-
-      const detectLocation = document.getElementById("detectLocation");
-
-      const manualLocation = document.getElementById("manualLocation");
-
-      const manualLocationPanel = document.getElementById(
-        "manualLocationPanel",
-      );
-
-      const cancelManualLocation = document.getElementById(
-        "cancelManualLocation",
-      );
-
-      const saveManualLocation = document.getElementById("saveManualLocation");
-
-      const manualAddress = document.getElementById("manualAddress");
-
-      const manualCity = document.getElementById("manualCity");
-
-      const manualState = document.getElementById("manualState");
-
-      const manualPincode = document.getElementById("manualPincode");
-
-      const manualLandmark = document.getElementById("manualLandmark");
-
-      const locationStatus = document.getElementById("locationStatus");
-
-      const locationDot = document.getElementById("locationDot");
-
-      const coordinates = document.getElementById("coordinates");
-
-      const latitudeInput = document.getElementById("latitude");
-
-      const longitudeInput = document.getElementById("longitude");
-
-      /* =========================
-           RESTORE FORM DATA FROM URL
-           ========================== */
-
-      function prefillEmergencyFormFromUrl() {
-        const params = new URLSearchParams(window.location.search);
-
-        const values = {
-          patientName: params.get("patientName"),
-          patientPhone: params.get("patientPhone"),
-          patientAge: params.get("patientAge"),
-          patientSex: params.get("patientSex") || params.get("patientGender"),
-          emergencyType: params.get("emergencyType"),
-          patientCondition: params.get("patientCondition"),
-          description: params.get("description") || params.get("details"),
-        };
-
-        Object.entries(values).forEach(([id, value]) => {
-          if (value === null || value === "") return;
-
-          const element = document.getElementById(id);
-          if (element) {
-            element.value = value;
-            element.dispatchEvent(new Event("input", { bubbles: true }));
-            element.dispatchEvent(new Event("change", { bubbles: true }));
-          }
-        });
-
-        const priority = params.get("priority");
-        if (priority) {
-          const priorityInput = document.querySelector(
-            'input[name="priority"][value="' + CSS.escape(priority) + '"]'
-          );
-          if (priorityInput) {
-            priorityInput.checked = true;
-            priorityInput.dispatchEvent(new Event("change", { bubbles: true }));
-          }
-        }
-      }
-
-      // The page is sometimes opened with patient details in the query string.
-      // Restore those values immediately so a browser refresh does not make
-      // the form appear empty while the URL still contains the data.
-      prefillEmergencyFormFromUrl();
-
-
-      /* =========================
-           STATUS MESSAGE
-        ========================== */
-
-      function showMessage(message, type) {
-        statusMessage.textContent = message;
-
-        statusMessage.className = "status-message " + type;
-
-        window.scrollTo({
-          top: 0,
-          behavior: "smooth",
-        });
-      }
-      /* =========================
-           MANUAL LOCATION
-         ========================== */
-
-
-      manualLocation.addEventListener("click", function () {
-        manualLocationPanel.classList.add("active");
-
-        manualLocation.scrollIntoView({
-          behavior: "smooth",
-          block: "nearest",
-        });
-
-        manualAddress.focus();
-      });
-
-      cancelManualLocation.addEventListener("click", function () {
-        manualLocationPanel.classList.remove("active");
-      });
-
-      saveManualLocation.addEventListener("click", async function () {
-        const address = manualAddress.value.trim();
-        const city = manualCity.value.trim();
-        const state = manualState.value.trim();
-        const pincode = manualPincode.value.trim();
-        const landmark = manualLandmark.value.trim();
-
-        if (!address || !city || !state || !/^[0-9]{6}$/.test(pincode)) {
-          showMessage(
-            "Please enter the address, city, state and a valid 6-digit pincode.",
-            "error",
-          );
-
-          if (!address) {
-            manualAddress.focus();
-          } else if (!city) {
-            manualCity.focus();
-          } else if (!state) {
-            manualState.focus();
-          } else {
-            manualPincode.focus();
-          }
-
-          return;
-        }
-
-        let locationText =
-          address + ", " + city + ", " + state + " - " + pincode;
-
-        if (landmark) {
-          locationText += " | Landmark: " + landmark;
-        }
-
-        const originalText = saveManualLocation.textContent;
-        saveManualLocation.disabled = true;
-        saveManualLocation.textContent = "Finding location...";
-
-        try {
-          /*
-           * The emergency backend requires real latitude/longitude.
-           * Convert the manually entered address into coordinates before
-           * saving it into emergency.js's shared location state.
-           */
-          const query = encodeURIComponent(locationText);
-
-          const response = await fetch(
-            "https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=in&q=" +
-              query,
-            {
-              headers: {
-                Accept: "application/json",
-              },
-            },
-          );
-
-          if (!response.ok) {
-            throw new Error("Unable to find the entered location.");
-          }
-
-          const results = await response.json();
-
-          if (!Array.isArray(results) || results.length === 0) {
-            throw new Error(
-              "The entered address could not be located. Please provide a more complete address.",
-            );
-          }
-
-          const latitude = Number(results[0].lat);
-          const longitude = Number(results[0].lon);
-
-          if (
-            !Number.isFinite(latitude) ||
-            !Number.isFinite(longitude) ||
-            latitude < -90 ||
-            latitude > 90 ||
-            longitude < -180 ||
-            longitude > 180
-          ) {
-            throw new Error("The location service returned invalid coordinates.");
-          }
-
-          latitudeInput.value = latitude;
-          longitudeInput.value = longitude;
-
-          /*
-           * Keep emergency.js as the single source of truth for the
-           * emergency location used by createEmergency().
-           */
-          if (
-            window.resqEmergency &&
-            typeof window.resqEmergency.setLocation === "function"
-          ) {
-            window.resqEmergency.setLocation(
-              latitude,
-              longitude,
-              locationText,
-            );
-          }
-
-          coordinates.textContent =
-            "Manual location: " +
-            locationText +
-            " | Coordinates: " +
-            latitude.toFixed(6) +
-            ", " +
-            longitude.toFixed(6);
-
-          coordinates.classList.add("active");
-          locationStatus.textContent =
-            "Manual location saved successfully";
-          locationDot.classList.add("active");
-          manualLocationPanel.classList.remove("active");
-
-          showMessage(
-            "Emergency location saved successfully.",
-            "success",
-          );
-        } catch (error) {
-          console.error("Manual location error:", error);
-
-          /*
-           * Do not allow the user to submit a manual address that has no
-           * coordinates, because createEmergency() requires valid coordinates.
-           */
-          latitudeInput.value = "";
-          longitudeInput.value = "";
-
-          showMessage(
-            error.message ||
-              "Unable to locate the entered address. Please try again.",
-            "error",
-          );
-        } finally {
-          saveManualLocation.disabled = false;
-          saveManualLocation.textContent = originalText;
-        }
-      });
-
-      // Allow digits only in the pincode field.
-      manualPincode.addEventListener("input", function () {
-        this.value = this.value.replace(/\D/g, "").slice(0, 6);
-      });
-
-      /* =========================
-           MOBILE NUMBER VALIDATION
-        ========================== */
-
-      const patientPhoneInput = document.getElementById("patientPhone");
-
-      // Allow digits only and limit input to 10 digits.
-      patientPhoneInput.addEventListener("input", function () {
-        this.value = this.value.replace(/\D/g, "").slice(0, 10);
-      });
-
-      // Prevent non-numeric keys while typing.
-      patientPhoneInput.addEventListener("keydown", function (event) {
-        const allowedKeys = [
-          "Backspace",
-          "Delete",
-          "ArrowLeft",
-          "ArrowRight",
-          "Tab",
-          "Home",
-          "End",
-        ];
-
-        if (allowedKeys.includes(event.key) || event.ctrlKey || event.metaKey) {
-          return;
-        }
-
-        if (!/^[0-9]$/.test(event.key)) {
-          event.preventDefault();
-        }
-      });
-
-      /*
-       * FORM SUBMISSION
-       *
-       * The real emergency submission is intentionally handled by
-       * js/emergency.js. That module creates the patient/emergency records,
-       * assigns an ambulance/hospital, writes the emergency to Supabase,
-       * and redirects to the family dashboard after success.
-       *
-       * Keeping a second submit listener here would cause duplicate handling
-       * and could display a false "validated" message without inserting data.
-       */
-    </script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
     <script src="js/supabase.js"></script>
-    <script src="js/auth.js"></script>
+
     <script src="js/emergency.js"></script>
+
     <script src="js/realtime.js"></script>
+
     <script src="js/bed-allocation.js"></script>
-  </body>
+
+
+</body>
+
 </html>
