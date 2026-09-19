@@ -1577,6 +1577,10 @@ async function createEmergency(
                 emergency_type:
                     emergencyData.emergencyType,
 
+                condition:
+                    emergencyData.condition ||
+                    null,
+
                 priority:
                     emergencyData.priority ||
                     EMERGENCY_CONFIG.defaultPriority,
@@ -1630,9 +1634,18 @@ async function createEmergency(
 
             "EMERGENCY_CREATED",
 
-            emergencyData.description
-                ? `Emergency request created. Details: ${emergencyData.description}`
-                : "Emergency request created."
+            [
+                emergencyData.condition
+                    ? `Condition: ${emergencyData.condition}`
+                    : null,
+
+                emergencyData.description
+                    ? `Details: ${emergencyData.description}`
+                    : null
+            ]
+                .filter(Boolean)
+                .join(" | ") ||
+                "Emergency request created."
 
         );
 
@@ -2351,7 +2364,23 @@ function setupEmergencyForm() {
 
 
                 /*
-                 * DESCRIPTION
+                 * CURRENT PATIENT CONDITION
+                 *
+                 * This value is stored on the emergency itself because
+                 * a patient's condition can be different for different
+                 * emergency incidents.
+                 */
+
+                const condition =
+                    getEmergencyValue(
+                        "patientCondition",
+                        "condition",
+                        "currentCondition"
+                    );
+
+
+                /*
+                 * DESCRIPTION / ADDITIONAL DETAILS
                  */
 
                 const description =
@@ -2359,8 +2388,7 @@ function setupEmergencyForm() {
                         "emergencyDetails",
                         "details",
                         "description",
-                        "condition",
-                        "patientCondition"
+                        "emergencyDescription"
                     );
 
 
@@ -2376,6 +2404,9 @@ function setupEmergencyForm() {
 
                         emergencyType:
                             emergencyType,
+
+                        condition:
+                            condition,
 
                         priority:
                             priority,

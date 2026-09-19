@@ -314,6 +314,8 @@ create table if not exists public.emergencies (
 
     emergency_type text not null,
 
+    condition text,
+
     priority public.emergency_priority
         not null default 'high',
 
@@ -1084,6 +1086,10 @@ on public.emergencies(hospital_id);
 
 create index if not exists idx_emergencies_status
 on public.emergencies(status);
+
+
+create index if not exists idx_emergencies_condition
+on public.emergencies(condition);
 
 
 create index if not exists idx_emergencies_created_at

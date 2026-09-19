@@ -291,6 +291,7 @@
                     status,
                     latitude,
                     longitude,
+                    condition,
                     created_at,
                     patients (
                         id,
@@ -520,6 +521,11 @@
                 emergency?.emergency_type
             );
 
+        const condition =
+            normalize(
+                emergency?.condition
+            );
+
 
         const explicitRoom =
             normalize(
@@ -537,6 +543,32 @@
 
             return [
                 explicitRoom
+            ];
+
+        }
+
+
+        /*
+         * CONDITION-BASED ALLOCATION
+         *
+         * These conditions indicate that the patient
+         * may need immediate critical/emergency care.
+         *
+         * ICU is preferred first, followed by emergency
+         * and critical-designated rooms.
+         */
+
+        if (
+            condition === "critical" ||
+            condition === "unconscious" ||
+            condition === "breathing" ||
+            condition === "bleeding"
+        ) {
+
+            return [
+                "icu",
+                "emergency",
+                "critical"
             ];
 
         }
@@ -576,6 +608,36 @@
                 "icu",
                 "emergency",
                 "critical"
+            ];
+
+        }
+
+
+        /*
+         * A conscious patient without a critical
+         * condition can use emergency/general care.
+         */
+
+        if (
+            condition === "conscious"
+        ) {
+
+            if (priority === "high") {
+
+                return [
+                    "emergency",
+                    "general",
+                    "ward",
+                    "icu"
+                ];
+
+            }
+
+            return [
+                "general",
+                "ward",
+                "emergency",
+                "other"
             ];
 
         }
@@ -742,7 +804,58 @@
 
 
         /*
-         * Critical patients strongly prefer ICU.
+         * CONDITION-BASED SCORING
+         *
+         * The room matching above determines which room types
+         * are acceptable. This scoring gives the most appropriate
+         * available room an additional preference.
+         */
+
+        const condition =
+            normalize(emergency?.condition);
+
+        if (
+            (
+                condition === "critical" ||
+                condition === "unconscious" ||
+                condition === "breathing" ||
+                condition === "bleeding"
+            ) &&
+            roomType.includes("icu")
+        ) {
+
+            score += 80;
+
+        }
+
+        if (
+            (
+                condition === "critical" ||
+                condition === "unconscious" ||
+                condition === "breathing" ||
+                condition === "bleeding"
+            ) &&
+            roomType.includes("emergency")
+        ) {
+
+            score += 45;
+
+        }
+
+        if (
+            condition === "conscious" &&
+            (
+                roomType.includes("general") ||
+                roomType.includes("ward")
+            )
+        ) {
+
+            score += 25;
+
+        }
+
+        /*
+         * Critical priority remains an additional signal.
          */
 
         if (
@@ -1077,6 +1190,17 @@
                     (
                         emergency.priority ||
                         "HIGH"
+                    ),
+                "condition=" +
+                    (
+                        emergency.condition ||
+                        "UNKNOWN"
+                    ),
+                "allocation_rule=CONDITION_PRIORITY_TYPE",
+                "room_type=" +
+                    (
+                        bed.room_type ||
+                        "Other"
                     )
             ].join("|");
 
@@ -2659,6 +2783,14 @@
                                         )}
                                     </span>
 
+                                    <span>
+                                        Condition:
+                                        ${escapeHtml(
+                                            emergency.condition ||
+                                            "Unknown"
+                                        )}
+                                    </span>
+
                                 </div>
 
 
@@ -2796,6 +2928,14 @@
                                     ${escapeHtml(
                                         emergency.emergency_type ||
                                         "Emergency"
+                                    )}
+                                </small>
+
+                                <small>
+                                    Condition:
+                                    ${escapeHtml(
+                                        emergency.condition ||
+                                        "Unknown"
                                     )}
                                 </small>
 

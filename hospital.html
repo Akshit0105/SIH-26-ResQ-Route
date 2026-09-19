@@ -331,6 +331,18 @@
             color: #16834a;
         }
 
+        .incoming-request-condition {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 7px;
+            border-radius: 12px;
+            font-size: 8px;
+            font-weight: 900;
+            text-transform: uppercase;
+            background: #eef2f7;
+            color: #475467;
+        }
+
         .incoming-request-meta {
             color: #7a8494;
             font-size: 9px;
@@ -2957,6 +2969,7 @@
 </script>
 <script src="js/emergency.js"></script>
 <script src="js/realtime.js"></script>
+<script src="js/bed-allocation.js"></script>
 
 <script>
 /* =========================================================
@@ -5426,6 +5439,7 @@
             const name = patient.name || "Unknown Patient";
             const emergencyId = emergency.id || "Emergency";
             const type = emergency.emergency_type || "Emergency";
+            const condition = emergency.condition || "Condition not recorded";
             const age = patient.age != null ? `${patient.age} yrs` : "Age not recorded";
             const gender = patient.gender || "Gender not recorded";
             const status = incomingStatusLabel(emergency.status);
@@ -6036,10 +6050,10 @@
        ===================================================== */
 
     const PROTOTYPE_PATIENTS = [
-        { name: "Rahul Sharma", age: 54, gender: "Male", blood_group: "B+", allergies: "Penicillin", medical_conditions: "Multiple trauma / suspected fractures", emergency_type: "Road Accident", priority: "critical", heart_rate: 118, spo2: 91, blood_pressure: "146/92", temperature: 38.1, ecg_status: "Sinus tachycardia" },
-        { name: "Aman Singh", age: 46, gender: "Male", blood_group: "O+", allergies: "None known", medical_conditions: "Acute chest pain / suspected cardiac event", emergency_type: "Chest Pain", priority: "high", heart_rate: 104, spo2: 95, blood_pressure: "138/88", temperature: 37.2, ecg_status: "Under observation" },
-        { name: "Simran Kaur", age: 31, gender: "Female", blood_group: "A+", allergies: "None known", medical_conditions: "Fall injury / soft tissue trauma", emergency_type: "Fall Injury", priority: "medium", heart_rate: 88, spo2: 98, blood_pressure: "122/80", temperature: 36.8, ecg_status: "Normal" },
-        { name: "Karan Mehta", age: 62, gender: "Male", blood_group: "O-", allergies: "Sulfa drugs", medical_conditions: "Respiratory distress", emergency_type: "Breathing Difficulty", priority: "critical", heart_rate: 126, spo2: 88, blood_pressure: "154/96", temperature: 38.4, ecg_status: "Requires monitoring" }
+        { name: "Rahul Sharma", age: 54, gender: "Male", blood_group: "B+", allergies: "Penicillin", medical_conditions: "Multiple trauma / suspected fractures", emergency_type: "Road Accident", condition: "critical", priority: "critical", heart_rate: 118, spo2: 91, blood_pressure: "146/92", temperature: 38.1, ecg_status: "Sinus tachycardia" },
+        { name: "Aman Singh", age: 46, gender: "Male", blood_group: "O+", allergies: "None known", medical_conditions: "Acute chest pain / suspected cardiac event", emergency_type: "Chest Pain", condition: "breathing", priority: "high", heart_rate: 104, spo2: 95, blood_pressure: "138/88", temperature: 37.2, ecg_status: "Under observation" },
+        { name: "Simran Kaur", age: 31, gender: "Female", blood_group: "A+", allergies: "None known", medical_conditions: "Fall injury / soft tissue trauma", emergency_type: "Fall Injury", condition: "conscious", priority: "medium", heart_rate: 88, spo2: 98, blood_pressure: "122/80", temperature: 36.8, ecg_status: "Normal" },
+        { name: "Karan Mehta", age: 62, gender: "Male", blood_group: "O-", allergies: "Sulfa drugs", medical_conditions: "Respiratory distress", emergency_type: "Breathing Difficulty", condition: "breathing", priority: "critical", heart_rate: 126, spo2: 88, blood_pressure: "154/96", temperature: 38.4, ecg_status: "Requires monitoring" }
     ];
 
     const PROTOTYPE_BEDS = [
@@ -6141,7 +6155,7 @@
         if (!user) return;
 
         const emergencyResult = await db.from("emergencies")
-            .select("id,patient_id,emergency_type,priority,status,patients(id,name,age,gender,blood_group,allergies,medical_conditions,consent_given)")
+            .select("id,patient_id,emergency_type,condition,priority,status,patients(id,name,age,gender,blood_group,allergies,medical_conditions,consent_given)")
             .eq("hospital_id", hospitalId)
             .not("status", "in", "(COMPLETED,CANCELLED)");
 
@@ -6191,12 +6205,13 @@
                     patient_id: patientId,
                     requester_id: user.id,
                     emergency_type: demo.emergency_type,
+                    condition: demo.condition,
                     priority: demo.priority,
                     latitude: 30.9010,
                     longitude: 75.8573,
                     hospital_id: hospitalId,
                     status: "ARRIVED_AT_HOSPITAL"
-                }).select("id,patient_id,emergency_type,priority,status,created_at,updated_at,patients(id,name,age,gender,blood_group,allergies,medical_conditions,consent_given)").single();
+                }).select("id,patient_id,emergency_type,condition,priority,status,created_at,updated_at,patients(id,name,age,gender,blood_group,allergies,medical_conditions,consent_given)").single();
 
                 if (emergencyInsert.error) {
                     console.warn("Prototype emergency seed skipped:", demo.name, emergencyInsert.error);
@@ -6819,7 +6834,8 @@ document.addEventListener("DOMContentLoaded", function () {
         const allocation = allocationSummary(allocations);
         const priority = String(emergency.priority || "").toUpperCase();
         const status = titleCaseStatus(emergency.status);
-        const condition = display(emergency.emergency_type);
+        const condition = display(emergency.condition || emergency.emergency_type);
+        const emergencyType = display(emergency.emergency_type);
         const medicalConditions = display(patient.medical_conditions);
         const allergies = display(patient.allergies);
 
@@ -6884,7 +6900,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 <div class="patient-monitor-card">
                     <h3>Condition & Medical Information</h3>
                     <div class="patient-info-grid">
-                        <div class="patient-info-box"><span class="patient-info-label">Emergency / Condition</span><strong class="patient-info-value">${esc(condition)}</strong></div>
+                        <div class="patient-info-box"><span class="patient-info-label">Current Condition</span><strong class="patient-info-value">${esc(condition)}</strong></div>
+                         <div class="patient-info-box"><span class="patient-info-label">Emergency Type</span><strong class="patient-info-value">${esc(emergencyType)}</strong></div>
                         <div class="patient-info-box"><span class="patient-info-label">Known Medical Conditions</span><strong class="patient-info-value">${esc(medicalConditions)}</strong></div>
                         <div class="patient-info-box"><span class="patient-info-label">Allergies</span><strong class="patient-info-value">${esc(allergies)}</strong></div>
                         <div class="patient-info-box"><span class="patient-info-label">Patient Status</span><strong class="patient-info-value">${esc(status)}</strong></div>
